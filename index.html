@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <script>
+      (function() {
+        try {
+          var originalDefineProperty = Object.defineProperty;
+          var customFetchValue;
+          var hasCustomFetch = false;
+
+          Object.defineProperty = function(obj, prop, descriptor) {
+            if (
+              (obj === window ||
+               obj === globalThis ||
+               (typeof Window !== 'undefined' && (obj instanceof Window || obj === Window.prototype))) &&
+              prop === 'fetch' &&
+              descriptor
+            ) {
+              var origGet = descriptor.get;
+              var origSet = descriptor.set;
+
+              var patchedDesc = {
+                configurable: true,
+                enumerable: descriptor.enumerable !== undefined ? descriptor.enumerable : true,
+                get: function() {
+                  if (hasCustomFetch) return customFetchValue;
+                  if (typeof origGet === 'function') return origGet.call(this);
+                  return descriptor.value !== undefined ? descriptor.value : window.fetch;
+                },
+                set: function(val) {
+                  customFetchValue = val;
+                  hasCustomFetch = true;
+                  if (typeof origSet === 'function') {
+                    try { origSet.call(this, val); } catch (e) {}
+                  }
+                }
+              };
+              return originalDefineProperty.call(Object, obj, prop, patchedDesc);
+            }
+            return originalDefineProperty.apply(this, arguments);
+          };
+
+          // If fetch already has a getter without a setter on window, define a setter immediately
+          var existingDesc = Object.getOwnPropertyDescriptor(window, 'fetch');
+          if (existingDesc && existingDesc.get && !existingDesc.set) {
+            var currGet = existingDesc.get;
+            originalDefineProperty.call(Object, window, 'fetch', {
+              configurable: true,
+              enumerable: existingDesc.enumerable !== undefined ? existingDesc.enumerable : true,
+              get: function() {
+                if (hasCustomFetch) return customFetchValue;
+                return currGet.call(this);
+              },
+              set: function(val) {
+                customFetchValue = val;
+                hasCustomFetch = true;
+              }
+            });
+          }
+        } catch (e) {
+          // Fallback gracefully without breaking page execution
+        }
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StudyBg - Medical Gateway</title>
+    <meta name="description" content="Guidance and administrative platform for English-taught Medicine and Dentistry degrees in Bulgaria, featuring student onboarding wizard, student portal, and staff ops." />
+    <meta property="og:title" content="StudyBg - Medical Gateway" />
+    <meta property="og:description" content="Guidance and administrative platform for English-taught Medicine and Dentistry degrees in Bulgaria, featuring student onboarding wizard, student portal, and staff ops." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  </head>
+  <body class="bg-[#F8FAFC] text-[#0b1c30] antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

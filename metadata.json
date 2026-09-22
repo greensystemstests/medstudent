@@ -1,0 +1,6 @@
+{
+  "name": "StudyBg - Medical Gateway",
+  "description": "Guidance and administrative platform for English-taught Medicine and Dentistry degrees in Bulgaria, featuring student onboarding wizard, student portal, and staff ops.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

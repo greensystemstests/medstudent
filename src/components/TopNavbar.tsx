@@ -1,0 +1,279 @@
+import React, { useState } from 'react';
+import { AppView } from '../types';
+import { StudyBgLogo } from './StudyBgLogo';
+import { 
+  GraduationCap, 
+  UserCheck, 
+  ShieldAlert, 
+  FileText, 
+  Home, 
+  CheckCircle2, 
+  ChevronRight,
+  Sparkles,
+  Layers,
+  Menu,
+  X
+} from 'lucide-react';
+
+interface TopNavbarProps {
+  currentView: AppView;
+  onNavigate: (view: AppView) => void;
+  onOpenQuickFit: () => void;
+}
+
+export const TopNavbar: React.FC<TopNavbarProps> = ({ currentView, onNavigate, onOpenQuickFit }) => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  return (
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
+      {/* Top micro-bar with status and rapid persona switcher */}
+      <div className="bg-[#0f1e36] text-slate-200 px-4 py-1.5 text-xs">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#006644]/40 text-[#6ee7b7] font-medium text-[11px] border border-[#10b981]/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse"></span>
+              2025/2026 Intake Active
+            </span>
+            <span className="hidden sm:inline text-slate-300">
+              Bulgarian Ministry of Education (MOES) & EU Directive 2005/36/EC
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 text-xs">
+            <span className="text-slate-400 mr-1 hidden md:inline">Demo Switcher:</span>
+            <div className="flex items-center bg-slate-800/80 rounded-lg p-0.5 border border-slate-700/60">
+              <button
+                id="switcher-home-btn"
+                onClick={() => onNavigate('home')}
+                className={`px-2.5 py-1 rounded-md transition-all font-medium flex items-center gap-1.5 ${
+                  currentView === 'home'
+                    ? 'bg-[#006644] text-white shadow-xs'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                }`}
+              >
+                <Home className="w-3.5 h-3.5" />
+                <span>Public Site</span>
+              </button>
+
+              <button
+                id="switcher-wizard-btn"
+                onClick={() => onNavigate('wizard')}
+                className={`px-2.5 py-1 rounded-md transition-all font-medium flex items-center gap-1.5 ${
+                  currentView === 'wizard'
+                    ? 'bg-[#006644] text-white shadow-xs'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>Wizard Demo</span>
+              </button>
+
+              <button
+                id="switcher-student-btn"
+                onClick={() => onNavigate('student')}
+                className={`px-2.5 py-1 rounded-md transition-all font-medium flex items-center gap-1.5 ${
+                  currentView === 'student'
+                    ? 'bg-[#006644] text-white shadow-xs'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                }`}
+              >
+                <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Student Portal</span>
+                <span className="bg-amber-400/20 text-amber-300 text-[10px] px-1 rounded">1 Action</span>
+              </button>
+
+              <button
+                id="switcher-staff-btn"
+                onClick={() => onNavigate('staff')}
+                className={`px-2.5 py-1 rounded-md transition-all font-medium flex items-center gap-1.5 ${
+                  currentView === 'staff'
+                    ? 'bg-[#006644] text-white shadow-xs'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                }`}
+              >
+                <ShieldAlert className="w-3.5 h-3.5 text-sky-400" />
+                <span>Staff Ops</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main header navbar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 sm:h-20">
+          {/* Logo & Brand Identity */}
+          <button
+            onClick={() => onNavigate('home')}
+            className="flex items-center gap-2 text-left focus:outline-none group py-1"
+            id="brand-logo-btn"
+          >
+            <StudyBgLogo size="lg" />
+            <div className="hidden sm:block pl-2 border-l border-slate-200">
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200 block w-fit">
+                Medical Gateway
+              </span>
+              <p className="text-[11px] text-slate-500 font-medium">Bulgaria English Medical & Dental Admissions</p>
+            </div>
+          </button>
+
+          {/* Primary Navigation Links */}
+          <nav className="hidden lg:flex items-center space-x-1">
+            <button
+              onClick={() => {
+                onNavigate('home');
+                const el = document.getElementById('universities-section');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#006644] hover:bg-slate-50 rounded-lg transition-colors"
+            >
+              Universities
+            </button>
+            <button
+              onClick={() => {
+                onNavigate('home');
+                const el = document.getElementById('six-stages-section');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#006644] hover:bg-slate-50 rounded-lg transition-colors"
+            >
+              6-Stage Journey
+            </button>
+            <button
+              onClick={() => {
+                onNavigate('home');
+                const el = document.getElementById('eligibility-section');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#006644] hover:bg-slate-50 rounded-lg transition-colors"
+            >
+              Prerequisites
+            </button>
+            <button
+              onClick={() => {
+                onNavigate('home');
+                const el = document.getElementById('pricing-section');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#006644] hover:bg-slate-50 rounded-lg transition-colors"
+            >
+              Transparent Pricing (€180)
+            </button>
+            <button
+              onClick={() => {
+                onNavigate('home');
+                const el = document.getElementById('faqs-section');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#006644] hover:bg-slate-50 rounded-lg transition-colors"
+            >
+              FAQ & Non-EU Visa
+            </button>
+          </nav>
+
+          {/* Action CTAs */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <button
+              onClick={onOpenQuickFit}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#006644] bg-[#006644]/10 hover:bg-[#006644]/20 border border-[#006644]/20 rounded-lg transition-colors"
+              id="header-quick-fit-btn"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Quick Fit Check</span>
+            </button>
+
+            <button
+              onClick={() => onNavigate('wizard')}
+              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs font-semibold text-white bg-[#006644] hover:bg-[#005538] rounded-lg shadow-sm hover:shadow transition-all"
+              id="header-apply-btn"
+            >
+              <span>Apply Now (€180)</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Mobile Hamburger Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Navigation Dropdown */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden border-t border-slate-200 py-3 space-y-1">
+            <button
+              onClick={() => {
+                onNavigate('home');
+                setMobileMenuOpen(false);
+                const el = document.getElementById('universities-section');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg"
+            >
+              Universities
+            </button>
+            <button
+              onClick={() => {
+                onNavigate('home');
+                setMobileMenuOpen(false);
+                const el = document.getElementById('six-stages-section');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg"
+            >
+              6-Stage Journey
+            </button>
+            <button
+              onClick={() => {
+                onNavigate('home');
+                setMobileMenuOpen(false);
+                const el = document.getElementById('eligibility-section');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg"
+            >
+              Prerequisites
+            </button>
+            <button
+              onClick={() => {
+                onNavigate('home');
+                setMobileMenuOpen(false);
+                const el = document.getElementById('pricing-section');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg"
+            >
+              Transparent Pricing (€180)
+            </button>
+            <button
+              onClick={() => {
+                onNavigate('home');
+                setMobileMenuOpen(false);
+                const el = document.getElementById('faqs-section');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg"
+            >
+              FAQ & Non-EU Visa
+            </button>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenQuickFit();
+              }}
+              className="w-full text-left px-3 py-2 text-sm font-semibold text-[#006644] hover:bg-emerald-50 rounded-lg flex items-center gap-1.5"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Quick Fit Check</span>
+            </button>
+          </div>
+        )}
+      </div>
+    </header>
+  );
+};
+

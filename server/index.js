@@ -4,8 +4,11 @@ import 'dotenv/config';
 import { Resend } from 'resend';
 import Stripe from 'stripe';
 import { createApp } from './app.js';
-import { connectKv } from './kv.js';
+import { connectDb, migrate } from './db.js';
+import { fileKeyFromEnv } from './fileCrypto.js';
 import { sellerFromEnv } from './invoice.js';
+import { connectKv } from './kv.js';
+import { sendLoginCodeEmail } from './mail.js';
 
 const DEFAULT_ORIGINS = [
   'https://studybg.ac',
@@ -44,9 +47,24 @@ const startNumber = Math.max(1, Number(process.env.INVOICE_START_NUMBER) || 1);
 
 const billing = { kv, resend, seller, fromEmail, saleNotifyEmail: process.env.SALE_NOTIFICATION_EMAIL?.trim(), invoiceStartNumber: startNumber };
 
+// Accounts: sign-in codes go out by email (same Resend setup as receipts). LOG_LOGIN_CODES=true
+// prints them to the server log instead — for local development only, never in production.
+const db = connectDb(process.env.DATABASE_URL?.trim());
+if (db) await migrate(db);
+const fileKey = fileKeyFromEnv(process.env.FILE_ENCRYPTION_KEY?.trim());
+const siteUrl = (process.env.SITE_URL?.trim() || 'https://studybg.ac').replace(/\/+$/, '');
+const logLoginCodes = process.env.LOG_LOGIN_CODES === 'true';
+const deliverCode =
+  resend && fromEmail
+    ? (email, code) => sendLoginCodeEmail(resend, { from: fromEmail, to: email, code, siteUrl })
+    : logLoginCodes
+      ? async (email, code) => console.log(`[dev] sign-in code for ${email}: ${code}`)
+      : null;
+
 const app = createApp({
   stripe,
   billing,
+  accounts: { db, fileKey, deliverCode },
   config: {
     publishableKey,
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET?.trim(),
@@ -60,5 +78,7 @@ app.listen(port, () => {
   const stripeMode = !stripe || !publishableKey ? 'NOT CONFIGURED' : secretKey.includes('_live_') ? 'LIVE' : 'test';
   const missing = [!kv && 'REDIS_URL', !resend && 'RESEND_API_KEY', !seller && 'COMPANY_* fields', !fromEmail && 'INVOICE_FROM_EMAIL'].filter(Boolean);
   const billingMode = missing.length ? `NOT CONFIGURED (missing ${missing.join(', ')})` : 'ready';
-  console.log(`StudyBg API listening on :${port} (Stripe: ${stripeMode}, invoicing/email: ${billingMode})`);
+  const accountMissing = [!db && 'DATABASE_URL', !fileKey && 'FILE_ENCRYPTION_KEY', !deliverCode && 'RESEND_API_KEY + INVOICE_FROM_EMAIL'].filter(Boolean);
+  const accountsMode = accountMissing.length ? `NOT CONFIGURED (missing ${accountMissing.join(', ')})` : 'ready';
+  console.log(`StudyBg API listening on :${port} (Stripe: ${stripeMode}, invoicing/email: ${billingMode}, accounts: ${accountsMode})`);
 });

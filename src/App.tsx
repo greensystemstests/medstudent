@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { AccountView } from './components/AccountView';
 import { TopNavbar } from './components/TopNavbar';
 import { PublicSiteView } from './components/PublicSiteView';
 import { WizardView } from './components/WizardView';
@@ -6,7 +7,9 @@ import { StudentPortalView } from './components/StudentPortalView';
 import { StaffOpsView } from './components/StaffOpsView';
 import { QuickFitModal } from './components/QuickFitModal';
 import { applyPrefill, createApplication, loadApplication, PAYMENT_STEP, saveApplication, WizardPrefill } from './lib/application';
+import { liveAccountApi } from './lib/account';
 import { getPaymentStatus } from './lib/api';
+import { createDemoAccountApi } from './lib/demoAccount';
 import { ApplicationState, AppView } from './types';
 
 const DEMO_KEY = 'studybg.demo';
@@ -26,6 +29,21 @@ function readDemoMode(): boolean {
   }
 }
 
+/** Each view has its own address, so pages can be bookmarked, shared, and the back button works. */
+const VIEW_HASH: Record<AppView, string> = {
+  home: '',
+  wizard: '#/apply',
+  account: '#/account',
+  student: '#/portal-demo',
+  staff: '#/staff-demo',
+};
+
+function viewFromHash(hash: string): AppView | null {
+  if (hash === '' || hash === '#' || hash === '#/') return 'home';
+  const match = (Object.entries(VIEW_HASH) as [AppView, string][]).find(([, h]) => h && hash.startsWith(h));
+  return match ? match[0] : null;
+}
+
 /** Stripe sends some payment methods (e.g. bank redirects) back here with ?payment_intent=... */
 function readPaymentReturn(): string | null {
   const params = new URLSearchParams(window.location.search);
@@ -36,7 +54,19 @@ export default function App() {
   const [demoMode] = useState(readDemoMode);
   const [returningPaymentIntent] = useState(readPaymentReturn);
   const [application, setApplication] = useState<ApplicationState>(loadApplication);
-  const [currentView, setCurrentView] = useState<AppView>(returningPaymentIntent ? 'wizard' : 'home');
+  const guardView = useCallback(
+    (view: AppView): AppView => {
+      // Sample-data views are demo-only; real applicants go to their own application instead.
+      if (!demoMode && view === 'student') return 'wizard';
+      if (!demoMode && view === 'staff') return 'home';
+      return view;
+    },
+    [demoMode],
+  );
+  const [currentView, setCurrentView] = useState<AppView>(() =>
+    returningPaymentIntent ? 'wizard' : guardView(viewFromHash(window.location.hash) ?? 'home'),
+  );
+  const accountApi = useMemo(() => (demoMode ? createDemoAccountApi() : liveAccountApi), [demoMode]);
   const [pendingSection, setPendingSection] = useState<string | null>(null);
   const [isQuickFitOpen, setIsQuickFitOpen] = useState(false);
 
@@ -73,16 +103,36 @@ export default function App() {
 
   const navigate = useCallback(
     (view: AppView) => {
-      // Sample-data views are demo-only; real applicants go to their own application instead.
-      let target = view;
-      if (!demoMode && target === 'student') target = 'wizard';
-      if (!demoMode && target === 'staff') target = 'home';
-      setCurrentView(target);
+      setCurrentView(guardView(view));
       setPendingSection(null);
       window.scrollTo({ top: 0 });
     },
-    [demoMode],
+    [guardView],
   );
+
+  // Keep the address bar in step with the view...
+  useEffect(() => {
+    const target = VIEW_HASH[currentView];
+    if (viewFromHash(window.location.hash) === currentView) return;
+    window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${target}`);
+  }, [currentView]);
+
+  // ...and the view in step with the address bar (back/forward buttons, links, typed URLs).
+  useEffect(() => {
+    const onAddressChange = () => {
+      const view = viewFromHash(window.location.hash);
+      if (view) {
+        setCurrentView(guardView(view));
+        window.scrollTo({ top: 0 });
+      }
+    };
+    window.addEventListener('popstate', onAddressChange);
+    window.addEventListener('hashchange', onAddressChange);
+    return () => {
+      window.removeEventListener('popstate', onAddressChange);
+      window.removeEventListener('hashchange', onAddressChange);
+    };
+  }, [guardView]);
 
   const navigateToSection = useCallback((sectionId: string) => {
     setCurrentView('home');
@@ -139,6 +189,10 @@ export default function App() {
             onStartNewApplication={startNewApplication}
             demoMode={demoMode}
           />
+        )}
+
+        {currentView === 'account' && (
+          <AccountView api={accountApi} defaultEmail={application.form.email || undefined} onNavigate={navigate} />
         )}
 
         {currentView === 'student' && demoMode && <StudentPortalView onNavigate={navigate} />}

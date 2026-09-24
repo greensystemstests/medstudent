@@ -1,5 +1,5 @@
 import React from 'react';
-import { CalendarClock, CheckCircle2, FileCheck2, Home, Mail, Receipt, Truck, UserCheck, Video } from 'lucide-react';
+import { ArrowRight, CalendarClock, CheckCircle2, FileCheck2, FolderUp, Home, Mail, Receipt, Truck, UserCheck, Video } from 'lucide-react';
 import { APP_IMAGES, EXAM_DECIDE_WITH_ADVISOR, EXAM_SESSIONS, UNIVERSITIES } from '../data/constants';
 import { formatDay } from '../lib/application';
 import { ApplicationState, AppView } from '../types';
@@ -83,6 +83,27 @@ export const ApplicationConfirmation: React.FC<Props> = ({ app, demoMode, onNavi
               ))}
             </ol>
           </div>
+        </div>
+
+        {/* Next: upload documents */}
+        <div className="rounded-2xl bg-gradient-to-r from-[#0f1e36] to-[#006644] text-white p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <FolderUp className="w-6 h-6 text-emerald-300 shrink-0" />
+            <div>
+              <div className="font-bold font-heading">Upload your documents securely</div>
+              <p className="text-xs text-slate-200 mt-0.5">
+                Sign in to your account with {form.email} to upload your passport, diploma and certificates, and follow your application.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigate('account')}
+            id="go-to-account-btn"
+            className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-white text-[#006644] hover:bg-emerald-50"
+          >
+            Go to my account <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         </div>
 
         {/* Summary */}

@@ -302,7 +302,7 @@ describe('without Stripe keys', () => {
   test('payment endpoints answer 503 instead of crashing', async () => {
     assert.equal((await fetch(`${base}/api/config`)).status, 503);
     assert.equal((await post('/api/payment-intent', { applicationId, applicant })).status, 503);
-    assert.deepEqual(await (await fetch(`${base}/api/health`)).json(), { ok: true, paymentsReady: false, billingReady: false });
+    assert.deepEqual(await (await fetch(`${base}/api/health`)).json(), { ok: true, paymentsReady: false, billingReady: false, accountsReady: false });
   });
 });
 
@@ -326,7 +326,7 @@ describe('invoicing & receipt emails', () => {
   afterEach(stop);
 
   test('health reports billing as ready once kv/resend/seller/fromEmail are all set', async () => {
-    assert.deepEqual(await (await fetch(`${base}/api/health`)).json(), { ok: true, paymentsReady: true, billingReady: true });
+    assert.deepEqual(await (await fetch(`${base}/api/health`)).json(), { ok: true, paymentsReady: true, billingReady: true, accountsReady: false });
   });
 
   test('a successful payment gets a PDF invoice emailed to the buyer, and a sale alert to the business', async () => {

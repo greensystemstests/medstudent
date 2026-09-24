@@ -12,6 +12,7 @@ import {
   Sparkles,
   Layers,
   Menu,
+  CircleUserRound,
   X
 } from 'lucide-react';
 
@@ -172,6 +173,21 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Quick Fit Check</span>
+            </button>
+
+            <button
+              onClick={() => onNavigate('account')}
+              aria-label="My account"
+              title="My account"
+              className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 text-xs font-semibold rounded-lg border transition-colors ${
+                currentView === 'account'
+                  ? 'text-[#006644] bg-emerald-50 border-[#006644]/30'
+                  : 'text-slate-700 bg-white border-slate-200 hover:border-[#006644]/40 hover:text-[#006644]'
+              }`}
+              id="header-account-btn"
+            >
+              <CircleUserRound className="w-4 h-4" />
+              <span className="hidden sm:inline">My Account</span>
             </button>
 
             <button

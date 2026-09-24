@@ -3,15 +3,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import cors from 'cors';
 import express from 'express';
+import { mountAccountRoutes } from './accountRoutes.js';
 import { formatMoney, renderInvoicePdf } from './invoice.js';
 import { isInvoiceSent, markInvoiceSent, reserveInvoiceNumber, saveInvoiceRecord } from './kv.js';
 import { sendReceiptEmail, sendSaleNotification } from './mail.js';
+import { ONBOARDING_FEE, PAYMENT_SOURCE } from './pricing.js';
+import { rateLimit } from './rateLimit.js';
 
-// The onboarding fee is fixed on the server. The browser never decides how much is charged.
-export const ONBOARDING_FEE = { amount: 18000, currency: 'eur' };
-
-// Tag on every PaymentIntent we create, so status lookups can refuse unrelated intents.
-const PAYMENT_SOURCE = 'studybg-wizard';
+export { ONBOARDING_FEE };
 
 const APPLICATION_ID_RE = /^[A-Za-z0-9-]{8,64}$/;
 const PAYMENT_INTENT_ID_RE = /^pi_[A-Za-z0-9]{8,64}$/;
@@ -83,22 +82,6 @@ function describeIntent(intent) {
 
 function isOurs(intent, applicationId) {
   return intent?.metadata?.source === PAYMENT_SOURCE && intent.metadata.application_id === applicationId;
-}
-
-/** Small fixed-window rate limiter, per client IP. Enough to stop a runaway client loop. */
-function rateLimit({ windowMs, max }) {
-  const hits = new Map();
-  return (req, res, next) => {
-    const now = Date.now();
-    const entry = hits.get(req.ip);
-    if (!entry || now - entry.start > windowMs) {
-      hits.set(req.ip, { start: now, count: 1 });
-    } else if (++entry.count > max) {
-      return res.status(429).json({ error: 'Too many requests, please wait a minute and try again.' });
-    }
-    if (hits.size > 10000) hits.clear();
-    next();
-  };
 }
 
 /**
@@ -187,9 +170,11 @@ async function issueInvoiceAndNotify(intent, billing, log) {
  * @param {{ publishableKey?: string, webhookSecret?: string, allowedOrigins: string[], staticDir?: string }} deps.config
  * @param {{ kv: import('ioredis').Redis, resend: import('resend').Resend, seller: object, fromEmail: string, saleNotifyEmail?: string, invoiceStartNumber: number } | null} [deps.billing]
  *   null (or any piece missing) disables invoicing/emails; the webhook still 200s Stripe, just skips them.
+ * @param {{ db: import('pg').Pool | null, fileKey: Buffer | null, deliverCode: ((email: string, code: string) => Promise<void>) | null } | null} [deps.accounts]
+ *   Accounts (sign-in, profile, documents). null (or any piece missing) makes /api/auth and /api/me answer 503.
  * @param {(line: string) => void} [deps.log]
  */
-export function createApp({ stripe, config, billing = null, log = console.log }) {
+export function createApp({ stripe, config, billing = null, accounts = null, log = console.log }) {
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', 1);
@@ -238,12 +223,21 @@ export function createApp({ stripe, config, billing = null, log = console.log })
     '/api',
     cors({
       origin: (origin, cb) => cb(null, !origin || config.allowedOrigins.includes(origin)),
-      methods: ['GET', 'POST'],
+      methods: ['GET', 'POST', 'DELETE'],
     }),
   );
   app.use('/api', express.json({ limit: '16kb' }));
 
-  app.get('/api/health', (_req, res) => res.json({ ok: true, paymentsReady, billingReady }));
+  const { accountsReady } = mountAccountRoutes(app, {
+    db: accounts?.db ?? null,
+    fileKey: accounts?.fileKey ?? null,
+    deliverCode: accounts?.deliverCode ?? null,
+    rateLimits: accounts?.rateLimits,
+    stripe,
+    log,
+  });
+
+  app.get('/api/health', (_req, res) => res.json({ ok: true, paymentsReady, billingReady, accountsReady }));
 
   app.get('/api/config', (_req, res) => {
     if (!paymentsReady) return notConfigured(res);

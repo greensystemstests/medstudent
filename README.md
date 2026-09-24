@@ -37,6 +37,38 @@ is retried on Stripe's next delivery — it never reuses or skips a number.
 Bulgarian invoicing software output, but whether it fully satisfies your specific registration (VAT status,
 any e-invoicing/SAF-T obligations) needs sign-off from your accountant before you rely on it for filing.
 
+### Student accounts & documents (`#/account`)
+
+Students sign in with just their email: we email a 6-digit code (valid 10 minutes, 5 tries, one at a time),
+no passwords. Once signed in they get a profile, in the same look as the rest of the site, with three tabs:
+
+- **Overview**: their paid application(s) (read live from Stripe by email) and a checklist of the 5 required
+  documents with a progress bar and one-click "Upload" per missing item.
+- **Documents**: upload (pick the type, then drop/choose a PDF, JPG or PNG up to 10 MB), view in-page, download, delete.
+- **Activity**: a timeline of everything done with the account (sign-ins, uploads, views, downloads, deletions, payment).
+
+Security:
+
+- Files are encrypted with AES-256-GCM before they're stored in Postgres (`FILE_ENCRYPTION_KEY`). Each file's
+  ciphertext is bound to its owner and document id, so a blob copied to another row can't be decrypted.
+- File type is checked from the file's actual bytes, not its name. Limits: 10 MB per file, 30 files / 100 MB per student.
+- Every document query is scoped to the signed-in user; another user's document id simply returns "not found".
+- Only hashes of sign-in codes and session tokens are stored. Sessions last 30 days, and signing out revokes them server-side.
+- Files are served with `Cache-Control: no-store`, `nosniff` and a sandboxing CSP.
+
+API: `POST /api/auth/request-code`, `POST /api/auth/verify`, `POST /api/auth/logout`, `GET /api/me`,
+`GET|POST /api/me/documents`, `GET /api/me/documents/:id/file`, `DELETE /api/me/documents/:id`, `GET /api/me/activity`.
+
+## Pages (URLs)
+
+| Page | URL |
+|---|---|
+| Public site | `/` |
+| Application (8 steps + payment) | `/#/apply` |
+| Student account / sign in | `/#/account` |
+| Account preview with sample data (no sign-in) | `/?demo=1#/account` |
+| Sample student portal / staff ops (demo) | `/?demo=1#/portal-demo`, `/?demo=1#/staff-demo` |
+
 ## Application flow
 
 1. Applicant & high school → 2. Faculty & intake → 3. Science grades (≥62% in Biology **and** Chemistry) & English →
@@ -52,8 +84,9 @@ Demo mode (persona switcher, sample Student Portal and Staff Ops views) is hidde
 
 ```bash
 npm install
-cp .env.example .env        # add your Stripe TEST keys
-npm run dev:server          # payments API on :8787
+cp .env.example .env        # add your Stripe TEST keys; for accounts also DATABASE_URL,
+                            # FILE_ENCRYPTION_KEY and LOG_LOGIN_CODES=true (codes print to the console)
+npm run dev:server          # API on :8787
 npm run dev                 # site on :3000 (proxies /api to :8787)
 ```
 
@@ -61,7 +94,7 @@ Test card: `4242 4242 4242 4242`, any future expiry, any CVC. Declined: `4000 00
 
 ```bash
 npm run lint   # type check
-npm test       # API tests
+npm test       # API tests (account tests also need TEST_DATABASE_URL=postgres://...; CI provides one)
 npm run build
 ```
 
@@ -88,5 +121,15 @@ npm run build
    - `REDIS_URL` is already set for you (linked to the `studybg-invoices` Key Value store)
 3. Make a test payment; check the applicant's inbox for the receipt PDF and your own inbox for the sale alert.
    The Render logs also print `invoice <number> emailed for <payment id>` for every one that goes out.
+
+## Turning on student accounts
+
+1. **Render → studybg-db** (Postgres) → *Connections* → copy the **Internal Database URL**.
+2. **Render → studybg-api → Environment**, set:
+   - `DATABASE_URL`: the URL from step 1
+   - `FILE_ENCRYPTION_KEY`: click *Generate*. **Back this value up somewhere safe and never change it**;
+     without it, stored documents can't be decrypted.
+   - `RESEND_API_KEY` + `INVOICE_FROM_EMAIL`: needed to email sign-in codes (same as for receipts).
+3. After the redeploy, `/api/health` shows `"accountsReady": true` and the Render log line says `accounts: ready`.
 
 Update `EXAM_SESSIONS` in `src/data/constants.ts` each admission cycle; sessions whose date has passed show as closed.

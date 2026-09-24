@@ -3,6 +3,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import cors from 'cors';
 import express from 'express';
+import { formatMoney, renderInvoicePdf } from './invoice.js';
+import { isInvoiceSent, markInvoiceSent, reserveInvoiceNumber, saveInvoiceRecord } from './kv.js';
+import { sendReceiptEmail, sendSaleNotification } from './mail.js';
 
 // The onboarding fee is fixed on the server. The browser never decides how much is charged.
 export const ONBOARDING_FEE = { amount: 18000, currency: 'eur' };
@@ -99,22 +102,105 @@ function rateLimit({ windowMs, max }) {
 }
 
 /**
+ * Builds the applicant/university-facing bits an invoice or sale-notification email needs
+ * out of a PaymentIntent's metadata (see buildPaymentIntentParams above for what's in it).
+ */
+function applicantFromIntent(intent) {
+  const md = intent.metadata || {};
+  return {
+    name: md.applicant_name || 'Applicant',
+    email: md.applicant_email,
+    degree: md.degree || '—',
+    university: md.university || '—',
+    callDate: md.call_date || '—',
+    callWindow: md.call_window || '—',
+  };
+}
+
+/**
+ * Issues the sequential invoice PDF and emails it to the payer, plus a sale notification to
+ * the business inbox. Safe to call more than once for the same PaymentIntent (Stripe redelivers
+ * webhooks): the invoice number is assigned at most once, and the emails are sent at most once,
+ * tracked separately so a failure between the two (e.g. PDF renders but the email send fails)
+ * is retried on the next delivery instead of silently skipped or double-sent.
+ */
+async function issueInvoiceAndNotify(intent, billing, log) {
+  if (await isInvoiceSent(billing.kv, intent.id)) return;
+
+  const number = await reserveInvoiceNumber(billing.kv, intent.id, billing.invoiceStartNumber);
+  const invoiceNumber = String(number).padStart(10, '0');
+  const applicant = applicantFromIntent(intent);
+  if (!applicant.email) {
+    log(`invoice ${invoiceNumber}: PaymentIntent ${intent.id} has no applicant email, skipping.`);
+    return;
+  }
+
+  const pdfBytes = await renderInvoicePdf({
+    invoiceNumber,
+    issueDate: new Date(),
+    seller: billing.seller,
+    buyer: { name: applicant.name, email: applicant.email },
+    description: intent.description || 'StudyBg onboarding & advisory fee',
+    amountMinor: intent.amount,
+    currency: intent.currency,
+    paymentRef: intent.id,
+  });
+  const totalText = formatMoney(intent.amount, intent.currency);
+
+  await saveInvoiceRecord(billing.kv, invoiceNumber, {
+    paymentIntentId: intent.id,
+    issuedAt: new Date().toISOString(),
+    amount: intent.amount,
+    currency: intent.currency,
+    buyerName: applicant.name,
+    buyerEmail: applicant.email,
+  });
+
+  await sendReceiptEmail(billing.resend, {
+    from: billing.fromEmail,
+    to: applicant.email,
+    buyerName: applicant.name,
+    invoiceNumber,
+    totalText,
+    pdfBytes,
+  });
+  if (billing.saleNotifyEmail) {
+    await sendSaleNotification(billing.resend, {
+      from: billing.fromEmail,
+      to: billing.saleNotifyEmail,
+      buyerName: applicant.name,
+      buyerEmail: applicant.email,
+      totalText,
+      invoiceNumber,
+      applicant,
+    });
+  }
+
+  // Marked only after both emails succeed, so a failure above is retried (same invoice number) rather than lost.
+  await markInvoiceSent(billing.kv, intent.id);
+  log(`invoice ${invoiceNumber} emailed for ${intent.id} (${totalText} — ${applicant.email})`);
+}
+
+/**
  * @param {object} deps
  * @param {import('stripe').Stripe | null} deps.stripe  null when STRIPE_SECRET_KEY is not configured
  * @param {{ publishableKey?: string, webhookSecret?: string, allowedOrigins: string[], staticDir?: string }} deps.config
+ * @param {{ kv: import('ioredis').Redis, resend: import('resend').Resend, seller: object, fromEmail: string, saleNotifyEmail?: string, invoiceStartNumber: number } | null} [deps.billing]
+ *   null (or any piece missing) disables invoicing/emails; the webhook still 200s Stripe, just skips them.
  * @param {(line: string) => void} [deps.log]
  */
-export function createApp({ stripe, config, log = console.log }) {
+export function createApp({ stripe, config, billing = null, log = console.log }) {
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', 1);
 
   const paymentsReady = Boolean(stripe && config.publishableKey);
+  const billingReady = Boolean(billing?.kv && billing?.resend && billing?.seller && billing?.fromEmail);
   const notConfigured = (res) =>
     res.status(503).json({ error: 'Payments are not configured on the server yet.' });
 
   // Webhook must see the raw body for signature verification, so it is mounted before express.json().
-  app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), (req, res) => {
+  app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
     if (!stripe || !config.webhookSecret) return notConfigured(res);
     let event;
     try {
@@ -124,17 +210,25 @@ export function createApp({ stripe, config, log = console.log }) {
     }
 
     const intent = event.data?.object;
-    if (event.type === 'payment_intent.succeeded' || event.type === 'payment_intent.payment_failed') {
-      if (intent?.metadata?.source === PAYMENT_SOURCE) {
-        log(
-          JSON.stringify({
-            event: event.type,
-            paymentIntentId: intent.id,
-            amount: intent.amount,
-            currency: intent.currency,
-            ...intent.metadata,
-          }),
-        );
+    const isOurs = (event.type === 'payment_intent.succeeded' || event.type === 'payment_intent.payment_failed')
+      && intent?.metadata?.source === PAYMENT_SOURCE;
+
+    if (isOurs) {
+      log(JSON.stringify({ event: event.type, paymentIntentId: intent.id, amount: intent.amount, currency: intent.currency, ...intent.metadata }));
+    }
+
+    if (isOurs && event.type === 'payment_intent.succeeded') {
+      if (!billingReady) {
+        log(`invoice/email skipped for ${intent.id}: RESEND_API_KEY / REDIS_URL / COMPANY_* env vars not fully configured.`);
+      } else {
+        try {
+          await issueInvoiceAndNotify(intent, billing, log);
+        } catch (err) {
+          log(`invoice/email error for ${intent.id}: ${err.message}`);
+          // Non-2xx makes Stripe retry this delivery (with backoff, for up to ~3 days) instead
+          // of silently losing the receipt on a transient failure (e.g. Resend hiccup).
+          return res.status(500).json({ error: 'Failed to process invoice, will retry.' });
+        }
       }
     }
     res.json({ received: true });
@@ -149,7 +243,7 @@ export function createApp({ stripe, config, log = console.log }) {
   );
   app.use('/api', express.json({ limit: '16kb' }));
 
-  app.get('/api/health', (_req, res) => res.json({ ok: true, paymentsReady }));
+  app.get('/api/health', (_req, res) => res.json({ ok: true, paymentsReady, billingReady }));
 
   app.get('/api/config', (_req, res) => {
     if (!paymentsReady) return notConfigured(res);

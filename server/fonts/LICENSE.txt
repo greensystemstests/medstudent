@@ -1,0 +1,10 @@
+DejaVu fonts (DejaVuSans.ttf, DejaVuSans-Bold.ttf)
+
+Bundled here so invoice PDFs render correctly (including Cyrillic, for the
+Bulgarian-language invoice labels) without depending on fonts installed on
+the host machine.
+
+License: Bitstream Vera License + public-domain additions by the DejaVu
+fonts team. Free to use, copy, modify, embed and redistribute, including
+commercially, with attribution retained in this notice.
+Full text and font sources: https://dejavu-fonts.github.io/License.html

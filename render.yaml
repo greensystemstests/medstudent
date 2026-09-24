@@ -1,6 +1,11 @@
 # Render Blueprint for the StudyBg payments API.
 # Secrets are marked sync: false, so Render asks for them in its dashboard;
 # they never live in this repository.
+#
+# Note: the live studybg-api service and the studybg-invoices Key Value
+# instance were provisioned directly via the Render API, not by syncing this
+# blueprint. It's kept here as documentation of the full setup (and so a
+# from-scratch redeploy via "New Blueprint" in the Render dashboard works).
 services:
   - type: web
     name: studybg-api
@@ -20,3 +25,31 @@ services:
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: studybg-invoices
+          property: connectionString
+      - key: RESEND_API_KEY
+        sync: false
+      - key: INVOICE_FROM_EMAIL
+        sync: false
+      - key: SALE_NOTIFICATION_EMAIL
+        sync: false
+      - key: COMPANY_LEGAL_NAME
+        sync: false
+      - key: COMPANY_EIK
+        sync: false
+      - key: COMPANY_ADDRESS
+        sync: false
+      - key: COMPANY_CITY
+        sync: false
+      - key: COMPANY_VAT_NUMBER
+        sync: false
+
+  - type: keyvalue
+    name: studybg-invoices
+    plan: free
+    region: frankfurt
+    maxmemoryPolicy: noeviction
+    ipAllowList: []

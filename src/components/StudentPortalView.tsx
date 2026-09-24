@@ -261,7 +261,7 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
                     <span className="font-heading font-extrabold text-sm text-amber-950">
                       Action Required: Jordanian Tawjihi Diploma — Reverse Apostille Stamp Missing
                     </span>
-                    <span className="bg-amber-200/80 text-amber-900 text-[0.625rem] font-bold px-2 py-0.5 rounded uppercase">
+                    <span className="bg-amber-200/80 text-amber-900 text-[0.6875rem] font-bold px-2 py-0.5 rounded uppercase">
                       Urgent Prerequisite
                     </span>
                   </div>
@@ -346,7 +346,7 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
                 <div className={`font-bold text-xs truncate ${st.status === 'current' ? 'text-white' : 'text-slate-800'}`}>
                   {st.title}
                 </div>
-                <div className={`text-[0.625rem] truncate mt-0.5 ${st.status === 'current' ? 'text-slate-300' : 'text-slate-500'}`}>
+                <div className={`text-[0.6875rem] truncate mt-0.5 ${st.status === 'current' ? 'text-slate-300' : 'text-slate-500'}`}>
                   {st.duration}
                 </div>
               </div>
@@ -413,7 +413,7 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-bold text-xs text-slate-900">{doc.title}</span>
                             <span
-                              className={`text-[0.625rem] font-bold px-2 py-0.5 rounded-full ${
+                              className={`text-[0.6875rem] font-bold px-2 py-0.5 rounded-full ${
                                 isVerified
                                   ? 'bg-emerald-100 text-emerald-800'
                                   : isActionNeeded
@@ -514,7 +514,7 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
                     </div>
 
                     <span
-                      className={`text-[0.625rem] font-bold px-2 py-0.5 rounded shrink-0 ${
+                      className={`text-[0.6875rem] font-bold px-2 py-0.5 rounded shrink-0 ${
                         task.isUrgent
                           ? 'bg-amber-200 text-amber-900'
                           : 'bg-slate-100 text-slate-600'
@@ -790,7 +790,7 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
               />
               <div>
                 <div className="font-bold text-xs">Elena Dimitrova</div>
-                <div className="text-[0.625rem] text-emerald-300">Senior Legal Officer (Sofia Desk)</div>
+                <div className="text-[0.6875rem] text-emerald-300">Senior Legal Officer (Sofia Desk)</div>
               </div>
             </div>
             <button onClick={() => setIsChatOpen(false)} className="text-slate-300 hover:text-white">
@@ -814,7 +814,7 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
                 >
                   {msg.text}
                 </div>
-                <span className="text-[0.625rem] text-slate-400 mt-1 px-1">{msg.time}</span>
+                <span className="text-[0.6875rem] text-slate-400 mt-1 px-1">{msg.time}</span>
               </div>
             ))}
           </div>

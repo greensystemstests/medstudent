@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowRight, CalendarClock, CheckCircle2, FileCheck2, FolderUp, Home, Mail, Receipt, Truck, UserCheck, Video } from 'lucide-react';
-import { APP_IMAGES, EXAM_DECIDE_WITH_ADVISOR, EXAM_SESSIONS, UNIVERSITIES } from '../data/constants';
+import { APP_IMAGES, EXAM_DECIDE_WITH_ADVISOR, UNIVERSITIES } from '../data/constants';
+import { examSessionLabel } from '../lib/admissions';
 import { formatDay } from '../lib/application';
 import { ApplicationState, AppView } from '../types';
 import { formatMoney } from './PaymentStep';
@@ -131,7 +132,7 @@ export const ApplicationConfirmation: React.FC<Props> = ({ app, demoMode, onNavi
               <div className="text-slate-500">
                 {form.examDate === EXAM_DECIDE_WITH_ADVISOR
                   ? 'Chosen with your advisor on the call'
-                  : EXAM_SESSIONS.find((s) => s.date === form.examDate)?.label}
+                  : examSessionLabel(form.examDate)}
               </div>
             </div>
           </div>

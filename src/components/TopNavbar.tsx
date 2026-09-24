@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AppView } from '../types';
+import { intakeYearLabel } from '../lib/admissions';
 import { StudyBgLogo } from './StudyBgLogo';
 import { 
   GraduationCap, 
@@ -34,6 +35,20 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   onOpenQuickFit,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const menuToggleRef = useRef<HTMLButtonElement>(null);
+
+  // Close the mobile menu when the page changes, and on Escape (focus goes back to the menu button).
+  useEffect(() => setMobileMenuOpen(false), [currentView]);
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setMobileMenuOpen(false);
+      menuToggleRef.current?.focus();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [mobileMenuOpen]);
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
@@ -43,7 +58,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#006644]/40 text-[#6ee7b7] font-medium text-[0.6875rem] border border-[#10b981]/30">
               <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse"></span>
-              2025/2026 Intake Active
+              {intakeYearLabel()} Applications Open
             </span>
             <span className="hidden sm:inline text-slate-300">
               Bulgarian Ministry of Education (MOES) & EU Directive 2005/36/EC
@@ -91,7 +106,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
               >
                 <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Student Portal</span>
-                <span className="bg-amber-400/20 text-amber-300 text-[0.625rem] px-1 rounded">1 Action</span>
+                <span className="bg-amber-400/20 text-amber-300 text-[0.6875rem] px-1 rounded">1 Action</span>
               </button>
 
               <button
@@ -122,8 +137,8 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             id="brand-logo-btn"
           >
             <StudyBgLogo size="lg" />
-            <div className="hidden sm:block pl-2 border-l border-slate-200">
-              <span className="text-[0.625rem] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200 block w-fit">
+            <div className="hidden lg:block xl:hidden pl-2 border-l border-slate-200">
+              <span className="text-[0.6875rem] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200 block w-fit">
                 Medical Gateway
               </span>
               <p className="text-[0.6875rem] text-slate-500 font-medium">Bulgaria English Medical & Dental Admissions</p>
@@ -131,7 +146,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           </button>
 
           {/* Primary Navigation Links */}
-          <nav aria-label="Main" className="desktop-nav hidden lg:flex items-center space-x-1">
+          <nav aria-label="Main" className="desktop-nav hidden xl:flex items-center space-x-1">
             <button
               onClick={() => onNavigateToSection('universities-section')}
               className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#006644] hover:bg-slate-50 rounded-lg transition-colors"
@@ -154,13 +169,13 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
               onClick={() => onNavigateToSection('pricing-section')}
               className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#006644] hover:bg-slate-50 rounded-lg transition-colors"
             >
-              Transparent Pricing (€180)
+              Pricing (€180)
             </button>
             <button
               onClick={() => onNavigateToSection('faqs-section')}
               className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#006644] hover:bg-slate-50 rounded-lg transition-colors"
             >
-              FAQ & Non-EU Visa
+              FAQ & Visa
             </button>
           </nav>
 
@@ -168,7 +183,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           <div className="ml-auto flex items-center gap-2 sm:gap-2.5">
             <button
               onClick={onOpenQuickFit}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#006644] bg-[#006644]/10 hover:bg-[#006644]/20 border border-[#006644]/20 rounded-lg transition-colors"
+              className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#006644] bg-[#006644]/10 hover:bg-[#006644]/20 border border-[#006644]/20 rounded-lg transition-colors"
               id="header-quick-fit-btn"
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -179,7 +194,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
               onClick={() => onNavigate('account')}
               aria-label="My account"
               title="My account"
-              className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 text-xs font-semibold rounded-lg border transition-colors ${
+              className={`max-[379px]:hidden inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 text-xs font-semibold rounded-lg border transition-colors ${
                 currentView === 'account'
                   ? 'text-[#006644] bg-emerald-50 border-[#006644]/30'
                   : 'text-slate-700 bg-white border-slate-200 hover:border-[#006644]/40 hover:text-[#006644]'
@@ -195,15 +210,16 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
               className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs font-semibold text-white bg-[#006644] hover:bg-[#005538] rounded-lg shadow-sm hover:shadow transition-all"
               id="header-apply-btn"
             >
-              <span className="max-[379px]:hidden">{hasPaidApplication ? 'My Application' : 'Apply Now (€180)'}</span>
-              <span className="min-[380px]:hidden">{hasPaidApplication ? 'My Application' : 'Apply'}</span>
+              <span className="hidden sm:inline">{hasPaidApplication ? 'My Application' : 'Apply Now (€180)'}</span>
+              <span className="sm:hidden">{hasPaidApplication ? 'Application' : 'Apply'}</span>
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
 
             {/* Mobile Hamburger Button */}
             <button
+              ref={menuToggleRef}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="mobile-nav-toggle lg:hidden p-2 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors"
+              className="mobile-nav-toggle xl:hidden p-2 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors"
               aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-menu"
@@ -215,7 +231,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
 
         {/* Mobile Navigation Dropdown */}
         {mobileMenuOpen && (
-          <div id="mobile-menu" className="lg:hidden border-t border-slate-200 py-3 space-y-1">
+          <div id="mobile-menu" className="xl:hidden border-t border-slate-200 py-3 space-y-1">
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
@@ -260,6 +276,16 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
               className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg"
             >
               FAQ & Non-EU Visa
+            </button>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onNavigate('account');
+              }}
+              className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg flex items-center gap-1.5"
+            >
+              <CircleUserRound className="w-4 h-4" aria-hidden="true" />
+              <span>My Account</span>
             </button>
             <button
               onClick={() => {

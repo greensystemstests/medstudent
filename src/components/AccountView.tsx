@@ -642,7 +642,7 @@ const DocumentsTab: React.FC<{
 
         <div>
           <div id="upload-type-label" className="text-xs font-semibold text-slate-700 mb-2">
-            <span aria-hidden="true" className="inline-flex w-5 h-5 rounded-full bg-[#006644] text-white text-[0.625rem] font-bold items-center justify-center mr-1.5">1</span>
+            <span aria-hidden="true" className="inline-flex w-5 h-5 rounded-full bg-[#006644] text-white text-[0.6875rem] font-bold items-center justify-center mr-1.5">1</span>
             <span className="sr-only">Step 1: </span>What is it?
           </div>
           <div role="group" aria-labelledby="upload-type-label" className="grid grid-cols-2 gap-2">
@@ -666,7 +666,7 @@ const DocumentsTab: React.FC<{
 
         <div>
           <div className="text-xs font-semibold text-slate-700 mb-2">
-            <span aria-hidden="true" className="inline-flex w-5 h-5 rounded-full bg-[#006644] text-white text-[0.625rem] font-bold items-center justify-center mr-1.5">2</span>
+            <span aria-hidden="true" className="inline-flex w-5 h-5 rounded-full bg-[#006644] text-white text-[0.6875rem] font-bold items-center justify-center mr-1.5">2</span>
             <span className="sr-only">Step 2: </span>Choose the file
           </div>
           <label

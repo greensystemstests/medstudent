@@ -24,7 +24,7 @@ export const UNIVERSITIES: University[] = [
     intakeSeats: '550 International Seats',
     englishRequirement: 'IELTS 6.5 / B2 or Entrance Test',
     entranceExamDates: 'July 15, Aug 20, Sep 12 (Online/On-campus)',
-    applicationDeadline: 'September 1, 2025',
+    applicationDeadline: { month: 9, day: 1 },
     programs: ['Medicine', 'Dentistry', 'Pharmacy'],
     description: 'The oldest and most prestigious Bulgarian medical school, established in 1917. Features multi-specialty clinical university hospitals and modern dissection laboratories.',
     strengths: [
@@ -45,7 +45,7 @@ export const UNIVERSITIES: University[] = [
     intakeSeats: '400 International Seats',
     englishRequirement: 'Online University English Exam or B2',
     entranceExamDates: 'June 28, July 26, Aug 30',
-    applicationDeadline: 'September 5, 2025',
+    applicationDeadline: { month: 9, day: 5 },
     programs: ['Medicine', 'Dentistry', 'Pharmacy'],
     description: 'Home to Southeast Europe’s largest certified Medical Simulation Training Center with virtual reality laparoscopy, surgical mannequins, and standardized patient suites.',
     strengths: [
@@ -66,7 +66,7 @@ export const UNIVERSITIES: University[] = [
     intakeSeats: '300 International Seats',
     englishRequirement: 'High School English or B2 Certificate',
     entranceExamDates: 'July 8, Aug 12, Sep 4',
-    applicationDeadline: 'August 28, 2025',
+    applicationDeadline: { month: 8, day: 28 },
     programs: ['Medicine', 'Dentistry', 'Pharmacy'],
     description: 'Dynamic seaside university offering cutting-edge 3D interactive anatomy tables, modern research institutes, and a relaxed lifestyle on the Black Sea coast.',
     strengths: [
@@ -87,7 +87,7 @@ export const UNIVERSITIES: University[] = [
     intakeSeats: '150 International Seats',
     englishRequirement: 'High School Transcript or B2',
     entranceExamDates: 'Spring & Fall intake options',
-    applicationDeadline: 'October 15, 2025 (February Intake)',
+    applicationDeadline: { month: 10, day: 15, note: 'February intake' },
     programs: ['Medicine'],
     description: 'The first university in Bulgaria to launch an all-English medical curriculum in 1997. Renowned worldwide for minimally invasive and robotic da Vinci surgery training.',
     strengths: [
@@ -373,13 +373,14 @@ export const INTAKE_OPTIONS = [
 ];
 
 /**
- * Entrance exam sessions. Sessions whose date has passed are shown as closed automatically.
- * Update these each admission cycle.
+ * Entrance exam sessions, as month/day. They roll over to next year automatically once the last
+ * session has passed (see src/lib/admissions.ts); sessions already past this season show as closed.
+ * Check these against the universities' official calendars each admission cycle.
  */
 export const EXAM_SESSIONS = [
-  { date: '2025-07-15', label: 'Session 1 (July 15)', note: 'Early intake' },
-  { date: '2025-08-20', label: 'Session 2 (Aug 20)', note: 'Recommended' },
-  { date: '2025-09-12', label: 'Session 3 (Sep 12)', note: 'Final session' },
+  { month: 7, day: 15, name: 'Session 1', note: 'Early intake' },
+  { month: 8, day: 20, name: 'Session 2', note: 'Recommended' },
+  { month: 9, day: 12, name: 'Session 3', note: 'Final session' },
 ];
 
 /** examDate value meaning "choose the session with my advisor on the call". */

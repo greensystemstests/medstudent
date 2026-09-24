@@ -24,6 +24,8 @@ import {
 } from 'lucide-react';
 import { UNIVERSITIES, FAQS, APP_IMAGES, ONBOARDING_INCLUSIONS } from '../data/constants';
 import { AppView, University } from '../types';
+import { formatLongDate, intakeYearLabel, soonestDeadline, universityDeadline } from '../lib/admissions';
+import { scrollBehavior } from '../lib/a11y';
 
 interface PublicSiteViewProps {
   onNavigate: (view: AppView) => void;
@@ -38,6 +40,7 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
 }) => {
   const [selectedProgramFilter, setSelectedProgramFilter] = useState<'All' | 'Medicine' | 'Dentistry' | 'Pharmacy'>('All');
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
+  const nextDeadline = soonestDeadline();
 
   const filteredUniversities = selectedProgramFilter === 'All'
     ? UNIVERSITIES
@@ -120,7 +123,7 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
                       <div className="font-heading font-bold text-sm text-white flex items-center gap-1.5">
                         <span>StudyBg Admissions Snapshot</span>
                       </div>
-                      <div className="text-xs text-slate-400">2025/2026 Academic Session</div>
+                      <div className="text-xs text-slate-400">{intakeYearLabel()} Academic Year</div>
                     </div>
                   </div>
                   <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold border border-emerald-500/30">
@@ -179,20 +182,20 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
       <div className="bg-white border-b border-slate-200 py-4 px-4 sm:px-6 shadow-xs">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+            <Calendar className="w-5 h-5 text-[#006644] shrink-0" aria-hidden="true" />
             <span className="text-sm font-semibold text-slate-800">
-              Upcoming Deadlines: MU Sofia & MU Plovdiv Entrance Exam Registrations Closing Soon
+              Next application deadline: {nextDeadline.university.shortName}
+              {nextDeadline.university.applicationDeadline.note ? ` (${nextDeadline.university.applicationDeadline.note})` : ''},{' '}
+              {formatLongDate(nextDeadline.date)}
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => onNavigate('wizard')}
-              className="text-xs font-semibold text-[#006644] hover:underline flex items-center gap-1"
-            >
-              <span>View Exam Calendar & Syllabus</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          <button
+            onClick={() => document.getElementById('universities-section')?.scrollIntoView({ behavior: scrollBehavior() })}
+            className="text-xs font-semibold text-[#006644] hover:underline flex items-center gap-1 py-1"
+          >
+            <span>See all universities & deadlines</span>
+            <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
+          </button>
         </div>
       </div>
 
@@ -230,12 +233,9 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
           </div>
 
           {/* Stage 2 */}
-          <div className="bg-white rounded-2xl p-6 border-2 border-[#006644] shadow-xs hover:shadow-md transition-shadow relative">
-            <div className="absolute -top-3 right-4 bg-[#006644] text-white text-[0.625rem] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full">
-              Student Tariq Active
-            </div>
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs hover:shadow-md transition-shadow relative">
             <div className="flex items-center justify-between mb-4">
-              <span className="w-8 h-8 rounded-lg bg-[#006644] text-white font-bold text-sm flex items-center justify-center font-heading">
+              <span className="w-8 h-8 rounded-lg bg-emerald-100 text-[#006644] font-bold text-sm flex items-center justify-center font-heading">
                 02
               </span>
               <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800">
@@ -412,7 +412,7 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
                       <span className="font-semibold text-slate-900">Seats:</span> {uni.intakeSeats}
                     </div>
                     <div>
-                      <span className="font-semibold text-slate-900">Deadline:</span> {uni.applicationDeadline}
+                      <span className="font-semibold text-slate-900">Deadline:</span> {universityDeadline(uni)}
                     </div>
                   </div>
 

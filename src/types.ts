@@ -1,5 +1,12 @@
 export type AppView = 'home' | 'wizard' | 'account' | 'privacy' | 'terms' | 'gdpr' | 'accessibility' | 'student' | 'staff';
 
+/** A date that repeats every year. Month is 1–12. */
+export interface AnnualDate {
+  month: number;
+  day: number;
+  note?: string;
+}
+
 export interface University {
   id: string;
   name: string;
@@ -11,7 +18,8 @@ export interface University {
   intakeSeats: string;
   englishRequirement: string;
   entranceExamDates: string;
-  applicationDeadline: string;
+  /** Repeats every year; the next upcoming date is shown. */
+  applicationDeadline: AnnualDate;
   programs: ('Medicine' | 'Dentistry' | 'Pharmacy')[];
   description: string;
   strengths: string[];

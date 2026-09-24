@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
-import { loadStripe, Stripe, StripeElementsOptions } from '@stripe/stripe-js';
+// The /pure entry only loads Stripe.js when the payment step opens, not on every page.
+import { loadStripe } from '@stripe/stripe-js/pure';
+import type { Stripe, StripeElementsOptions } from '@stripe/stripe-js';
 import {
   AlertCircle,
   CalendarClock,
@@ -228,7 +230,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ app, onIntentCreated, 
               <ol className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {CONSULTATION_AGENDA.map((item, idx) => (
                   <li key={item.title} className="flex items-start gap-2 text-xs">
-                    <span className="w-5 h-5 rounded-full bg-[#006644] text-white text-[0.625rem] font-bold flex items-center justify-center shrink-0">
+                    <span className="w-5 h-5 rounded-full bg-[#006644] text-white text-[0.6875rem] font-bold flex items-center justify-center shrink-0">
                       {idx + 1}
                     </span>
                     <span>

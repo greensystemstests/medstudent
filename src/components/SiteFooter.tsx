@@ -1,5 +1,6 @@
 import React from 'react';
 import { AppView } from '../types';
+import { hasRealEmail, LEGAL_ENTITY } from '../data/legal';
 import { StudyBgLogo } from './StudyBgLogo';
 
 const LEGAL_LINKS: { view: AppView; hash: string; label: string }[] = [
@@ -46,8 +47,16 @@ export const SiteFooter: React.FC<{ onNavigate: (view: AppView) => void }> = ({ 
         <h2 className="font-bold text-white mb-2 uppercase tracking-wider text-[0.6875rem]">Sofia Office</h2>
         <p className="leading-relaxed">
           Tsar Osvoboditel Blvd, 1000 Sofia Center, Bulgaria<br />
-          Direct Legal Desk: +359 2 984 1020<br />
-          Email: admissions@studybg.medical
+          Direct Legal Desk: +359 2 984 1020
+          {hasRealEmail(LEGAL_ENTITY.contactEmail) && (
+            <>
+              <br />
+              Email:{' '}
+              <a href={`mailto:${LEGAL_ENTITY.contactEmail}`} className="text-slate-300 hover:text-white underline underline-offset-2">
+                {LEGAL_ENTITY.contactEmail}
+              </a>
+            </>
+          )}
         </p>
       </div>
 
@@ -74,21 +83,13 @@ export const SiteFooter: React.FC<{ onNavigate: (view: AppView) => void }> = ({ 
 
     <div className="max-w-7xl mx-auto pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-400 text-[0.6875rem]">
       <div>© {new Date().getFullYear()} StudyBg Medical Gateway. All rights reserved.</div>
-      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
-        {LEGAL_LINKS.map((link) => (
-          <a
-            key={link.view}
-            href={link.hash}
-            onClick={(e) => {
-              e.preventDefault();
-              onNavigate(link.view);
-            }}
-            className="inline-block py-1 hover:text-slate-200"
-          >
-            {link.label}
-          </a>
-        ))}
-      </div>
+      <button
+        type="button"
+        onClick={() => window.dispatchEvent(new Event('studybg:open-a11y'))}
+        className="inline-block py-1 text-slate-300 hover:text-white underline underline-offset-2"
+      >
+        Accessibility settings
+      </button>
     </div>
   </footer>
 );

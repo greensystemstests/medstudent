@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { scrollBehavior } from '../lib/a11y';
+import { examSessionLabel, examSessions } from '../lib/admissions';
 import {
   AlertCircle,
   ArrowLeft,
@@ -18,7 +19,6 @@ import {
   APP_IMAGES,
   CONSULTATION_WINDOWS,
   EXAM_DECIDE_WITH_ADVISOR,
-  EXAM_SESSIONS,
   INTAKE_OPTIONS,
   MIN_SCIENCE_GRADE,
   UNIVERSITIES,
@@ -528,7 +528,7 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                   subtitle="The official entrance examination is multiple-choice in Biology & Chemistry."
                 />
                 <div role="group" aria-label="Entrance exam session" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {EXAM_SESSIONS.map((session) => {
+                  {examSessions().map((session) => {
                     const open = isExamSessionOpen(session.date);
                     return (
                       <button
@@ -540,7 +540,7 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                       >
                         <div className="font-bold text-xs text-slate-900 flex items-center justify-between">
                           {session.label}
-                          {!open && <span className="text-[0.625rem] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Closed</span>}
+                          {!open && <span className="text-[0.6875rem] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Closed</span>}
                         </div>
                         <div className="text-[0.6875rem] text-slate-500">{open ? session.note : 'Registration has closed'}</div>
                       </button>
@@ -638,7 +638,7 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                       Exam:{' '}
                       {form.examDate === EXAM_DECIDE_WITH_ADVISOR
                         ? 'decide with advisor'
-                        : EXAM_SESSIONS.find((s) => s.date === form.examDate)?.label}
+                        : examSessionLabel(form.examDate)}
                     </div>
                     <div>All 5 documents confirmed</div>
                     <div className="truncate">Pickup: {form.dhlPickupAddress}</div>
@@ -788,7 +788,7 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                     value={
                       form.examDate === EXAM_DECIDE_WITH_ADVISOR
                         ? 'With advisor'
-                        : EXAM_SESSIONS.find((s) => s.date === form.examDate)?.label ?? '—'
+                        : examSessionLabel(form.examDate) ?? '—'
                     }
                   />
                   <div className="flex justify-between">
@@ -800,7 +800,7 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                   <img src={APP_IMAGES.elenaAdvisor} alt="Elena Dimitrova" className="w-9 h-9 rounded-lg object-cover" referrerPolicy="no-referrer" />
                   <div className="text-xs">
                     <div className="font-bold text-slate-800">Elena Dimitrova</div>
-                    <div className="text-[0.625rem] text-slate-500">Your Sofia legal advisor</div>
+                    <div className="text-[0.6875rem] text-slate-500">Your Sofia legal advisor</div>
                   </div>
                 </div>
               </div>

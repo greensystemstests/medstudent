@@ -1,4 +1,5 @@
-import { EXAM_DECIDE_WITH_ADVISOR, EXAM_SESSIONS, MIN_SCIENCE_GRADE, UNIVERSITIES } from '../data/constants';
+import { EXAM_DECIDE_WITH_ADVISOR, MIN_SCIENCE_GRADE, UNIVERSITIES } from '../data/constants';
+import { examSessions } from './admissions';
 import { ApplicationState, WizardFormData } from '../types';
 
 export const TOTAL_STEPS = 8;
@@ -188,7 +189,7 @@ export function validateStep(step: number, form: WizardFormData, now = new Date(
       break;
     }
     case 5: {
-      const session = EXAM_SESSIONS.find((s) => s.date === form.examDate);
+      const session = examSessions(now).find((s) => s.date === form.examDate);
       if (form.examDate !== EXAM_DECIDE_WITH_ADVISOR && !session) errors.push('Choose an exam session, or decide it with your advisor.');
       else if (session && !isExamSessionOpen(session.date, now)) errors.push('That exam session has already closed. Choose another option.');
       break;

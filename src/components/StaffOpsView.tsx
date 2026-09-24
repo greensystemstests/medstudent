@@ -127,7 +127,7 @@ export const StaffOpsView: React.FC<StaffOpsViewProps> = ({ onNavigate }) => {
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="text-lg font-bold font-heading">Staff Operations & Legal Review</h1>
-                  <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[0.625rem] font-bold px-2 py-0.5 rounded-full">
+                  <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[0.6875rem] font-bold px-2 py-0.5 rounded-full">
                     RBAC Tier-2 (Full Legal Dossier Access)
                   </span>
                 </div>
@@ -245,7 +245,7 @@ export const StaffOpsView: React.FC<StaffOpsViewProps> = ({ onNavigate }) => {
                         {doc.title}
                       </span>
                       <span
-                        className={`text-[0.625rem] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                        className={`text-[0.6875rem] font-bold px-2 py-0.5 rounded-full shrink-0 ${
                           isVerified
                             ? 'bg-emerald-100 text-emerald-800'
                             : isActionNeeded
@@ -437,7 +437,7 @@ export const StaffOpsView: React.FC<StaffOpsViewProps> = ({ onNavigate }) => {
 
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
-              <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[0.625rem]">
+              <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[0.6875rem]">
                 <tr>
                   <th className="p-3">Candidate</th>
                   <th className="p-3">Faculty</th>
@@ -456,7 +456,7 @@ export const StaffOpsView: React.FC<StaffOpsViewProps> = ({ onNavigate }) => {
                   <td className="p-3 text-slate-600">MU Sofia (Medicine)</td>
                   <td className="p-3 font-bold text-emerald-700">84 Days</td>
                   <td className="p-3">
-                    <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[0.625rem] font-bold">
+                    <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[0.6875rem] font-bold">
                       On Track
                     </span>
                   </td>
@@ -473,7 +473,7 @@ export const StaffOpsView: React.FC<StaffOpsViewProps> = ({ onNavigate }) => {
                   <td className="p-3 text-slate-600">MU Plovdiv (Dentistry)</td>
                   <td className="p-3 font-bold text-amber-700">42 Days</td>
                   <td className="p-3">
-                    <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[0.625rem] font-bold">
+                    <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[0.6875rem] font-bold">
                       Prepare Uverenie
                     </span>
                   </td>
@@ -490,7 +490,7 @@ export const StaffOpsView: React.FC<StaffOpsViewProps> = ({ onNavigate }) => {
                   <td className="p-3 text-slate-600">MU Varna (Medicine)</td>
                   <td className="p-3 font-bold text-rose-600">18 Days</td>
                   <td className="p-3">
-                    <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-800 text-[0.625rem] font-bold">
+                    <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-800 text-[0.6875rem] font-bold">
                       Urgent Biometrics
                     </span>
                   </td>
@@ -535,7 +535,7 @@ export const StaffOpsView: React.FC<StaffOpsViewProps> = ({ onNavigate }) => {
                   <div className="text-slate-700">{log.details}</div>
                 </div>
 
-                <div className="flex items-center gap-2 text-[0.625rem] text-slate-400 font-mono self-start sm:self-auto">
+                <div className="flex items-center gap-2 text-[0.6875rem] text-slate-400 font-mono self-start sm:self-auto">
                   <span>Hash: {log.hash}</span>
                   <span>•</span>
                   <span>{log.ipAddress}</span>

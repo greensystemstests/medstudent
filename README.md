@@ -66,6 +66,7 @@ API: `POST /api/auth/request-code`, `POST /api/auth/verify`, `POST /api/auth/log
 | Public site | `/` |
 | Application (8 steps + payment) | `/#/apply` |
 | Student account / sign in | `/#/account` |
+| Privacy Policy · Terms & Conditions · GDPR Compliance (linked in the footer of every page) | `/#/privacy`, `/#/terms`, `/#/gdpr` |
 | Account preview with sample data (no sign-in) | `/?demo=1#/account` |
 | Sample student portal / staff ops (demo) | `/?demo=1#/portal-demo`, `/?demo=1#/staff-demo` |
 
@@ -131,5 +132,8 @@ npm run build
      without it, stored documents can't be decrypted.
    - `RESEND_API_KEY` + `INVOICE_FROM_EMAIL`: needed to email sign-in codes (same as for receipts).
 3. After the redeploy, `/api/health` shows `"accountsReady": true` and the Render log line says `accounts: ready`.
+
+The company's legal name, ЕИК, address and contact emails shown on the legal pages live in `src/data/legal.ts`.
+Fill them in before launch, and update `LEGAL_LAST_UPDATED` whenever the legal text changes.
 
 Update `EXAM_SESSIONS` in `src/data/constants.ts` each admission cycle; sessions whose date has passed show as closed.

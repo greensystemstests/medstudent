@@ -1,4 +1,4 @@
-export type AppView = 'home' | 'wizard' | 'account' | 'student' | 'staff';
+export type AppView = 'home' | 'wizard' | 'account' | 'privacy' | 'terms' | 'gdpr' | 'student' | 'staff';
 
 export interface University {
   id: string;

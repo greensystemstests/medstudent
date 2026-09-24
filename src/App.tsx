@@ -1,5 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AccountView } from './components/AccountView';
+import { GdprView } from './components/legal/GdprView';
+import { PrivacyPolicyView } from './components/legal/PrivacyPolicyView';
+import { TermsView } from './components/legal/TermsView';
+import { SiteFooter } from './components/SiteFooter';
 import { TopNavbar } from './components/TopNavbar';
 import { PublicSiteView } from './components/PublicSiteView';
 import { WizardView } from './components/WizardView';
@@ -34,6 +38,9 @@ const VIEW_HASH: Record<AppView, string> = {
   home: '',
   wizard: '#/apply',
   account: '#/account',
+  privacy: '#/privacy',
+  terms: '#/terms',
+  gdpr: '#/gdpr',
   student: '#/portal-demo',
   staff: '#/staff-demo',
 };
@@ -195,9 +202,15 @@ export default function App() {
           <AccountView api={accountApi} defaultEmail={application.form.email || undefined} onNavigate={navigate} />
         )}
 
+        {currentView === 'privacy' && <PrivacyPolicyView onNavigate={navigate} />}
+        {currentView === 'terms' && <TermsView onNavigate={navigate} />}
+        {currentView === 'gdpr' && <GdprView onNavigate={navigate} />}
+
         {currentView === 'student' && demoMode && <StudentPortalView onNavigate={navigate} />}
         {currentView === 'staff' && demoMode && <StaffOpsView onNavigate={navigate} />}
       </main>
+
+      <SiteFooter onNavigate={navigate} />
 
       <QuickFitModal isOpen={isQuickFitOpen} onClose={() => setIsQuickFitOpen(false)} onStartApplication={startWithPrefill} />
     </div>

@@ -658,8 +658,19 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                   {(
                     [
                       ['accuracySigned', 'I confirm that my secondary credentials and grades are authentic and accurate.'],
-                      ['termsAgreed', 'I accept the StudyBg terms of service for the €180 onboarding & advisory package.'],
-                      ['gdprAgreed', 'I consent to processing of my data under the EU GDPR and to representation before the Bulgarian MOES.'],
+                      [
+                        'termsAgreed',
+                        <>
+                          I accept the StudyBg <LegalLink href="#/terms">Terms &amp; Conditions</LegalLink> for the €180 onboarding & advisory package.
+                        </>,
+                      ],
+                      [
+                        'gdprAgreed',
+                        <>
+                          I consent to processing of my data as described in the <LegalLink href="#/privacy">Privacy Policy</LegalLink> and to
+                          representation before the Bulgarian MOES.
+                        </>,
+                      ],
                     ] as const
                   ).map(([key, text]) => (
                     <label key={key} className="flex items-start gap-2 cursor-pointer">
@@ -769,6 +780,13 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
     </div>
   );
 };
+
+/** Opens a legal page in a new tab, so the applicant keeps their place in the form. */
+const LegalLink: React.FC<{ href: string; children: React.ReactNode }> = ({ href, children }) => (
+  <a href={href} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()} className="text-[#006644] font-semibold underline">
+    {children}
+  </a>
+);
 
 const StepHeading: React.FC<{ title: string; subtitle: string }> = ({ title, subtitle }) => (
   <div className="border-b border-slate-100 pb-4">

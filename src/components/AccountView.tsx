@@ -214,6 +214,12 @@ const SignIn: React.FC<{ api: AccountApi; defaultEmail?: string; onSignedIn: () 
             </form>
           )}
 
+          <p className="text-[11px] text-slate-500">
+            By signing in you agree to our{' '}
+            <a href="#/terms" className="text-[#006644] font-semibold underline">Terms &amp; Conditions</a>. See how we protect your data in our{' '}
+            <a href="#/privacy" className="text-[#006644] font-semibold underline">Privacy Policy</a>.
+          </p>
+
           <ul className="pt-4 border-t border-slate-100 space-y-2 text-xs text-slate-600">
             <li className="flex items-center gap-2">
               <KeyRound className="w-4 h-4 text-[#006644]" /> No password to remember

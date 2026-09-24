@@ -86,51 +86,64 @@ export interface ApplicantProfile {
   isPassportMasked: boolean;
 }
 
+export type DegreeProgram = 'Medicine' | 'Dentistry' | 'Pharmacy';
+
 export interface WizardFormData {
-  // Step 1: Nationality & High School
+  // Step 1: Applicant, nationality & high school
+  fullName: string;
+  email: string;
+  phone: string;
   nationalityCategory: 'non_eu' | 'eu_eea' | 'uk_post_brexit';
   citizenshipCountry: string;
-  highSchoolCountry: string;
   highSchoolCurriculum: 'tawjihi' | 'ib' | 'a_levels' | 'american_diploma' | 'national_curriculum';
   graduationYear: string;
 
-  // Step 2: Target Degree & City
-  degree: 'Medicine' | 'Dentistry' | 'Pharmacy';
+  // Step 2: Faculty & intake
+  degree: DegreeProgram;
   universityId: string;
-  intakeSeason: 'Winter (October 2025)' | 'Spring (February 2026)';
+  intakeSeason: string;
 
-  // Step 3: Academic Prerequisites
+  // Step 3: Academic prerequisites
   biologyGrade: string;
   chemistryGrade: string;
-  gpaEquivalent: string;
-  mathPhysicsBonus: boolean;
-  englishProficiency: 'native' | 'ielts_toefl' | 'cambridge' | 'need_prep_course';
+  englishProficiency: '' | 'native' | 'ielts_toefl' | 'cambridge' | 'need_prep_course';
 
-  // Step 4: Documents & Legalization readiness
+  // Step 4: Documents & legalization readiness
   hasDiploma: boolean;
   hasTranscript: boolean;
   hasMedicalCertificate: boolean;
   hasPoliceClearance: boolean;
   hasHagueApostilleAccess: boolean;
 
-  // Step 5: Entrance Exam
+  // Step 5: Entrance exam ('advisor' = decide on the consultation call)
   examDate: string;
-  examLocation: 'Online Proctored' | 'On-Campus Sofia' | 'On-Campus Plovdiv';
-  mockTestBooked: boolean;
 
-  // Step 6: Commercial Gate & Advisor Booking
-  commercialGatePassed: boolean;
-  feeAmount: number;
-  bookedConsultationSlot: string;
-  paymentReference: string;
-
-  // Step 7: Translation & Courier
+  // Step 6: Translation & courier
   swornTranslationRequested: boolean;
   dhlPickupAddress: string;
-  courierTrackingCode: string;
 
-  // Step 8: Submission
+  // Step 7: Review, consultation call & consents
+  consultationDate: string;
+  consultationWindow: string;
   termsAgreed: boolean;
   gdprAgreed: boolean;
   accuracySigned: boolean;
+}
+
+export type PaymentStatus = 'unpaid' | 'paid';
+
+export interface PaymentRecord {
+  status: PaymentStatus;
+  paymentIntentId?: string;
+  receiptRef?: string;
+  amount?: number;
+  currency?: string;
+  paidAt?: string;
+}
+
+export interface ApplicationState {
+  id: string;
+  form: WizardFormData;
+  currentStep: number;
+  payment: PaymentRecord;
 }

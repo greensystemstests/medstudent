@@ -22,7 +22,7 @@ import {
   FileCheck,
   Search
 } from 'lucide-react';
-import { UNIVERSITIES, FAQS, APP_IMAGES } from '../data/constants';
+import { UNIVERSITIES, FAQS, APP_IMAGES, ONBOARDING_INCLUSIONS } from '../data/constants';
 import { AppView, University } from '../types';
 
 interface PublicSiteViewProps {
@@ -475,30 +475,12 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
               </p>
 
               <div className="space-y-3 text-xs text-slate-200">
-                <div className="flex items-start gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span><strong>Comprehensive Secondary Credential Audit:</strong> Bio/Chem MOES compliance check.</span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span><strong>1-on-1 Strategy Video Consultation:</strong> 45 min with Senior Legal Officer Elena Dimitrova.</span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span><strong>Entrance Exam Prep Package:</strong> Past questions, MCQs & syllabus guides for Sofia & Plovdiv.</span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span><strong>Sworn Translation Management in Sofia:</strong> Direct cost passthrough with zero markups.</span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span><strong>Non-EU Type-D Visa Dossier Blueprint:</strong> Housing, health insurance & bank balance assistance.</span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span><strong>Continuous VRN 84-Day Renewal Tracker:</strong> Automated residence compliance throughout all 6 study years.</span>
-                </div>
+                {ONBOARDING_INCLUSIONS.map((item) => (
+                  <div key={item.title} className="flex items-start gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <span><strong>{item.title}:</strong> {item.detail}</span>
+                  </div>
+                ))}
               </div>
             </div>
 

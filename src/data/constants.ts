@@ -330,3 +330,57 @@ export const FAQS = [
     a: 'Non-EU students hold a 1-year Bulgarian Continuous Residence Permit that must be renewed annually at the Migration Directorate (MVR) at least 14 days before expiry. Our portal automatically calculates your countdown, issues early alerts at 90/60/30 days, prepares the university confirmation certificate (Uverenie), and schedules your biometrics.'
   }
 ];
+
+// ---------------------------------------------------------------------------
+// Application wizard & checkout content
+// ---------------------------------------------------------------------------
+
+/** Statutory minimum (%) in BOTH Biology and Chemistry. */
+export const MIN_SCIENCE_GRADE = 62;
+
+/** Onboarding fee shown in the UI. The amount actually charged is fixed on the server (server/app.js). */
+export const ONBOARDING_FEE_EUR = 180;
+
+/** What the €180 onboarding fee includes. Used on the pricing section and the payment page. */
+export const ONBOARDING_INCLUSIONS = [
+  { title: 'Comprehensive Secondary Credential Audit', detail: 'Bio/Chem MOES compliance check.' },
+  { title: '1-on-1 Strategy Video Consultation', detail: '45 min with Senior Legal Officer Elena Dimitrova.' },
+  { title: 'Entrance Exam Prep Package', detail: 'Past questions, MCQs & syllabus guides for Sofia & Plovdiv.' },
+  { title: 'Sworn Translation Management in Sofia', detail: 'Direct cost passthrough with zero markups.' },
+  { title: 'Non-EU Type-D Visa Dossier Blueprint', detail: 'Housing, health insurance & bank balance assistance.' },
+  { title: 'Continuous VRN 84-Day Renewal Tracker', detail: 'Automated residence compliance throughout all 6 study years.' },
+];
+
+/** What is covered on the 45-minute consultation call. */
+export const CONSULTATION_AGENDA = [
+  { title: 'Eligibility & credential review', detail: 'We go through your grades and documents against Bulgarian MOES rules.' },
+  { title: 'University & program strategy', detail: 'Compare faculties, tuition and seats, and confirm the right intake for you.' },
+  { title: 'Entrance exam plan', detail: 'Choose your exam session and walk through the prep package.' },
+  { title: 'Legalization roadmap', detail: 'Apostille, sworn translation and courier dispatch for your country.' },
+  { title: 'Visa & relocation', detail: 'Type-D visa file, housing, health insurance and proof of funds (non-EU).' },
+  { title: 'Your questions', detail: 'Costs, student life in Bulgaria, and exactly what happens next.' },
+];
+
+export const CONSULTATION_WINDOWS = [
+  'Morning (10:00–12:00 Sofia time)',
+  'Afternoon (14:00–16:00 Sofia time)',
+  'Evening (17:00–19:00 Sofia time)',
+];
+
+export const INTAKE_OPTIONS = [
+  { value: 'Autumn intake (October)', note: 'Main intake, all programs' },
+  { value: 'Spring intake (February)', note: 'Limited programs & seats' },
+];
+
+/**
+ * Entrance exam sessions. Sessions whose date has passed are shown as closed automatically.
+ * Update these each admission cycle.
+ */
+export const EXAM_SESSIONS = [
+  { date: '2025-07-15', label: 'Session 1 (July 15)', note: 'Early intake' },
+  { date: '2025-08-20', label: 'Session 2 (Aug 20)', note: 'Recommended' },
+  { date: '2025-09-12', label: 'Session 3 (Sep 12)', note: 'Final session' },
+];
+
+/** examDate value meaning "choose the session with my advisor on the call". */
+export const EXAM_DECIDE_WITH_ADVISOR = 'advisor';

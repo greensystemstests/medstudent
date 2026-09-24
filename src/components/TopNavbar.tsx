@@ -17,11 +17,21 @@ import {
 
 interface TopNavbarProps {
   currentView: AppView;
+  demoMode: boolean;
+  hasPaidApplication: boolean;
   onNavigate: (view: AppView) => void;
+  onNavigateToSection: (sectionId: string) => void;
   onOpenQuickFit: () => void;
 }
 
-export const TopNavbar: React.FC<TopNavbarProps> = ({ currentView, onNavigate, onOpenQuickFit }) => {
+export const TopNavbar: React.FC<TopNavbarProps> = ({
+  currentView,
+  demoMode,
+  hasPaidApplication,
+  onNavigate,
+  onNavigateToSection,
+  onOpenQuickFit,
+}) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -39,6 +49,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ currentView, onNavigate, o
             </span>
           </div>
 
+          {demoMode && (
           <div className="flex items-center gap-1.5 text-xs">
             <span className="text-slate-400 mr-1 hidden md:inline">Demo Switcher:</span>
             <div className="flex items-center bg-slate-800/80 rounded-lg p-0.5 border border-slate-700/60">
@@ -96,6 +107,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ currentView, onNavigate, o
               </button>
             </div>
           </div>
+          )}
         </div>
       </div>
 
@@ -120,51 +132,31 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ currentView, onNavigate, o
           {/* Primary Navigation Links */}
           <nav className="hidden lg:flex items-center space-x-1">
             <button
-              onClick={() => {
-                onNavigate('home');
-                const el = document.getElementById('universities-section');
-                el?.scrollIntoView({ behavior: 'smooth' });
-              }}
+              onClick={() => onNavigateToSection('universities-section')}
               className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#006644] hover:bg-slate-50 rounded-lg transition-colors"
             >
               Universities
             </button>
             <button
-              onClick={() => {
-                onNavigate('home');
-                const el = document.getElementById('six-stages-section');
-                el?.scrollIntoView({ behavior: 'smooth' });
-              }}
+              onClick={() => onNavigateToSection('six-stages-section')}
               className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#006644] hover:bg-slate-50 rounded-lg transition-colors"
             >
               6-Stage Journey
             </button>
             <button
-              onClick={() => {
-                onNavigate('home');
-                const el = document.getElementById('eligibility-section');
-                el?.scrollIntoView({ behavior: 'smooth' });
-              }}
+              onClick={() => onNavigateToSection('eligibility-section')}
               className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#006644] hover:bg-slate-50 rounded-lg transition-colors"
             >
               Prerequisites
             </button>
             <button
-              onClick={() => {
-                onNavigate('home');
-                const el = document.getElementById('pricing-section');
-                el?.scrollIntoView({ behavior: 'smooth' });
-              }}
+              onClick={() => onNavigateToSection('pricing-section')}
               className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#006644] hover:bg-slate-50 rounded-lg transition-colors"
             >
               Transparent Pricing (€180)
             </button>
             <button
-              onClick={() => {
-                onNavigate('home');
-                const el = document.getElementById('faqs-section');
-                el?.scrollIntoView({ behavior: 'smooth' });
-              }}
+              onClick={() => onNavigateToSection('faqs-section')}
               className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#006644] hover:bg-slate-50 rounded-lg transition-colors"
             >
               FAQ & Non-EU Visa
@@ -187,7 +179,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ currentView, onNavigate, o
               className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs font-semibold text-white bg-[#006644] hover:bg-[#005538] rounded-lg shadow-sm hover:shadow transition-all"
               id="header-apply-btn"
             >
-              <span>Apply Now (€180)</span>
+              <span>{hasPaidApplication ? 'My Application' : 'Apply Now (€180)'}</span>
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
 
@@ -207,10 +199,8 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ currentView, onNavigate, o
           <div className="lg:hidden border-t border-slate-200 py-3 space-y-1">
             <button
               onClick={() => {
-                onNavigate('home');
                 setMobileMenuOpen(false);
-                const el = document.getElementById('universities-section');
-                el?.scrollIntoView({ behavior: 'smooth' });
+                onNavigateToSection('universities-section');
               }}
               className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg"
             >
@@ -218,10 +208,8 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ currentView, onNavigate, o
             </button>
             <button
               onClick={() => {
-                onNavigate('home');
                 setMobileMenuOpen(false);
-                const el = document.getElementById('six-stages-section');
-                el?.scrollIntoView({ behavior: 'smooth' });
+                onNavigateToSection('six-stages-section');
               }}
               className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg"
             >
@@ -229,10 +217,8 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ currentView, onNavigate, o
             </button>
             <button
               onClick={() => {
-                onNavigate('home');
                 setMobileMenuOpen(false);
-                const el = document.getElementById('eligibility-section');
-                el?.scrollIntoView({ behavior: 'smooth' });
+                onNavigateToSection('eligibility-section');
               }}
               className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg"
             >
@@ -240,10 +226,8 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ currentView, onNavigate, o
             </button>
             <button
               onClick={() => {
-                onNavigate('home');
                 setMobileMenuOpen(false);
-                const el = document.getElementById('pricing-section');
-                el?.scrollIntoView({ behavior: 'smooth' });
+                onNavigateToSection('pricing-section');
               }}
               className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg"
             >
@@ -251,10 +235,8 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ currentView, onNavigate, o
             </button>
             <button
               onClick={() => {
-                onNavigate('home');
                 setMobileMenuOpen(false);
-                const el = document.getElementById('faqs-section');
-                el?.scrollIntoView({ behavior: 'smooth' });
+                onNavigateToSection('faqs-section');
               }}
               className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg"
             >

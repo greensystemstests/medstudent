@@ -1,0 +1,22 @@
+# Render Blueprint for the StudyBg payments API.
+# Secrets are marked sync: false, so Render asks for them in its dashboard;
+# they never live in this repository.
+services:
+  - type: web
+    name: studybg-api
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: claude/intelligent-curie-jsa86h
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false

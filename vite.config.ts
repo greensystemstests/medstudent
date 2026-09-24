@@ -17,6 +17,10 @@ export default defineConfig(() => {
       hmr: process.env.DISABLE_HMR !== 'true',
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
+      // In local dev the payments API (npm run dev:server) runs separately on :8787.
+      proxy: {
+        '/api': 'http://localhost:8787',
+      },
     },
   };
 });

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, CheckCircle2, AlertCircle, ArrowRight, Sparkles, BookOpen, ShieldCheck, HelpCircle } from 'lucide-react';
-import { UNIVERSITIES } from '../data/constants';
+import { MIN_SCIENCE_GRADE, UNIVERSITIES } from '../data/constants';
 
 interface QuickFitModalProps {
   isOpen: boolean;
@@ -25,7 +25,8 @@ export const QuickFitModal: React.FC<QuickFitModalProps> = ({ isOpen, onClose, o
   if (!isOpen) return null;
 
   const averageScience = Math.round((Number(biology) + Number(chemistry)) / 2);
-  const isEligible = averageScience >= 62;
+  // Same rule the application enforces: at least MIN_SCIENCE_GRADE in BOTH subjects.
+  const isEligible = biology >= MIN_SCIENCE_GRADE && chemistry >= MIN_SCIENCE_GRADE;
   const isCompetitive = averageScience >= 78;
 
   const getApostilleNote = () => {
@@ -208,8 +209,8 @@ export const QuickFitModal: React.FC<QuickFitModalProps> = ({ isOpen, onClose, o
                   {isEligible
                     ? isCompetitive
                       ? 'High Admission Probability (Exceeds Competitive Threshold)'
-                      : 'MOES Requirement Satisfied (≥62% combined average)'
-                    : 'Below Standard 62% Threshold - Consult Advisor for Preparatory Route'}
+                      : 'MOES Requirement Satisfied (≥62% in Biology and Chemistry)'
+                    : 'Below the 62% Minimum in Biology or Chemistry - Consult an Advisor About a Preparatory Route'}
                 </div>
                 <p className="text-slate-600 leading-relaxed">
                   {getApostilleNote()}

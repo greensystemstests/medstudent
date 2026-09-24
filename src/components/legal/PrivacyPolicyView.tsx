@@ -1,4 +1,5 @@
 import React from 'react';
+import { scrollBehavior } from '../../lib/a11y';
 import { LEGAL_ENTITY } from '../../data/legal';
 import { AppView } from '../../types';
 import { Callout, ControllerBlock, Email, LegalLayout, List, PageLink, Section, Sub, Table } from './LegalLayout';
@@ -97,7 +98,7 @@ export const PrivacyPolicyView: React.FC<{ onNavigate: (view: AppView) => void }
             </>,
             <>
               <strong>Usage statistics:</strong> basic information about how the site is used. See{' '}
-              <a href="#statistics" onClick={(e) => { e.preventDefault(); document.getElementById('statistics')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-[#006644] font-semibold underline">section 6</a>.
+              <a href="#statistics" onClick={(e) => { e.preventDefault(); document.getElementById('statistics')?.scrollIntoView({ behavior: scrollBehavior() }); }} className="text-[#006644] font-semibold underline">section 6</a>.
             </>,
             <>
               <strong>Account activity:</strong> a log of sign-ins, sign-outs, and document uploads, views, downloads and deletions, with
@@ -182,6 +183,7 @@ export const PrivacyPolicyView: React.FC<{ onNavigate: (view: AppView) => void }
         rows={[
           ['studybg.application.v1 (browser storage)', 'Saves your application progress on your device so you don\'t lose it', 'Until you clear it or start a new application', 'No, strictly necessary for the form you are filling in'],
           ['studybg.session (browser storage)', 'Keeps you signed in to your account', 'Until you sign out, or 30 days', 'No, strictly necessary for your account'],
+          ['studybg.a11y (browser storage)', 'Remembers the accessibility settings you choose (text size, contrast, etc.)', 'Until you reset them or clear it', 'No, it only stores a preference you set'],
           ['studybg.demo (browser tab storage)', 'Remembers if you opened the demo preview', 'Until you close the tab', 'No, strictly necessary'],
           ['Stripe cookies (e.g. __stripe_mid, __stripe_sid)', 'Set by Stripe on the payment step to process payments and prevent fraud', 'Up to 1 year', 'No, strictly necessary for secure payment'],
           ['Statistics', 'See section 6', 'As described when you are asked', 'Yes, where they are not strictly necessary'],
@@ -335,7 +337,7 @@ export const PrivacyPolicyView: React.FC<{ onNavigate: (view: AppView) => void }
       </p>
       <p>
         If you're unhappy with how we handle your information, please tell us first so we can put it right. You can also complain to the
-        Bulgarian Commission for Personal Data Protection (Комисия за защита на личните данни), 2 Prof. Tsvetan Lazarov Blvd., Sofia
+        Bulgarian Commission for Personal Data Protection (<span lang="bg">Комисия за защита на личните данни</span>), 2 Prof. Tsvetan Lazarov Blvd., Sofia
         1592, Bulgaria, www.cpdp.bg, or to the data protection authority in the EU country where you live or work.
       </p>
     </Section>

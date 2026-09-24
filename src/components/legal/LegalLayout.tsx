@@ -1,14 +1,16 @@
 import React from 'react';
-import { FileText, Scale, ShieldCheck } from 'lucide-react';
+import { scrollBehavior } from '../../lib/a11y';
+import { Accessibility, FileText, Scale, ShieldCheck } from 'lucide-react';
 import { hasRealEmail, LEGAL_ENTITY, LEGAL_LAST_UPDATED } from '../../data/legal';
 import { AppView } from '../../types';
 
-export type LegalView = 'privacy' | 'terms' | 'gdpr';
+export type LegalView = 'privacy' | 'terms' | 'gdpr' | 'accessibility';
 
 const PAGES: { view: LegalView; label: string; icon: React.ElementType }[] = [
   { view: 'privacy', label: 'Privacy Policy', icon: ShieldCheck },
   { view: 'terms', label: 'Terms & Conditions', icon: FileText },
   { view: 'gdpr', label: 'GDPR Compliance', icon: Scale },
+  { view: 'accessibility', label: 'Accessibility', icon: Accessibility },
 ];
 
 interface LegalLayoutProps {
@@ -26,7 +28,7 @@ export const LegalLayout: React.FC<LegalLayoutProps> = ({ view, title, intro, se
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0f1e36] to-[#00281b] text-white p-6 sm:p-8 border border-emerald-500/30 shadow-lg">
         <div className="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-emerald-400/10" aria-hidden />
         <div className="relative">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-300">Legal</div>
+          <div className="text-[0.6875rem] font-bold uppercase tracking-wider text-emerald-300">Legal</div>
           <h1 className="text-2xl sm:text-3xl font-bold font-heading mt-1">{title}</h1>
           <p className="text-sm text-slate-300 mt-2 max-w-3xl leading-relaxed">{intro}</p>
           <p className="text-xs text-slate-400 mt-3">Last updated: {LEGAL_LAST_UPDATED}</p>
@@ -34,13 +36,13 @@ export const LegalLayout: React.FC<LegalLayoutProps> = ({ view, title, intro, se
       </div>
 
       {/* Switch between the three documents */}
-      <nav aria-label="Legal documents" className="bg-white rounded-xl border border-slate-200 p-1 flex gap-1 shadow-2xs">
+      <nav aria-label="Legal documents" className="bg-white rounded-xl border border-slate-200 p-1 grid grid-cols-2 sm:grid-cols-4 gap-1 shadow-2xs">
         {PAGES.map(({ view: v, label, icon: Icon }) => (
           <button
             key={v}
             onClick={() => onNavigate(v)}
             aria-current={v === view ? 'page' : undefined}
-            className={`flex-1 inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
+            className={`inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
               v === view ? 'bg-[#006644] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-50'
             }`}
           >
@@ -51,9 +53,9 @@ export const LegalLayout: React.FC<LegalLayoutProps> = ({ view, title, intro, se
       </nav>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <aside className="hidden lg:block lg:col-span-3 lg:sticky lg:top-28 bg-white rounded-2xl border border-slate-200 shadow-xs p-5">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-3">On this page</div>
-          <ol className="space-y-1.5 text-xs">
+        <aside aria-label="On this page" className="hidden lg:block lg:col-span-3 lg:sticky lg:top-28 bg-white rounded-2xl border border-slate-200 shadow-xs p-5">
+          <div className="text-[0.6875rem] font-bold uppercase tracking-wider text-slate-500 mb-3">On this page</div>
+          <ol className="text-xs">
             {sections.map((s, i) => (
               <li key={s.id}>
                 <a
@@ -61,11 +63,11 @@ export const LegalLayout: React.FC<LegalLayoutProps> = ({ view, title, intro, se
                   onClick={(e) => {
                     // Scroll in-page without replacing the #/route in the address bar.
                     e.preventDefault();
-                    document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    document.getElementById(s.id)?.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
                   }}
-                  className="text-slate-600 hover:text-[#006644] flex gap-2"
+                  className="text-slate-600 hover:text-[#006644] flex gap-2 py-1"
                 >
-                  <span className="text-slate-400 w-4 shrink-0">{i + 1}.</span>
+                  <span className="text-slate-500 w-4 shrink-0">{i + 1}.</span>
                   <span>{s.title}</span>
                 </a>
               </li>
@@ -157,7 +159,7 @@ export const PageLink: React.FC<{ to: AppView; onNavigate: (view: AppView) => vo
 export const ControllerBlock: React.FC = () => (
   <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm space-y-0.5">
     <div className="font-bold text-slate-900">{LEGAL_ENTITY.name}</div>
-    <div>ЕИК / UIC: {LEGAL_ENTITY.eik}</div>
+    <div><span lang="bg">ЕИК</span> / UIC: {LEGAL_ENTITY.eik}</div>
     {LEGAL_ENTITY.vatNumber && <div>VAT number: {LEGAL_ENTITY.vatNumber}</div>}
     <div>{LEGAL_ENTITY.address}</div>
     <div>

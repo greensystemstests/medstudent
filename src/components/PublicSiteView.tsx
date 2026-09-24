@@ -148,25 +148,25 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
                   <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
                     <div className="text-xs text-slate-400">Annual Tuition</div>
                     <div className="text-xl font-extrabold text-emerald-400 font-heading">€8,500 – €9,000</div>
-                    <div className="text-[11px] text-slate-500">Standard state university fee</div>
+                    <div className="text-[0.6875rem] text-slate-500">Standard state university fee</div>
                   </div>
 
                   <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
                     <div className="text-xs text-slate-400">Intake Capacity</div>
                     <div className="text-xl font-extrabold text-white font-heading">1,400+ Seats</div>
-                    <div className="text-[11px] text-slate-500">Across 4 medical faculties</div>
+                    <div className="text-[0.6875rem] text-slate-500">Across 4 medical faculties</div>
                   </div>
 
                   <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
                     <div className="text-xs text-slate-400">Type-D Visa Rate</div>
                     <div className="text-xl font-extrabold text-sky-400 font-heading">98.4%</div>
-                    <div className="text-[11px] text-slate-500">For non-EU candidates</div>
+                    <div className="text-[0.6875rem] text-slate-500">For non-EU candidates</div>
                   </div>
 
                   <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
                     <div className="text-xs text-slate-400">Onboarding Fee</div>
                     <div className="text-xl font-extrabold text-amber-400 font-heading">€180 Flat</div>
-                    <div className="text-[11px] text-slate-500">Includes legal advisor slot</div>
+                    <div className="text-[0.6875rem] text-slate-500">Includes legal advisor slot</div>
                   </div>
                 </div>
               </div>
@@ -231,7 +231,7 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
 
           {/* Stage 2 */}
           <div className="bg-white rounded-2xl p-6 border-2 border-[#006644] shadow-xs hover:shadow-md transition-shadow relative">
-            <div className="absolute -top-3 right-4 bg-[#006644] text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full">
+            <div className="absolute -top-3 right-4 bg-[#006644] text-white text-[0.625rem] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full">
               Student Tariq Active
             </div>
             <div className="flex items-center justify-between mb-4">
@@ -341,10 +341,11 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
             </div>
 
             {/* Filter Pills */}
-            <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
+            <div role="group" aria-label="Filter universities by program" className="flex flex-wrap items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
               {(['All', 'Medicine', 'Dentistry', 'Pharmacy'] as const).map((prog) => (
                 <button
                   key={prog}
+                  aria-pressed={selectedProgramFilter === prog}
                   onClick={() => setSelectedProgramFilter(prog)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                     selectedProgramFilter === prog
@@ -384,7 +385,7 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
                 {/* Content */}
                 <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
                   <div>
-                    <div className="flex items-center justify-between gap-2 mb-1">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
                       <h3 className="font-heading font-bold text-lg text-slate-900">{uni.name}</h3>
                       <span className="text-xs font-extrabold text-[#006644] bg-emerald-50 px-2 py-1 rounded border border-emerald-200 shrink-0">
                         {uni.tuitionFee}

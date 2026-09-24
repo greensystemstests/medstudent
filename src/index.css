@@ -48,3 +48,155 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* ==========================================================================
+   Accessibility (WCAG 2.2 AA) — always on
+   ========================================================================== */
+
+/* 2.4.11 Focus Not Obscured: keep focused/anchored elements clear of the sticky header. */
+html {
+  scroll-padding-top: 9rem;
+  scroll-padding-bottom: 6rem; /* the floating accessibility button */
+}
+
+/* <main> receives focus from the skip link and page changes; it isn't a control, so no ring. */
+main:focus,
+main:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* 2.4.7 Focus Visible: one strong, two-tone ring that shows on light and dark backgrounds,
+   applied even where a component set outline-none. Only for keyboard focus (:focus-visible). */
+:focus-visible {
+  outline: 3px solid #ffffff !important;
+  outline-offset: 1px !important;
+  box-shadow: 0 0 0 6px #0f1e36 !important;
+  border-radius: 6px;
+}
+
+/* Skip link: hidden until focused, then shown at the top of the page. */
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -10rem;
+  z-index: 100;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: #0f1e36;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.875rem;
+  text-decoration: underline;
+}
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* 2.3.3 / user preference: respect the operating system's "reduce motion" setting. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   Accessibility preferences — switched on by the user in the accessibility panel
+   (src/components/AccessibilityPanel.tsx). Each maps to a data attribute on <html>.
+   ========================================================================== */
+
+/* High contrast: darken greys used for text and borders on light backgrounds... */
+html[data-a11y-contrast='high'] {
+  --color-slate-400: #334155;
+  --color-slate-500: #1e293b;
+  --color-slate-600: #0f172a;
+  --color-slate-700: #020617;
+  --color-emerald-700: #064e3b;
+}
+html[data-a11y-contrast='high'] .border-slate-100,
+html[data-a11y-contrast='high'] .border-slate-200,
+html[data-a11y-contrast='high'] .border-slate-300 {
+  border-color: #475569 !important;
+}
+html[data-a11y-contrast='high'] ::placeholder {
+  color: #334155;
+  opacity: 1;
+}
+html[data-a11y-contrast='high'] a {
+  text-decoration: underline;
+}
+/* ...and lighten them again inside dark surfaces, so text there gets brighter, not darker. */
+html[data-a11y-contrast='high'] [class*='bg-[#0f1e36]'],
+html[data-a11y-contrast='high'] [class*='from-[#0f1e36]'],
+html[data-a11y-contrast='high'] [class*='bg-slate-900'],
+html[data-a11y-contrast='high'] [class*='bg-slate-800'] {
+  --color-slate-200: #ffffff;
+  --color-slate-300: #ffffff;
+  --color-slate-400: #f1f5f9;
+  --color-slate-500: #e2e8f0;
+  --color-slate-600: #e2e8f0;
+  --color-slate-700: #f8fafc;
+  --color-emerald-300: #a7f3d0;
+}
+
+/* Large text (130%+): the full navigation no longer fits in one row, so use the menu button
+   layout on every screen size (WCAG 1.4.4 / 1.4.10: no loss of content, no sideways scrolling). */
+html[data-a11y-text='large'] .desktop-nav {
+  display: none !important;
+}
+html[data-a11y-text='large'] .mobile-nav-toggle {
+  display: inline-flex !important;
+}
+html[data-a11y-text='large'] #mobile-menu {
+  display: block !important;
+}
+html[data-a11y-text='large'] #header-quick-fit-btn {
+  display: none !important;
+}
+
+/* Highlight links: underline every link so they don't rely on colour alone. */
+html[data-a11y-links='on'] a {
+  text-decoration: underline !important;
+  text-decoration-thickness: 2px !important;
+  text-underline-offset: 3px;
+}
+
+/* Readable font: a plain, wide, highly legible system font everywhere. */
+html[data-a11y-font='readable'] body,
+html[data-a11y-font='readable'] body *:not(svg):not(svg *) {
+  font-family: Verdana, Tahoma, 'Segoe UI', Arial, sans-serif !important;
+}
+
+/* Text spacing: the WCAG 1.4.12 values (line 1.5, letter 0.12em, word 0.16em, paragraph 2em). */
+html[data-a11y-spacing='on'] body *:not(svg):not(svg *) {
+  line-height: 1.5 !important;
+  letter-spacing: 0.12em !important;
+  word-spacing: 0.16em !important;
+}
+html[data-a11y-spacing='on'] p {
+  margin-bottom: 2em;
+}
+html[data-a11y-spacing='on'] p:last-child {
+  margin-bottom: 0;
+}
+
+/* Reduce motion (same as the OS setting above, but switchable on the site). */
+html[data-a11y-motion='reduce'] *,
+html[data-a11y-motion='reduce'] *::before,
+html[data-a11y-motion='reduce'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Large cursor: a 48px high-contrast arrow. */
+html[data-a11y-cursor='large'],
+html[data-a11y-cursor='large'] * {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cpath d='M6 4l30 18-13 3 8 15-6 3-8-15-11 9z' fill='%23000' stroke='%23fff' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E") 6 4, auto !important;
+}

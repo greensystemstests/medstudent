@@ -59,7 +59,7 @@ export const ApplicationConfirmation: React.FC<Props> = ({ app, demoMode, onNavi
             <Row label="Reference" value={payment.receiptRef ?? '—'} mono />
             <Row label="Date" value={paidAt ? paidAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'} />
             <Row label="Paid by" value={form.email} />
-            <p className="text-[11px] text-slate-500 pt-2 border-t border-slate-100">
+            <p className="text-[0.6875rem] text-slate-500 pt-2 border-t border-slate-100">
               Keep your reference for any questions about this payment.
             </p>
           </div>

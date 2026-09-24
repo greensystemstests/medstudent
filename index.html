@@ -63,6 +63,23 @@
       })();
     </script>
     <meta charset="UTF-8" />
+    <script>
+      // Apply saved accessibility preferences before first paint (mirrors applyA11y in src/lib/a11y.ts).
+      (function () {
+        try {
+          var s = JSON.parse(localStorage.getItem('studybg.a11y') || '{}');
+          var r = document.documentElement;
+          if ([115, 130, 150].indexOf(s.textSize) !== -1) r.style.fontSize = s.textSize + '%';
+          if (s.textSize >= 130) r.setAttribute('data-a11y-text', 'large');
+          if (s.highContrast) r.setAttribute('data-a11y-contrast', 'high');
+          if (s.highlightLinks) r.setAttribute('data-a11y-links', 'on');
+          if (s.readableFont) r.setAttribute('data-a11y-font', 'readable');
+          if (s.textSpacing) r.setAttribute('data-a11y-spacing', 'on');
+          if (s.reduceMotion) r.setAttribute('data-a11y-motion', 'reduce');
+          if (s.largeCursor) r.setAttribute('data-a11y-cursor', 'large');
+        } catch (e) {}
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>StudyBg - Medical Gateway</title>
     <meta name="description" content="Guidance and administrative platform for English-taught Medicine and Dentistry degrees in Bulgaria, featuring student onboarding wizard, student portal, and staff ops." />

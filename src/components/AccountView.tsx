@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { scrollBehavior } from '../lib/a11y';
 import {
   AlertCircle,
   ArrowRight,
@@ -40,6 +41,7 @@ import {
   StoredDocument,
 } from '../lib/account';
 import { formatDay } from '../lib/application';
+import { useDialogFocus } from '../lib/useDialogFocus';
 import { AppView } from '../types';
 import { formatMoney } from './PaymentStep';
 
@@ -156,7 +158,7 @@ const SignIn: React.FC<{ api: AccountApi; defaultEmail?: string; onSignedIn: () 
                   placeholder="you@example.com"
                   className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-800 focus:bg-white focus:border-[#006644] focus:ring-1 focus:ring-[#006644] outline-none"
                 />
-                <p className="text-[11px] text-slate-500 mt-1.5">Use the email you applied with, so we can show your application.</p>
+                <p className="text-[0.6875rem] text-slate-500 mt-1.5">Use the email you applied with, so we can show your application.</p>
               </div>
               <button
                 type="submit"
@@ -214,7 +216,7 @@ const SignIn: React.FC<{ api: AccountApi; defaultEmail?: string; onSignedIn: () 
             </form>
           )}
 
-          <p className="text-[11px] text-slate-500">
+          <p className="text-[0.6875rem] text-slate-500">
             By signing in you agree to our{' '}
             <a href="#/terms" className="text-[#006644] font-semibold underline">Terms &amp; Conditions</a>. See how we protect your data in our{' '}
             <a href="#/privacy" className="text-[#006644] font-semibold underline">Privacy Policy</a>.
@@ -328,7 +330,7 @@ const Profile: React.FC<{ api: AccountApi; onNavigate: (view: AppView) => void; 
   const openUpload = (category: DocumentCategory) => {
     setUploadCategory(category);
     setTab('documents');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: scrollBehavior() });
   };
 
   return (
@@ -342,7 +344,7 @@ const Profile: React.FC<{ api: AccountApi; onNavigate: (view: AppView) => void; 
               {displayName.charAt(0).toUpperCase()}
             </div>
             <div>
-              <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-300">My account</div>
+              <div className="text-[0.6875rem] font-bold uppercase tracking-wider text-emerald-300">My account</div>
               <h1 className="text-xl sm:text-2xl font-bold font-heading">Welcome, {displayName.split(' ')[0]}</h1>
               <div className="text-xs text-slate-300 flex items-center gap-1.5 mt-0.5">
                 <Mail className="w-3.5 h-3.5" /> {user.email}
@@ -360,7 +362,21 @@ const Profile: React.FC<{ api: AccountApi; onNavigate: (view: AppView) => void; 
       </div>
 
       {/* Tabs */}
-      <div role="tablist" className="bg-white rounded-xl border border-slate-200 p-1 flex gap-1 shadow-2xs">
+      <div
+        role="tablist"
+        aria-label="Account sections"
+        onKeyDown={(e) => {
+          const order: Tab[] = ['overview', 'documents', 'activity'];
+          const i = order.indexOf(tab);
+          const next =
+            e.key === 'ArrowRight' ? order[(i + 1) % 3] : e.key === 'ArrowLeft' ? order[(i + 2) % 3] : e.key === 'Home' ? order[0] : e.key === 'End' ? order[2] : null;
+          if (!next) return;
+          e.preventDefault();
+          setTab(next);
+          requestAnimationFrame(() => document.getElementById(`tab-${next}`)?.focus());
+        }}
+        className="bg-white rounded-xl border border-slate-200 p-1 flex gap-1 shadow-2xs"
+      >
         {(
           [
             ['overview', 'Overview', LayoutDashboard],
@@ -370,21 +386,24 @@ const Profile: React.FC<{ api: AccountApi; onNavigate: (view: AppView) => void; 
         ).map(([id, label, Icon]) => (
           <button
             key={id}
+            id={`tab-${id}`}
             role="tab"
             aria-selected={tab === id}
+            aria-controls={`panel-${id}`}
+            tabIndex={tab === id ? 0 : -1}
             onClick={() => setTab(id)}
             className={`flex-1 inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2.5 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition-colors ${
               tab === id ? 'bg-[#006644] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-50'
             }`}
           >
-            <Icon className="w-4 h-4 hidden sm:block" />
+            <Icon className="w-4 h-4 hidden sm:block" aria-hidden="true" />
             {label}
           </button>
         ))}
       </div>
 
       {tab === 'overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           <div className="lg:col-span-7 space-y-6">
             {applications.length > 0 ? (
               applications.map((a) => <ApplicationCard key={a.paymentIntentId} app={a} />)
@@ -431,7 +450,7 @@ const Profile: React.FC<{ api: AccountApi; onNavigate: (view: AppView) => void; 
                   {requiredDone} of {REQUIRED_DOCUMENTS.length}
                 </span>
               </div>
-              <div className="mt-2 h-2 rounded-full bg-slate-100 overflow-hidden">
+              <div aria-hidden="true" className="mt-2 h-2 rounded-full bg-slate-100 overflow-hidden">
                 <div
                   className="h-full bg-[#006644] rounded-full transition-all"
                   style={{ width: `${(requiredDone / REQUIRED_DOCUMENTS.length) * 100}%` }}
@@ -465,6 +484,7 @@ const Profile: React.FC<{ api: AccountApi; onNavigate: (view: AppView) => void; 
       )}
 
       {tab === 'documents' && (
+        <div role="tabpanel" id="panel-documents" aria-labelledby="tab-documents">
         <DocumentsTab
           api={api}
           docs={data.docs}
@@ -472,9 +492,14 @@ const Profile: React.FC<{ api: AccountApi; onNavigate: (view: AppView) => void; 
           onChanged={refreshDocsAndActivity}
           onAuthError={handleAuthError}
         />
+        </div>
       )}
 
-      {tab === 'activity' && <ActivityTab activity={data.activity} applications={applications} />}
+      {tab === 'activity' && (
+        <div role="tabpanel" id="panel-activity" aria-labelledby="tab-activity">
+          <ActivityTab activity={data.activity} applications={applications} />
+        </div>
+      )}
     </div>
   );
 };
@@ -483,12 +508,12 @@ const ApplicationCard: React.FC<{ app: PaidApplication }> = ({ app }) => (
   <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden" data-testid="application-card">
     <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between gap-3">
       <div>
-        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Your application</div>
+        <div className="text-[0.6875rem] font-bold uppercase tracking-wider text-slate-500">Your application</div>
         <div className="font-bold font-heading text-slate-900">
           {app.degree} · {app.university}
         </div>
       </div>
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-[#006644] shrink-0">
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[0.6875rem] font-bold text-[#006644] shrink-0">
         <CheckCircle2 className="w-3.5 h-3.5" /> Paid
       </span>
     </div>
@@ -506,12 +531,12 @@ const ApplicationCard: React.FC<{ app: PaidApplication }> = ({ app }) => (
 );
 
 const Detail: React.FC<{ icon: React.ElementType; label: string; value: string; mono?: boolean }> = ({ icon: Icon, label, value, mono }) => (
-  <div className="flex items-start gap-2.5">
-    <Icon className="w-4 h-4 text-[#006644] shrink-0 mt-0.5" />
-    <div className="min-w-0">
-      <dt className="text-slate-500">{label}</dt>
-      <dd className={`font-semibold text-slate-900 break-words ${mono ? 'font-mono' : ''}`}>{value}</dd>
-    </div>
+  <div className="relative pl-6.5 min-w-0">
+    <dt className="text-slate-500">
+      <Icon className="absolute left-0 top-0.5 w-4 h-4 text-[#006644]" aria-hidden="true" />
+      {label}
+    </dt>
+    <dd className={`font-semibold text-slate-900 break-words ${mono ? 'font-mono' : ''}`}>{value}</dd>
   </div>
 );
 
@@ -616,11 +641,11 @@ const DocumentsTab: React.FC<{
         </div>
 
         <div>
-          <div className="text-xs font-semibold text-slate-700 mb-2">
-            <span className="inline-flex w-5 h-5 rounded-full bg-[#006644] text-white text-[10px] font-bold items-center justify-center mr-1.5">1</span>
-            What is it?
+          <div id="upload-type-label" className="text-xs font-semibold text-slate-700 mb-2">
+            <span aria-hidden="true" className="inline-flex w-5 h-5 rounded-full bg-[#006644] text-white text-[0.625rem] font-bold items-center justify-center mr-1.5">1</span>
+            <span className="sr-only">Step 1: </span>What is it?
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div role="group" aria-labelledby="upload-type-label" className="grid grid-cols-2 gap-2">
             {(Object.keys(CATEGORY_LABELS) as DocumentCategory[]).map((c) => (
               <button
                 key={c}
@@ -641,8 +666,8 @@ const DocumentsTab: React.FC<{
 
         <div>
           <div className="text-xs font-semibold text-slate-700 mb-2">
-            <span className="inline-flex w-5 h-5 rounded-full bg-[#006644] text-white text-[10px] font-bold items-center justify-center mr-1.5">2</span>
-            Choose the file
+            <span aria-hidden="true" className="inline-flex w-5 h-5 rounded-full bg-[#006644] text-white text-[0.625rem] font-bold items-center justify-center mr-1.5">2</span>
+            <span className="sr-only">Step 2: </span>Choose the file
           </div>
           <label
             onDragOver={(e) => {
@@ -655,13 +680,13 @@ const DocumentsTab: React.FC<{
               setDragging(false);
               upload(e.dataTransfer.files[0]);
             }}
-            className={`flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-6 text-center cursor-pointer transition-colors ${
+            className={`flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-6 text-center cursor-pointer transition-colors has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-[#0f1e36] has-[:focus-visible]:ring-offset-2 ${
               !category ? 'opacity-60 cursor-not-allowed border-slate-200' : dragging ? 'border-[#006644] bg-emerald-50' : 'border-slate-300 hover:border-[#006644] hover:bg-emerald-50/40'
             }`}
           >
             <Upload className="w-7 h-7 text-[#006644]" />
             <span className="text-sm font-semibold text-slate-800">{category ? 'Drop your file here, or tap to choose' : 'Choose the document type first'}</span>
-            <span className="text-[11px] text-slate-500">A clear scan or photo of the whole page works best</span>
+            <span className="text-[0.6875rem] text-slate-500">A clear scan or photo of the whole page works best</span>
             <input
               ref={fileInput}
               id="document-file-input"
@@ -680,7 +705,14 @@ const DocumentsTab: React.FC<{
               <span className="truncate">Uploading {uploading.name}…</span>
               <span>{Math.round(uploading.progress * 100)}%</span>
             </div>
-            <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+            <div
+              role="progressbar"
+              aria-label={`Uploading ${uploading.name}`}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(uploading.progress * 100)}
+              className="h-2 rounded-full bg-slate-100 overflow-hidden"
+            >
               <div className="h-full bg-[#006644] transition-all" style={{ width: `${uploading.progress * 100}%` }} />
             </div>
           </div>
@@ -698,7 +730,7 @@ const DocumentsTab: React.FC<{
           </div>
         )}
 
-        <div className="pt-3 border-t border-slate-100 text-[11px] text-slate-500 flex items-center gap-1.5">
+        <div className="pt-3 border-t border-slate-100 text-[0.6875rem] text-slate-500 flex items-center gap-1.5">
           <Lock className="w-3.5 h-3.5 text-[#006644]" />
           {docs.usage.count} of {docs.limits.maxDocuments} files · {formatBytes(docs.usage.bytes)} of {formatBytes(docs.limits.maxTotalBytes)} used
         </div>
@@ -729,7 +761,7 @@ const DocumentsTab: React.FC<{
                     <div className="text-sm font-semibold text-slate-900 truncate" title={doc.filename}>
                       {doc.filename}
                     </div>
-                    <div className="text-[11px] text-slate-500 flex flex-wrap items-center gap-x-2">
+                    <div className="text-[0.6875rem] text-slate-500 flex flex-wrap items-center gap-x-2">
                       <span className="font-semibold text-slate-700">{doc.categoryLabel}</span>
                       <span>{formatBytes(doc.sizeBytes)}</span>
                       <span>{new Date(doc.uploadedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
@@ -788,20 +820,24 @@ const PreviewModal: React.FC<{ doc: StoredDocument; url: string; type: string; o
   onDownload,
   onClose,
 }) => {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  const dialog = useRef<HTMLDivElement>(null);
+  useDialogFocus(dialog, true, onClose);
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6" onClick={onClose} role="dialog" aria-modal="true" aria-label={doc.filename}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6" onClick={onClose}>
+      <div
+        ref={dialog}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="preview-title"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="px-4 py-3 border-b border-slate-200 flex items-center gap-3">
           <FileText className="w-4 h-4 text-[#006644] shrink-0" />
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold text-slate-900 truncate">{doc.filename}</div>
-            <div className="text-[11px] text-slate-500">{doc.categoryLabel}</div>
+            <h2 id="preview-title" className="text-sm font-semibold text-slate-900 truncate">{doc.filename}</h2>
+            <div className="text-[0.6875rem] text-slate-500">{doc.categoryLabel}</div>
           </div>
           <button onClick={onDownload} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#006644] bg-emerald-50 hover:bg-emerald-100">
             <Download className="w-3.5 h-3.5" /> Download
@@ -880,7 +916,7 @@ const ActivityTab: React.FC<{ activity: ActivityEvent[]; applications: PaidAppli
                 </div>
                 <div className="pb-5 min-w-0">
                   <div className="text-sm text-slate-900 break-words">{copy.text(e.detail)}</div>
-                  <div className="text-[11px] text-slate-500">
+                  <div className="text-[0.6875rem] text-slate-500">
                     {new Date(e.at).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })} · {timeAgo(e.at)}
                   </div>
                 </div>

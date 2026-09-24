@@ -41,7 +41,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
       <div className="bg-[#0f1e36] text-slate-200 px-4 py-1.5 text-xs">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#006644]/40 text-[#6ee7b7] font-medium text-[11px] border border-[#10b981]/30">
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#006644]/40 text-[#6ee7b7] font-medium text-[0.6875rem] border border-[#10b981]/30">
               <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse"></span>
               2025/2026 Intake Active
             </span>
@@ -91,7 +91,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
               >
                 <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Student Portal</span>
-                <span className="bg-amber-400/20 text-amber-300 text-[10px] px-1 rounded">1 Action</span>
+                <span className="bg-amber-400/20 text-amber-300 text-[0.625rem] px-1 rounded">1 Action</span>
               </button>
 
               <button
@@ -114,7 +114,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
 
       {/* Main header navbar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20">
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 py-2 min-h-16 sm:min-h-20">
           {/* Logo & Brand Identity */}
           <button
             onClick={() => onNavigate('home')}
@@ -123,15 +123,15 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           >
             <StudyBgLogo size="lg" />
             <div className="hidden sm:block pl-2 border-l border-slate-200">
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200 block w-fit">
+              <span className="text-[0.625rem] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200 block w-fit">
                 Medical Gateway
               </span>
-              <p className="text-[11px] text-slate-500 font-medium">Bulgaria English Medical & Dental Admissions</p>
+              <p className="text-[0.6875rem] text-slate-500 font-medium">Bulgaria English Medical & Dental Admissions</p>
             </div>
           </button>
 
           {/* Primary Navigation Links */}
-          <nav className="hidden lg:flex items-center space-x-1">
+          <nav aria-label="Main" className="desktop-nav hidden lg:flex items-center space-x-1">
             <button
               onClick={() => onNavigateToSection('universities-section')}
               className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#006644] hover:bg-slate-50 rounded-lg transition-colors"
@@ -165,7 +165,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           </nav>
 
           {/* Action CTAs */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
+          <div className="ml-auto flex items-center gap-2 sm:gap-2.5">
             <button
               onClick={onOpenQuickFit}
               className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#006644] bg-[#006644]/10 hover:bg-[#006644]/20 border border-[#006644]/20 rounded-lg transition-colors"
@@ -195,15 +195,18 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
               className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs font-semibold text-white bg-[#006644] hover:bg-[#005538] rounded-lg shadow-sm hover:shadow transition-all"
               id="header-apply-btn"
             >
-              <span>{hasPaidApplication ? 'My Application' : 'Apply Now (€180)'}</span>
+              <span className="max-[379px]:hidden">{hasPaidApplication ? 'My Application' : 'Apply Now (€180)'}</span>
+              <span className="min-[380px]:hidden">{hasPaidApplication ? 'My Application' : 'Apply'}</span>
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
 
             {/* Mobile Hamburger Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors"
-              aria-label="Toggle menu"
+              className="mobile-nav-toggle lg:hidden p-2 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors"
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -212,7 +215,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
 
         {/* Mobile Navigation Dropdown */}
         {mobileMenuOpen && (
-          <div className="lg:hidden border-t border-slate-200 py-3 space-y-1">
+          <div id="mobile-menu" className="lg:hidden border-t border-slate-200 py-3 space-y-1">
             <button
               onClick={() => {
                 setMobileMenuOpen(false);

@@ -150,7 +150,7 @@ export const GdprView: React.FC<{ onNavigate: (view: AppView) => void }> = ({ on
     <Section id="authority" n={10} title="Supervisory authority">
       <p>Our lead supervisory authority is:</p>
       <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm space-y-0.5">
-        <div className="font-bold text-slate-900">Commission for Personal Data Protection (Комисия за защита на личните данни)</div>
+        <div className="font-bold text-slate-900">Commission for Personal Data Protection (<span lang="bg">Комисия за защита на личните данни</span>)</div>
         <div>2 Prof. Tsvetan Lazarov Blvd., Sofia 1592, Bulgaria</div>
         <div>www.cpdp.bg</div>
       </div>

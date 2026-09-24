@@ -127,7 +127,7 @@ export const StaffOpsView: React.FC<StaffOpsViewProps> = ({ onNavigate }) => {
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="text-lg font-bold font-heading">Staff Operations & Legal Review</h1>
-                  <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[0.625rem] font-bold px-2 py-0.5 rounded-full">
                     RBAC Tier-2 (Full Legal Dossier Access)
                   </span>
                 </div>
@@ -197,7 +197,7 @@ export const StaffOpsView: React.FC<StaffOpsViewProps> = ({ onNavigate }) => {
           {/* Privacy & Compliance Toggle */}
           <div className="flex items-center gap-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs">
             <div className="space-y-0.5">
-              <div className="text-[11px] text-slate-500 font-medium">Passport Masking (GDPR):</div>
+              <div className="text-[0.6875rem] text-slate-500 font-medium">Passport Masking (GDPR):</div>
               <div className="font-mono font-bold text-slate-800">
                 {isPassportMasked ? 'P89*****0B' : student.passportNumber}
               </div>
@@ -220,7 +220,7 @@ export const StaffOpsView: React.FC<StaffOpsViewProps> = ({ onNavigate }) => {
               <h3 className="font-heading font-bold text-sm text-slate-900">
                 Dossier Verification Checklist
               </h3>
-              <span className="text-[11px] text-slate-500">5 Documents</span>
+              <span className="text-[0.6875rem] text-slate-500">5 Documents</span>
             </div>
 
             <div className="space-y-2">
@@ -245,7 +245,7 @@ export const StaffOpsView: React.FC<StaffOpsViewProps> = ({ onNavigate }) => {
                         {doc.title}
                       </span>
                       <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                        className={`text-[0.625rem] font-bold px-2 py-0.5 rounded-full shrink-0 ${
                           isVerified
                             ? 'bg-emerald-100 text-emerald-800'
                             : isActionNeeded
@@ -258,7 +258,7 @@ export const StaffOpsView: React.FC<StaffOpsViewProps> = ({ onNavigate }) => {
                         {isActionNeeded ? 'Action Needed' : isVerified ? 'Verified' : 'In Review'}
                       </span>
                     </div>
-                    <div className="text-[11px] text-slate-500 truncate">{doc.fileName}</div>
+                    <div className="text-[0.6875rem] text-slate-500 truncate">{doc.fileName}</div>
                   </button>
                 );
               })}
@@ -270,7 +270,7 @@ export const StaffOpsView: React.FC<StaffOpsViewProps> = ({ onNavigate }) => {
                 <Sparkles className="w-3.5 h-3.5 text-[#006644]" />
                 <span>Stage 2 Sign-off Prerequisite</span>
               </div>
-              <p className="text-[11px] text-slate-600 leading-relaxed">
+              <p className="text-[0.6875rem] text-slate-600 leading-relaxed">
                 Tawjihi diploma must possess authenticated Hague Apostille stamp before Sofia sworn translation can be dispatched to the Ministry.
               </p>
             </div>
@@ -318,7 +318,7 @@ export const StaffOpsView: React.FC<StaffOpsViewProps> = ({ onNavigate }) => {
                     <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
                     <span>Officer Diagnostic Inspection Note</span>
                   </div>
-                  <p className="text-[11px] leading-relaxed">
+                  <p className="text-[0.6875rem] leading-relaxed">
                     Front page displays official Jordanian General Secondary Examination credentials (Marks: Bio 94, Chem 91). Reverse leaf bearing Jordan Ministry of Foreign Affairs (MOFA) Hague Apostille stamp is currently missing from upload.
                   </p>
                 </div>
@@ -437,7 +437,7 @@ export const StaffOpsView: React.FC<StaffOpsViewProps> = ({ onNavigate }) => {
 
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
-              <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px]">
+              <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[0.625rem]">
                 <tr>
                   <th className="p-3">Candidate</th>
                   <th className="p-3">Faculty</th>
@@ -456,7 +456,7 @@ export const StaffOpsView: React.FC<StaffOpsViewProps> = ({ onNavigate }) => {
                   <td className="p-3 text-slate-600">MU Sofia (Medicine)</td>
                   <td className="p-3 font-bold text-emerald-700">84 Days</td>
                   <td className="p-3">
-                    <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                    <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[0.625rem] font-bold">
                       On Track
                     </span>
                   </td>
@@ -473,7 +473,7 @@ export const StaffOpsView: React.FC<StaffOpsViewProps> = ({ onNavigate }) => {
                   <td className="p-3 text-slate-600">MU Plovdiv (Dentistry)</td>
                   <td className="p-3 font-bold text-amber-700">42 Days</td>
                   <td className="p-3">
-                    <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-bold">
+                    <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[0.625rem] font-bold">
                       Prepare Uverenie
                     </span>
                   </td>
@@ -490,7 +490,7 @@ export const StaffOpsView: React.FC<StaffOpsViewProps> = ({ onNavigate }) => {
                   <td className="p-3 text-slate-600">MU Varna (Medicine)</td>
                   <td className="p-3 font-bold text-rose-600">18 Days</td>
                   <td className="p-3">
-                    <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-800 text-[10px] font-bold">
+                    <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-800 text-[0.625rem] font-bold">
                       Urgent Biometrics
                     </span>
                   </td>
@@ -528,14 +528,14 @@ export const StaffOpsView: React.FC<StaffOpsViewProps> = ({ onNavigate }) => {
               >
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-[11px] text-slate-400">{log.timestamp}</span>
+                    <span className="font-mono text-[0.6875rem] text-slate-400">{log.timestamp}</span>
                     <span className="font-bold text-slate-800">{log.officer}</span>
                     <span className="text-slate-400">({log.role})</span>
                   </div>
                   <div className="text-slate-700">{log.details}</div>
                 </div>
 
-                <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono self-start sm:self-auto">
+                <div className="flex items-center gap-2 text-[0.625rem] text-slate-400 font-mono self-start sm:self-auto">
                   <span>Hash: {log.hash}</span>
                   <span>•</span>
                   <span>{log.ipAddress}</span>

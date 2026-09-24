@@ -1,4 +1,5 @@
 import React from 'react';
+import { scrollBehavior } from '../../lib/a11y';
 import { ONBOARDING_FEE_EUR, ONBOARDING_INCLUSIONS } from '../../data/constants';
 import { LEGAL_ENTITY } from '../../data/legal';
 import { AppView } from '../../types';
@@ -129,7 +130,7 @@ export const TermsView: React.FC<{ onNavigate: (view: AppView) => void }> = ({ o
       </p>
       <p>
         To withdraw, tell us clearly before the period ends, for example by email to <Email address={LEGAL_ENTITY.contactEmail} />. You
-        can use the <a href="#withdrawal-form" onClick={(e) => { e.preventDefault(); document.getElementById('withdrawal-form')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-[#006644] font-semibold underline">model withdrawal form</a>{' '}
+        can use the <a href="#withdrawal-form" onClick={(e) => { e.preventDefault(); document.getElementById('withdrawal-form')?.scrollIntoView({ behavior: scrollBehavior() }); }} className="text-[#006644] font-semibold underline">model withdrawal form</a>{' '}
         below, but you don't have to. It's enough to send your message before the 14 days are up.
       </p>
       <Sub title="Refunds">
@@ -206,8 +207,7 @@ export const TermsView: React.FC<{ onNavigate: (view: AppView) => void }> = ({ o
         within 14 days and to resolve complaints quickly and fairly.
       </p>
       <p>
-        If we can't resolve your complaint, consumers can contact the Bulgarian Commission for Consumer Protection (Комисия за защита на
-        потребителите, www.kzp.bg), which can refer disputes to an out-of-court conciliation committee, or the consumer authority in their
+        If we can't resolve your complaint, consumers can contact the Bulgarian Commission for Consumer Protection (<span lang="bg">Комисия за защита на потребителите</span>, www.kzp.bg), which can refer disputes to an out-of-court conciliation committee, or the consumer authority in their
         own country.
       </p>
     </Section>

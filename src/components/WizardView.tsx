@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { scrollBehavior } from '../lib/a11y';
 import {
   AlertCircle,
   ArrowLeft,
@@ -79,6 +80,25 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
   useEffect(warmUpApi, []);
   useEffect(() => setShowErrors(false), [app.currentStep]);
 
+  const paid = app.payment.status === 'paid';
+  const firstStepRender = useRef(true);
+  useEffect(() => {
+    document.title = paid
+      ? 'Application confirmed – StudyBg'
+      : `Step ${Math.min(app.currentStep, TOTAL_STEPS)} of ${TOTAL_STEPS}: ${STEP_TITLES[Math.min(app.currentStep, TOTAL_STEPS) - 1]} – Apply – StudyBg`;
+    if (firstStepRender.current) {
+      firstStepRender.current = false;
+      return;
+    }
+    // Announce the new step by moving focus to its heading (WCAG 2.4.3 focus order).
+    requestAnimationFrame(() => {
+      const heading = document.querySelector<HTMLElement>('main h1');
+      if (!heading) return;
+      heading.setAttribute('tabindex', '-1');
+      heading.focus({ preventScroll: true });
+    });
+  }, [app.currentStep, paid]);
+
   if (app.payment.status === 'paid') {
     return (
       <ApplicationConfirmation
@@ -104,13 +124,18 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
     // Never allow jumping past the first incomplete step.
     const target = Math.min(Math.max(step, 1), reachable, TOTAL_STEPS);
     onChange((a) => ({ ...a, currentStep: target }));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: scrollBehavior() });
   };
 
   const handleNext = () => {
     if (errors.length) {
       setShowErrors(true);
-      document.getElementById('step-errors')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Move focus to the error summary so keyboard and screen-reader users land on it (WCAG 3.3.1).
+      requestAnimationFrame(() => {
+        const summary = document.getElementById('step-errors');
+        summary?.focus({ preventScroll: true });
+        summary?.scrollIntoView({ behavior: scrollBehavior(), block: 'center' });
+      });
       return;
     }
     goTo(currentStep + 1);
@@ -129,7 +154,7 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-[#006644] text-xs font-semibold border border-emerald-200">
                 Application Gateway
               </span>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-slate-500">
                 Step {currentStep} of {TOTAL_STEPS}
               </span>
             </div>
@@ -157,7 +182,7 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                     disabled={locked}
                     aria-current={isCurrent ? 'step' : undefined}
                     title={locked ? 'Complete the previous steps first' : title}
-                    className="flex items-center gap-2 group text-left focus:outline-none disabled:cursor-not-allowed"
+                    className="relative flex items-center gap-2 group text-left focus:outline-none disabled:cursor-not-allowed"
                   >
                     <span
                       className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center transition-all ${
@@ -170,7 +195,7 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                               : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'
                       }`}
                     >
-                      {isDone ? <Check className="w-3.5 h-3.5" /> : step}
+                      {isDone ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : step}
                     </span>
                     <span
                       className={`text-xs font-medium truncate max-w-[90px] ${
@@ -179,6 +204,8 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                     >
                       {title}
                     </span>
+                    {isDone && <span className="sr-only"> (completed)</span>}
+                    {locked && <span className="sr-only"> (complete the previous steps first)</span>}
                   </button>
                   {idx < TOTAL_STEPS - 1 && <div className="w-4 h-0.5 bg-slate-200 mx-1" />}
                 </li>
@@ -192,7 +219,7 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
             className={`${currentStep === PAYMENT_STEP ? 'lg:col-span-12' : 'lg:col-span-8'} bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-6`}
           >
             {showErrors && errors.length > 0 && (
-              <div id="step-errors" role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-xs text-red-800">
+              <div id="step-errors" role="alert" tabIndex={-1} className="rounded-xl border border-red-200 bg-red-50 p-4 text-xs text-red-800">
                 <div className="font-bold flex items-center gap-1.5 mb-1.5">
                   <AlertCircle className="w-4 h-4" /> Please complete this step before continuing
                 </div>
@@ -222,15 +249,15 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                   </div>
                   <div>
                     <label className={labelClass} htmlFor="phone">
-                      Phone / WhatsApp <span className="normal-case font-normal text-slate-400">(optional)</span>
+                      Phone / WhatsApp <span className="normal-case font-normal text-slate-500">(optional)</span>
                     </label>
                     <input id="phone" type="tel" autoComplete="tel" className={inputClass} value={form.phone} onChange={(e) => update({ phone: e.target.value })} />
                   </div>
                 </div>
 
                 <div>
-                  <span className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Immigration legal category</span>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <span id="grp-immigration" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Immigration legal category</span>
+                  <div role="group" aria-labelledby="grp-immigration" className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {(
                       [
                         ['non_eu', 'Non-EU / Third Country', 'Requires Type-D Student Visa & MOES Certificate'],
@@ -242,10 +269,10 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                         key={value}
                         type="button"
                         onClick={() => update({ nationalityCategory: value })}
-                        className={`p-4 ${choiceClass(form.nationalityCategory === value)}`}
+                        aria-pressed={form.nationalityCategory === value} className={`p-4 ${choiceClass(form.nationalityCategory === value)}`}
                       >
                         <div className="font-bold text-xs mb-1">{title}</div>
-                        <div className="text-[11px] text-slate-500">{note}</div>
+                        <div className="text-[0.6875rem] text-slate-500">{note}</div>
                       </button>
                     ))}
                   </div>
@@ -316,8 +343,8 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                   subtitle="Select your preferred Bulgarian state university and degree program taught entirely in English."
                 />
                 <div>
-                  <span className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Degree program</span>
-                  <div className="grid grid-cols-3 gap-3">
+                  <span id="grp-degree" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Degree program</span>
+                  <div role="group" aria-labelledby="grp-degree" className="grid grid-cols-3 gap-3">
                     {(['Medicine', 'Dentistry', 'Pharmacy'] as DegreeProgram[]).map((deg) => (
                       <button
                         key={deg}
@@ -326,10 +353,10 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                           const uni = UNIVERSITIES.find((u) => u.id === form.universityId);
                           update({ degree: deg, universityId: uni && !uni.programs.includes(deg) ? '' : form.universityId });
                         }}
-                        className={`p-3.5 text-center ${choiceClass(form.degree === deg)}`}
+                        aria-pressed={form.degree === deg} className={`p-3.5 text-center ${choiceClass(form.degree === deg)}`}
                       >
                         <div className="text-sm font-bold">{deg}</div>
-                        <div className="text-[11px] text-slate-500">
+                        <div className="text-[0.6875rem] text-slate-500">
                           {deg === 'Medicine' ? '6 Years (MD)' : deg === 'Dentistry' ? '5.5 Years (DMD)' : '5 Years (MPharm)'}
                         </div>
                       </button>
@@ -338,8 +365,8 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                 </div>
 
                 <div>
-                  <span className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Bulgarian state medical faculty</span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <span id="grp-university" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Bulgarian state medical faculty</span>
+                  <div role="group" aria-labelledby="grp-university" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {UNIVERSITIES.map((uni) => {
                       const offers = uni.programs.includes(form.degree);
                       return (
@@ -348,11 +375,11 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                           type="button"
                           disabled={!offers}
                           onClick={() => update({ universityId: uni.id })}
-                          className={`p-4 disabled:opacity-50 disabled:cursor-not-allowed ${choiceClass(form.universityId === uni.id)}`}
+                          aria-pressed={form.universityId === uni.id} className={`p-4 disabled:opacity-50 disabled:cursor-not-allowed ${choiceClass(form.universityId === uni.id)}`}
                         >
                           <div className="flex items-center justify-between mb-1">
                             <span className="font-bold text-sm text-slate-900">{uni.name}</span>
-                            <span className="text-[11px] font-bold text-[#006644] bg-emerald-100/70 px-2 py-0.5 rounded">{uni.shortName}</span>
+                            <span className="text-[0.6875rem] font-bold text-[#006644] bg-emerald-100/70 px-2 py-0.5 rounded">{uni.shortName}</span>
                           </div>
                           <div className="text-xs text-slate-500 mb-2">{uni.city}</div>
                           <div className="text-xs text-slate-600 flex items-center justify-between border-t border-slate-100 pt-2">
@@ -368,16 +395,16 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                 </div>
 
                 <div>
-                  <span className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Preferred intake</span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <span id="grp-intake" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Preferred intake</span>
+                  <div role="group" aria-labelledby="grp-intake" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {INTAKE_OPTIONS.map((opt) => (
-                      <button key={opt.value} type="button" onClick={() => update({ intakeSeason: opt.value })} className={`p-3.5 ${choiceClass(form.intakeSeason === opt.value)}`}>
+                      <button key={opt.value} type="button" onClick={() => update({ intakeSeason: opt.value })} aria-pressed={form.intakeSeason === opt.value} className={`p-3.5 ${choiceClass(form.intakeSeason === opt.value)}`}>
                         <div className="font-bold text-xs">{opt.value}</div>
-                        <div className="text-[11px] text-slate-500">{opt.note}</div>
+                        <div className="text-[0.6875rem] text-slate-500">{opt.note}</div>
                       </button>
                     ))}
                   </div>
-                  <p className="text-[11px] text-slate-500 mt-2">Your advisor confirms the exact intake year and deadlines on your call.</p>
+                  <p className="text-[0.6875rem] text-slate-500 mt-2">Your advisor confirms the exact intake year and deadlines on your call.</p>
                 </div>
               </div>
             )}
@@ -410,12 +437,16 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                           inputMode="decimal"
                           placeholder="e.g. 85"
                           value={form[key]}
+                          aria-invalid={low || undefined}
+                          aria-describedby={`${key}-hint`}
                           onChange={(e) => update({ [key]: e.target.value })}
                           className={`w-full bg-white border rounded-lg px-3 py-2 text-base font-bold outline-none ${
                             low ? 'border-red-300 text-red-700 focus:border-red-500' : 'border-slate-300 text-[#006644] focus:border-[#006644]'
                           }`}
                         />
-                        <p className="text-[11px] text-slate-500">Convert to a percentage if your system uses points or letters.</p>
+                        <p id={`${key}-hint`} className="text-[0.6875rem] text-slate-500">
+                          {low ? `Below the ${MIN_SCIENCE_GRADE}% minimum. ` : ''}Convert to a percentage if your system uses points or letters.
+                        </p>
                       </div>
                     );
                   })}
@@ -481,7 +512,7 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                       />
                       <div className="text-xs">
                         <div className="font-bold text-slate-800">{item.label}</div>
-                        <div className="text-slate-500 text-[11px]">{item.note}</div>
+                        <div className="text-slate-500 text-[0.6875rem]">{item.note}</div>
                       </div>
                     </label>
                   ))}
@@ -496,7 +527,7 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                   title="Step 5: Entrance Exam Session"
                   subtitle="The official entrance examination is multiple-choice in Biology & Chemistry."
                 />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div role="group" aria-label="Entrance exam session" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {EXAM_SESSIONS.map((session) => {
                     const open = isExamSessionOpen(session.date);
                     return (
@@ -505,23 +536,23 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                         type="button"
                         disabled={!open}
                         onClick={() => update({ examDate: session.date })}
-                        className={`p-3.5 disabled:opacity-50 disabled:cursor-not-allowed ${choiceClass(form.examDate === session.date)}`}
+                        aria-pressed={form.examDate === session.date} className={`p-3.5 disabled:opacity-50 disabled:cursor-not-allowed ${choiceClass(form.examDate === session.date)}`}
                       >
                         <div className="font-bold text-xs text-slate-900 flex items-center justify-between">
                           {session.label}
-                          {!open && <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Closed</span>}
+                          {!open && <span className="text-[0.625rem] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Closed</span>}
                         </div>
-                        <div className="text-[11px] text-slate-500">{open ? session.note : 'Registration has closed'}</div>
+                        <div className="text-[0.6875rem] text-slate-500">{open ? session.note : 'Registration has closed'}</div>
                       </button>
                     );
                   })}
                   <button
                     type="button"
                     onClick={() => update({ examDate: EXAM_DECIDE_WITH_ADVISOR })}
-                    className={`p-3.5 ${choiceClass(form.examDate === EXAM_DECIDE_WITH_ADVISOR)}`}
+                    aria-pressed={form.examDate === EXAM_DECIDE_WITH_ADVISOR} className={`p-3.5 ${choiceClass(form.examDate === EXAM_DECIDE_WITH_ADVISOR)}`}
                   >
                     <div className="font-bold text-xs text-slate-900">Decide with my advisor</div>
-                    <div className="text-[11px] text-slate-500">We'll pick the best upcoming session on your call</div>
+                    <div className="text-[0.6875rem] text-slate-500">We'll pick the best upcoming session on your call</div>
                   </button>
                 </div>
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs space-y-2">
@@ -552,7 +583,7 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                   />
                   <div className="text-xs">
                     <div className="font-bold text-slate-800">StudyBg manages my sworn translation</div>
-                    <div className="text-slate-500 text-[11px]">Translator's fee passed through at cost, zero markup.</div>
+                    <div className="text-slate-500 text-[0.6875rem]">Translator's fee passed through at cost, zero markup.</div>
                   </div>
                 </label>
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
@@ -571,7 +602,7 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                       className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:border-[#006644] outline-none"
                     />
                   </div>
-                  <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
+                  <div className="text-[0.6875rem] text-slate-500 flex items-center gap-1.5">
                     <Truck className="w-3.5 h-3.5 text-[#006644]" />
                     A DHL Express tracking reference will be generated for direct transit to the StudyBg Sofia desk.
                   </div>
@@ -621,18 +652,18 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                       <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
                         <CalendarClock className="w-4 h-4 text-[#006644]" /> Book your 45-min call with Elena Dimitrova
                       </div>
-                      <div className="text-[11px] text-slate-500">Senior Legal & MOES Officer. Included in your €180 fee.</div>
+                      <div className="text-[0.6875rem] text-slate-500">Senior Legal & MOES Officer. Included in your €180 fee.</div>
                     </div>
                   </div>
                   <div>
-                    <span className="block text-xs font-semibold text-slate-700 mb-2">Preferred day</span>
-                    <div className="flex flex-wrap gap-2">
+                    <span id="grp-call-day" className="block text-xs font-semibold text-slate-700 mb-2">Preferred day</span>
+                    <div role="group" aria-labelledby="grp-call-day" className="flex flex-wrap gap-2">
                       {callDays.map((day) => (
                         <button
                           key={day}
                           type="button"
                           onClick={() => update({ consultationDate: day })}
-                          className={`px-3 py-2 text-xs font-semibold ${choiceClass(form.consultationDate === day)}`}
+                          aria-pressed={form.consultationDate === day} className={`px-3 py-2 text-xs font-semibold ${choiceClass(form.consultationDate === day)}`}
                         >
                           {formatDay(day)}
                         </button>
@@ -640,15 +671,15 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                     </div>
                   </div>
                   <div>
-                    <span className="block text-xs font-semibold text-slate-700 mb-2">Preferred time</span>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <span id="grp-call-time" className="block text-xs font-semibold text-slate-700 mb-2">Preferred time</span>
+                    <div role="group" aria-labelledby="grp-call-time" className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       {CONSULTATION_WINDOWS.map((w) => (
-                        <button key={w} type="button" onClick={() => update({ consultationWindow: w })} className={`px-3 py-2 text-xs font-semibold ${choiceClass(form.consultationWindow === w)}`}>
+                        <button key={w} type="button" onClick={() => update({ consultationWindow: w })} aria-pressed={form.consultationWindow === w} className={`px-3 py-2 text-xs font-semibold ${choiceClass(form.consultationWindow === w)}`}>
                           {w}
                         </button>
                       ))}
                     </div>
-                    <p className="text-[11px] text-slate-500 mt-2 flex items-center gap-1">
+                    <p className="text-[0.6875rem] text-slate-500 mt-2 flex items-center gap-1">
                       <Globe2 className="w-3 h-3" /> Your timezone: {timezone}. We confirm the exact time by email.
                     </p>
                   </div>
@@ -769,7 +800,7 @@ export const WizardView: React.FC<WizardViewProps> = ({ app, onChange, onNavigat
                   <img src={APP_IMAGES.elenaAdvisor} alt="Elena Dimitrova" className="w-9 h-9 rounded-lg object-cover" referrerPolicy="no-referrer" />
                   <div className="text-xs">
                     <div className="font-bold text-slate-800">Elena Dimitrova</div>
-                    <div className="text-[10px] text-slate-500">Your Sofia legal advisor</div>
+                    <div className="text-[0.625rem] text-slate-500">Your Sofia legal advisor</div>
                   </div>
                 </div>
               </div>
@@ -805,8 +836,8 @@ const Notice: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 const ReviewCard: React.FC<{ title: string; onEdit: () => void; children: React.ReactNode }> = ({ title, onEdit, children }) => (
   <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 space-y-0.5 text-slate-600 min-w-0">
     <div className="flex items-center justify-between mb-1">
-      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{title}</span>
-      <button type="button" onClick={onEdit} className="text-[11px] font-semibold text-[#006644] hover:underline inline-flex items-center gap-1">
+      <span className="text-[0.6875rem] font-bold uppercase tracking-wider text-slate-500">{title}</span>
+      <button type="button" onClick={onEdit} className="text-[0.6875rem] font-semibold text-[#006644] hover:underline inline-flex items-center gap-1">
         <Pencil className="w-3 h-3" /> Edit
       </button>
     </div>

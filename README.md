@@ -67,6 +67,7 @@ API: `POST /api/auth/request-code`, `POST /api/auth/verify`, `POST /api/auth/log
 | Application (8 steps + payment) | `/#/apply` |
 | Student account / sign in | `/#/account` |
 | Privacy Policy · Terms & Conditions · GDPR Compliance (linked in the footer of every page) | `/#/privacy`, `/#/terms`, `/#/gdpr` |
+| Accessibility Statement (footer, and the accessibility button on every page) | `/#/accessibility` |
 | Account preview with sample data (no sign-in) | `/?demo=1#/account` |
 | Sample student portal / staff ops (demo) | `/?demo=1#/portal-demo`, `/?demo=1#/staff-demo` |
 

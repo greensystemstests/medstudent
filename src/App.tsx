@@ -1,5 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { scrollBehavior } from './lib/a11y';
+import { AccessibilityPanel } from './components/AccessibilityPanel';
 import { AccountView } from './components/AccountView';
+import { AccessibilityStatementView } from './components/legal/AccessibilityStatementView';
 import { GdprView } from './components/legal/GdprView';
 import { PrivacyPolicyView } from './components/legal/PrivacyPolicyView';
 import { TermsView } from './components/legal/TermsView';
@@ -41,6 +44,7 @@ const VIEW_HASH: Record<AppView, string> = {
   privacy: '#/privacy',
   terms: '#/terms',
   gdpr: '#/gdpr',
+  accessibility: '#/accessibility',
   student: '#/portal-demo',
   staff: '#/staff-demo',
 };
@@ -49,6 +53,29 @@ function viewFromHash(hash: string): AppView | null {
   if (hash === '' || hash === '#' || hash === '#/') return 'home';
   const match = (Object.entries(VIEW_HASH) as [AppView, string][]).find(([, h]) => h && hash.startsWith(h));
   return match ? match[0] : null;
+}
+
+/** 2.4.2 Page Titled: every view has its own title (the wizard adds the current step itself). */
+const VIEW_TITLE: Record<AppView, string> = {
+  home: 'StudyBg – Study Medicine & Dentistry in Bulgaria, in English',
+  wizard: 'Apply – StudyBg',
+  account: 'My account – StudyBg',
+  privacy: 'Privacy Policy – StudyBg',
+  terms: 'Terms & Conditions – StudyBg',
+  gdpr: 'GDPR Compliance – StudyBg',
+  accessibility: 'Accessibility Statement – StudyBg',
+  student: 'Student portal (demo) – StudyBg',
+  staff: 'Staff operations (demo) – StudyBg',
+};
+
+const openAccessibilitySettings = () => window.dispatchEvent(new Event('studybg:open-a11y'));
+
+/** Moves keyboard/screen-reader focus to the page's main heading, so the new page is announced. */
+function focusMainHeading() {
+  const heading = document.querySelector<HTMLElement>('main h1') ?? document.getElementById('main-content');
+  if (!heading) return;
+  if (!heading.hasAttribute('tabindex')) heading.setAttribute('tabindex', '-1');
+  heading.focus({ preventScroll: true });
 }
 
 /** Stripe sends some payment methods (e.g. bank redirects) back here with ?payment_intent=... */
@@ -117,11 +144,35 @@ export default function App() {
     [guardView],
   );
 
+  useEffect(() => {
+    if (currentView !== 'wizard') document.title = VIEW_TITLE[currentView];
+  }, [currentView]);
+
+  // After an in-app page change (not the first load), focus the new page's heading.
+  const firstRender = React.useRef(true);
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    const frame = requestAnimationFrame(focusMainHeading);
+    return () => cancelAnimationFrame(frame);
+  }, [currentView]);
+
   // Keep the address bar in step with the view...
+  const addressSynced = React.useRef(false);
   useEffect(() => {
     const target = VIEW_HASH[currentView];
+    const url = `${window.location.pathname}${window.location.search}${target}`;
+    if (!addressSynced.current) {
+      // The first view was read from the address, so only fill in a missing hash (e.g. returning
+      // from a bank redirect). Never overwrite an address that changed before this effect ran.
+      addressSynced.current = true;
+      if (window.location.hash === '' && target) window.history.replaceState(null, '', url);
+      return;
+    }
     if (viewFromHash(window.location.hash) === currentView) return;
-    window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${target}`);
+    window.history.pushState(null, '', url);
   }, [currentView]);
 
   // ...and the view in step with the address bar (back/forward buttons, links, typed URLs).
@@ -150,7 +201,7 @@ export default function App() {
   useEffect(() => {
     if (currentView !== 'home' || !pendingSection) return;
     const frame = requestAnimationFrame(() => {
-      document.getElementById(pendingSection)?.scrollIntoView({ behavior: 'smooth' });
+      document.getElementById(pendingSection)?.scrollIntoView({ behavior: scrollBehavior() });
       setPendingSection(null);
     });
     return () => cancelAnimationFrame(frame);
@@ -170,6 +221,18 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#0b1c30] flex flex-col font-sans selection:bg-[#006644] selection:text-white">
+      <a
+        href="#main-content"
+        className="skip-link"
+        onClick={(e) => {
+          e.preventDefault();
+          const main = document.getElementById('main-content');
+          main?.focus();
+          main?.scrollIntoView();
+        }}
+      >
+        Skip to main content
+      </a>
       <TopNavbar
         currentView={currentView}
         demoMode={demoMode}
@@ -179,7 +242,7 @@ export default function App() {
         onOpenQuickFit={() => setIsQuickFitOpen(true)}
       />
 
-      <main className="flex-1">
+      <main className="flex-1" id="main-content" tabIndex={-1}>
         {currentView === 'home' && (
           <PublicSiteView
             onNavigate={navigate}
@@ -205,12 +268,17 @@ export default function App() {
         {currentView === 'privacy' && <PrivacyPolicyView onNavigate={navigate} />}
         {currentView === 'terms' && <TermsView onNavigate={navigate} />}
         {currentView === 'gdpr' && <GdprView onNavigate={navigate} />}
+        {currentView === 'accessibility' && (
+          <AccessibilityStatementView onNavigate={navigate} onOpenSettings={openAccessibilitySettings} />
+        )}
 
         {currentView === 'student' && demoMode && <StudentPortalView onNavigate={navigate} />}
         {currentView === 'staff' && demoMode && <StaffOpsView onNavigate={navigate} />}
       </main>
 
       <SiteFooter onNavigate={navigate} />
+
+      <AccessibilityPanel onOpenStatement={() => navigate('accessibility')} />
 
       <QuickFitModal isOpen={isQuickFitOpen} onClose={() => setIsQuickFitOpen(false)} onStartApplication={startWithPrefill} />
     </div>

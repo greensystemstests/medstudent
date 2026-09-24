@@ -261,7 +261,7 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
                     <span className="font-heading font-extrabold text-sm text-amber-950">
                       Action Required: Jordanian Tawjihi Diploma — Reverse Apostille Stamp Missing
                     </span>
-                    <span className="bg-amber-200/80 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                    <span className="bg-amber-200/80 text-amber-900 text-[0.625rem] font-bold px-2 py-0.5 rounded uppercase">
                       Urgent Prerequisite
                     </span>
                   </div>
@@ -346,7 +346,7 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
                 <div className={`font-bold text-xs truncate ${st.status === 'current' ? 'text-white' : 'text-slate-800'}`}>
                   {st.title}
                 </div>
-                <div className={`text-[10px] truncate mt-0.5 ${st.status === 'current' ? 'text-slate-300' : 'text-slate-500'}`}>
+                <div className={`text-[0.625rem] truncate mt-0.5 ${st.status === 'current' ? 'text-slate-300' : 'text-slate-500'}`}>
                   {st.duration}
                 </div>
               </div>
@@ -413,7 +413,7 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-bold text-xs text-slate-900">{doc.title}</span>
                             <span
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              className={`text-[0.625rem] font-bold px-2 py-0.5 rounded-full ${
                                 isVerified
                                   ? 'bg-emerald-100 text-emerald-800'
                                   : isActionNeeded
@@ -426,7 +426,7 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
                               {doc.statusMessage || doc.status}
                             </span>
                           </div>
-                          <div className="text-[11px] text-slate-500 flex flex-wrap items-center gap-2">
+                          <div className="text-[0.6875rem] text-slate-500 flex flex-wrap items-center gap-2">
                             <span>{doc.fileName}</span>
                             <span>•</span>
                             <span>{doc.fileSize}</span>
@@ -434,7 +434,7 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
                             <span>Date: {doc.uploadDate}</span>
                           </div>
                           {doc.actionRequiredText && (
-                            <div className="text-[11px] text-amber-800 font-medium">
+                            <div className="text-[0.6875rem] text-amber-800 font-medium">
                               ⚠️ {doc.actionRequiredText}
                             </div>
                           )}
@@ -509,12 +509,12 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
                         <div className={`font-bold ${task.completed ? 'line-through text-slate-500' : 'text-slate-900'}`}>
                           {task.title}
                         </div>
-                        <div className="text-slate-500 text-[11px] mt-0.5">{task.subtitle}</div>
+                        <div className="text-slate-500 text-[0.6875rem] mt-0.5">{task.subtitle}</div>
                       </div>
                     </div>
 
                     <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded shrink-0 ${
+                      className={`text-[0.625rem] font-bold px-2 py-0.5 rounded shrink-0 ${
                         task.isUrgent
                           ? 'bg-amber-200 text-amber-900'
                           : 'bg-slate-100 text-slate-600'
@@ -533,7 +533,7 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
             {/* Bulgarian Annual Residence Permit (VRN) 84-Day Countdown Widget */}
             <div className="bg-gradient-to-br from-[#0f1e36] to-[#00281b] text-white rounded-2xl p-6 border border-slate-800 shadow-md space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                <span className="text-[0.6875rem] font-bold uppercase tracking-wider text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
                   MVR Migration Compliance
                 </span>
                 <Clock className="w-4 h-4 text-emerald-400" />
@@ -545,13 +545,13 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
                   <span className="text-4xl font-extrabold font-heading text-emerald-400">84</span>
                   <span className="text-xs font-semibold text-slate-300">Days to Stage 6 Deposit</span>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">
+                <p className="text-[0.6875rem] text-slate-400 mt-2 leading-relaxed">
                   Bulgarian law requires Non-EU students to present enrollment certificate (Uverenie) and housing lease at the Sofia Migration Directorate at least 14 days before start date.
                 </p>
               </div>
 
               {/* Progress Bar */}
-              <div className="space-y-1 text-[11px]">
+              <div className="space-y-1 text-[0.6875rem]">
                 <div className="flex justify-between text-slate-300">
                   <span>Permit Readiness</span>
                   <span className="text-emerald-300 font-bold">65% Prepared</span>
@@ -589,7 +589,7 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
                 <div>
                   <div className="font-heading font-bold text-sm text-slate-900">{student.advisorName}</div>
                   <div className="text-xs text-slate-500">{student.advisorRole}</div>
-                  <div className="text-[11px] text-emerald-700 font-semibold mt-0.5 flex items-center gap-1">
+                  <div className="text-[0.6875rem] text-emerald-700 font-semibold mt-0.5 flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span>Online at Sofia Desk</span>
                   </div>
@@ -749,12 +749,12 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
                     Supports PDF, JPG, PNG up to 25 MB (Color scan, 300+ DPI)
                   </div>
                 </div>
-                <span className="text-[11px] font-bold text-[#006644] bg-white px-3 py-1 rounded-full border border-emerald-200 shadow-2xs">
+                <span className="text-[0.6875rem] font-bold text-[#006644] bg-white px-3 py-1 rounded-full border border-emerald-200 shadow-2xs">
                   Simulate Instant Upload
                 </span>
               </div>
 
-              <div className="text-[11px] text-slate-500 bg-slate-50 p-3 rounded-xl">
+              <div className="text-[0.6875rem] text-slate-500 bg-slate-50 p-3 rounded-xl">
                 🔒 Uploaded files are encrypted under EU GDPR and transmitted directly to the accredited Sofia sworn translator.
               </div>
             </div>
@@ -790,7 +790,7 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
               />
               <div>
                 <div className="font-bold text-xs">Elena Dimitrova</div>
-                <div className="text-[10px] text-emerald-300">Senior Legal Officer (Sofia Desk)</div>
+                <div className="text-[0.625rem] text-emerald-300">Senior Legal Officer (Sofia Desk)</div>
               </div>
             </div>
             <button onClick={() => setIsChatOpen(false)} className="text-slate-300 hover:text-white">
@@ -814,7 +814,7 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
                 >
                   {msg.text}
                 </div>
-                <span className="text-[10px] text-slate-400 mt-1 px-1">{msg.time}</span>
+                <span className="text-[0.625rem] text-slate-400 mt-1 px-1">{msg.time}</span>
               </div>
             ))}
           </div>

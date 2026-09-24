@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { X, CheckCircle2, AlertCircle, ArrowRight, Sparkles, BookOpen, ShieldCheck, HelpCircle } from 'lucide-react';
 import { MIN_SCIENCE_GRADE, UNIVERSITIES } from '../data/constants';
+import { useDialogFocus } from '../lib/useDialogFocus';
 
 interface QuickFitModalProps {
   isOpen: boolean;
@@ -21,6 +22,8 @@ export const QuickFitModal: React.FC<QuickFitModalProps> = ({ isOpen, onClose, o
   const [chemistry, setChemistry] = useState(84);
   const [englishLevel, setEnglishLevel] = useState('fluent');
   const [selectedUniversity, setSelectedUniversity] = useState('mu-sofia');
+  const dialog = useRef<HTMLDivElement>(null);
+  useDialogFocus(dialog, isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -55,23 +58,31 @@ export const QuickFitModal: React.FC<QuickFitModalProps> = ({ isOpen, onClose, o
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div
+        ref={dialog}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="quickfit-title"
+        aria-describedby="quickfit-desc"
+        className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-200"
+      >
         {/* Header */}
         <div className="bg-gradient-to-r from-[#0f1e36] to-[#006644] text-white p-6 relative">
           <button
             onClick={onClose}
+            aria-label="Close eligibility calculator"
             className="absolute top-5 right-5 text-slate-300 hover:text-white bg-white/10 hover:bg-white/20 p-1.5 rounded-full transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 text-emerald-300 text-xs font-semibold mb-2">
             <Sparkles className="w-3.5 h-3.5" />
             <span>Interactive Admission Pre-Checker</span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold font-heading">
+          <h2 id="quickfit-title" className="text-xl sm:text-2xl font-bold font-heading">
             Quick Fit Eligibility Calculator
           </h2>
-          <p className="text-sm text-slate-200 mt-1">
+          <p id="quickfit-desc" className="text-sm text-slate-200 mt-1">
             Determine your Bulgarian MOES qualification status and Science score threshold instantly.
           </p>
         </div>
@@ -81,10 +92,11 @@ export const QuickFitModal: React.FC<QuickFitModalProps> = ({ isOpen, onClose, o
           {/* Country & Curriculum Row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1.5">
+              <label htmlFor="quickfit-country" className="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1.5">
                 Country of High School / Passport
               </label>
               <select
+                id="quickfit-country"
                 value={citizenship}
                 onChange={(e) => setCitizenship(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:bg-white focus:border-[#006644] focus:ring-1 focus:ring-[#006644] outline-none"
@@ -104,10 +116,11 @@ export const QuickFitModal: React.FC<QuickFitModalProps> = ({ isOpen, onClose, o
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1.5">
+              <label htmlFor="quickfit-curriculum" className="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1.5">
                 High School Diploma Type
               </label>
               <select
+                id="quickfit-curriculum"
                 value={curriculum}
                 onChange={(e) => setCurriculum(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:bg-white focus:border-[#006644] focus:ring-1 focus:ring-[#006644] outline-none"
@@ -136,13 +149,15 @@ export const QuickFitModal: React.FC<QuickFitModalProps> = ({ isOpen, onClose, o
             <div className="space-y-3">
               <div>
                 <div className="flex justify-between text-xs font-medium text-slate-700 mb-1">
-                  <span>Biology Score</span>
+                  <label htmlFor="quickfit-biology">Biology Score</label>
                   <span className="font-bold text-[#006644]">{biology}%</span>
                 </div>
                 <input
                   type="range"
                   min="40"
                   max="100"
+                  id="quickfit-biology"
+                  aria-valuetext={`${biology}%`}
                   value={biology}
                   onChange={(e) => setBiology(Number(e.target.value))}
                   className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#006644]"
@@ -151,13 +166,15 @@ export const QuickFitModal: React.FC<QuickFitModalProps> = ({ isOpen, onClose, o
 
               <div>
                 <div className="flex justify-between text-xs font-medium text-slate-700 mb-1">
-                  <span>Chemistry Score</span>
+                  <label htmlFor="quickfit-chemistry">Chemistry Score</label>
                   <span className="font-bold text-[#006644]">{chemistry}%</span>
                 </div>
                 <input
                   type="range"
                   min="40"
                   max="100"
+                  id="quickfit-chemistry"
+                  aria-valuetext={`${chemistry}%`}
                   value={chemistry}
                   onChange={(e) => setChemistry(Number(e.target.value))}
                   className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#006644]"
@@ -168,15 +185,16 @@ export const QuickFitModal: React.FC<QuickFitModalProps> = ({ isOpen, onClose, o
 
           {/* Preferred Medical Faculty */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1.5">
+            <span id="quickfit-uni-label" className="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1.5">
               Target Bulgarian University
-            </label>
-            <div className="grid grid-cols-2 gap-2">
+            </span>
+            <div role="group" aria-labelledby="quickfit-uni-label" className="grid grid-cols-2 gap-2">
               {UNIVERSITIES.map((u) => (
                 <button
                   key={u.id}
                   type="button"
                   onClick={() => setSelectedUniversity(u.id)}
+                  aria-pressed={selectedUniversity === u.id}
                   className={`p-2.5 rounded-lg border text-left transition-all ${
                     selectedUniversity === u.id
                       ? 'border-[#006644] bg-emerald-50/70 text-[#006644] shadow-xs'
@@ -184,7 +202,7 @@ export const QuickFitModal: React.FC<QuickFitModalProps> = ({ isOpen, onClose, o
                   }`}
                 >
                   <div className="font-bold text-xs">{u.shortName}</div>
-                  <div className="text-[11px] text-slate-500">{u.city}</div>
+                  <div className="text-[0.6875rem] text-slate-500">{u.city}</div>
                 </button>
               ))}
             </div>
@@ -192,6 +210,7 @@ export const QuickFitModal: React.FC<QuickFitModalProps> = ({ isOpen, onClose, o
 
           {/* Real-time Eligibility Result Banner */}
           <div
+            aria-live="polite"
             className={`p-4 rounded-xl border ${
               isEligible
                 ? 'bg-emerald-50/80 border-emerald-200 text-emerald-900'

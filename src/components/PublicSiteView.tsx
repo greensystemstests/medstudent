@@ -137,7 +137,7 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
             {/* Right Column: Hero Visual Card with Verified Metrics */}
             <div className="lg:col-span-5">
               <div className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 rounded-2xl border border-slate-700 p-6 shadow-2xl backdrop-blur-md relative overflow-hidden">
-                <div className="flex items-center justify-between pb-4 border-b border-slate-700">
+                <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-slate-700">
                   <div className="flex items-center gap-3">
                     <StudyBgLogo
                       variant="mark"
@@ -464,7 +464,7 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
                       <h3 className="font-heading font-bold text-lg text-slate-900">
                         {uni.name}
                       </h3>
-                      <span className="text-xs font-extrabold text-[#006644] bg-emerald-50 px-2 py-1 rounded border border-emerald-200 shrink-0">
+                      <span className="text-xs font-extrabold text-[#006644] bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
                         {uni.tuitionFee}
                       </span>
                     </div>
@@ -611,7 +611,7 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
               <h3 className="font-heading font-bold text-xl text-slate-900 mb-1">
                 Costs outside the onboarding fee
               </h3>
-              <div className="flex items-baseline gap-2 mb-4">
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 mb-4">
                 <span className="text-3xl sm:text-4xl font-extrabold font-heading text-slate-500">
                   Quoted separately
                 </span>

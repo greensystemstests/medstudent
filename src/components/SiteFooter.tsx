@@ -34,16 +34,17 @@ export const SiteFooter: React.FC<{ onNavigate: (view: AppView) => void }> = ({
         <h2 className="font-bold text-white mb-2 uppercase tracking-wider text-[0.6875rem]">
           Universities
         </h2>
-        <ul className="space-y-1.5">
+        <ul>
           {UNIVERSITIES.map((u) => (
             <li key={u.id}>
               <a
-                className="underline hover:text-white"
+                className="inline-block py-1 underline underline-offset-2 hover:text-white"
                 href={u.source}
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {u.name} ↗
+                {u.name} <span aria-hidden="true">↗</span>
+                <span className="sr-only"> (official site, opens in a new tab)</span>
               </a>
             </li>
           ))}

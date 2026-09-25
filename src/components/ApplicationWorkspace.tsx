@@ -166,14 +166,14 @@ export function ServiceNotice() {
             s.paymentsReady
               ? ""
               : s.accountsReady
-                ? "Online payments are not available yet. You can save a draft to your account."
-                : "Accounts and payments are being configured. You can explore the site and keep a draft on this device.",
+                ? "Online payment opens soon. You can already fill in your application and save it to your account."
+                : "Online payment and accounts open soon. You can already fill in your application; it is saved on this device.",
           );
       })
       .catch(() => {
         if (active)
           setState(
-            "The online service is temporarily unavailable. Your local draft remains on this device.",
+            "We can't reach our online service right now. Your application is still saved on this device.",
           );
       });
     return () => {

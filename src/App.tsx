@@ -277,7 +277,8 @@ export default function App() {
         onOpenQuickFit={() => setIsQuickFitOpen(true)}
       />
 
-      <ServiceNotice />
+      {/* Only where it affects what the visitor is doing: applying or signing in. */}
+      {(currentView === "wizard" || currentView === "account") && <ServiceNotice />}
       <main className="flex-1" id="main-content" tabIndex={-1}>
         {currentView === "home" && (
           <PublicSiteView

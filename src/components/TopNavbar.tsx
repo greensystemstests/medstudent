@@ -58,10 +58,10 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#006644]/40 text-[#6ee7b7] font-medium text-[0.6875rem] border border-[#10b981]/30">
               <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse"></span>
-              {intakeYearLabel()} Applications Open
+              Plan your next application
             </span>
             <span className="hidden sm:inline text-slate-300">
-              Bulgarian Ministry of Education (MOES) & EU Directive 2005/36/EC
+              Independent admissions support · university rules apply
             </span>
           </div>
 

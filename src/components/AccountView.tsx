@@ -1,3 +1,5 @@
+import { SavedApplications } from './ApplicationWorkspace';
+import { ApplicationState } from '../types';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { scrollBehavior } from '../lib/a11y';
 import {
@@ -47,13 +49,14 @@ import { formatMoney } from './PaymentStep';
 
 interface AccountViewProps {
   api: AccountApi;
+  onResume?: (app: ApplicationState) => void;
   defaultEmail?: string;
   onNavigate: (view: AppView) => void;
 }
 
 const errorMessage = (err: unknown) => (err instanceof Error ? err.message : 'Something went wrong. Please try again.');
 
-export const AccountView: React.FC<AccountViewProps> = ({ api, defaultEmail, onNavigate }) => {
+export const AccountView: React.FC<AccountViewProps> = ({ api, defaultEmail, onNavigate, onResume }) => {
   const [signedIn, setSignedIn] = useState(api.isSignedIn());
 
   return (
@@ -64,6 +67,7 @@ export const AccountView: React.FC<AccountViewProps> = ({ api, defaultEmail, onN
             <strong>Demo account:</strong> sample data only. Nothing you upload here leaves your browser, and any 6-digit code signs in.
           </div>
         )}
+        {signedIn && !api.isDemo && onResume && <SavedApplications onResume={onResume} />}
         {signedIn ? (
           <Profile api={api} onNavigate={onNavigate} onSignedOut={() => setSignedIn(false)} />
         ) : (
@@ -78,7 +82,7 @@ export const AccountView: React.FC<AccountViewProps> = ({ api, defaultEmail, onN
 /* Sign in                                                                     */
 /* -------------------------------------------------------------------------- */
 
-const SignIn: React.FC<{ api: AccountApi; defaultEmail?: string; onSignedIn: () => void }> = ({ api, defaultEmail, onSignedIn }) => {
+export const SignIn: React.FC<{ api: AccountApi; defaultEmail?: string; onSignedIn: () => void }> = ({ api, defaultEmail, onSignedIn }) => {
   const [step, setStep] = useState<'email' | 'code'>('email');
   const [email, setEmail] = useState(defaultEmail ?? '');
   const [code, setCode] = useState('');
@@ -761,12 +765,13 @@ const DocumentsTab: React.FC<{
                     <div className="text-sm font-semibold text-slate-900 truncate" title={doc.filename}>
                       {doc.filename}
                     </div>
+                    {doc.reviewNote && <p className="text-sm text-slate-700">{doc.reviewNote}</p>}
                     <div className="text-[0.6875rem] text-slate-500 flex flex-wrap items-center gap-x-2">
                       <span className="font-semibold text-slate-700">{doc.categoryLabel}</span>
                       <span>{formatBytes(doc.sizeBytes)}</span>
                       <span>{new Date(doc.uploadedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                       <span className="inline-flex items-center gap-1 text-[#006644] font-semibold">
-                        <CheckCircle2 className="w-3 h-3" /> Received
+                        <CheckCircle2 className="w-3 h-3" /> {doc.status.replaceAll('_', ' ')}
                       </span>
                     </div>
                   </div>

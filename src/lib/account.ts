@@ -33,6 +33,7 @@ export interface StoredDocument {
   sizeBytes: number;
   status: string;
   uploadedAt: string;
+  reviewNote?: string;
 }
 
 export interface DocumentsResponse {
@@ -53,8 +54,8 @@ export const REQUIRED_DOCUMENTS: { category: DocumentCategory; label: string; hi
   { category: 'passport', label: 'Passport', hint: 'Photo page, clearly readable' },
   { category: 'diploma', label: 'High school diploma', hint: 'With Hague Apostille (or consular legalization)' },
   { category: 'transcript', label: 'Science transcript', hint: 'Showing Biology and Chemistry grades' },
-  { category: 'medical', label: 'Medical certificate', hint: 'Form 086/e, issued within 30 days' },
-  { category: 'police', label: 'Police clearance', hint: 'Criminal record certificate' },
+  { category: 'medical', label: 'Medical certificate (if required)', hint: 'Confirm the university’s current requirements before uploading' },
+  { category: 'police', label: 'Police clearance (if required)', hint: 'Confirm the applicable requirements with your advisor' },
 ];
 
 export const CATEGORY_LABELS: Record<DocumentCategory, string> = {
@@ -95,6 +96,7 @@ async function request<T>(path: string, init: RequestInit & { auth?: boolean } =
   try {
     res = await fetch(`${API_BASE}${path}`, {
       ...init,
+      signal: AbortSignal.timeout(25000),
       headers: {
         ...(init.body && typeof init.body === 'string' ? { 'content-type': 'application/json' } : {}),
         ...(init.auth !== false && token ? { authorization: `Bearer ${token}` } : {}),
@@ -145,6 +147,8 @@ export function uploadDocument(file: File, category: DocumentCategory, onProgres
   return new Promise<StoredDocument>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     const qs = new URLSearchParams({ category, filename: file.name });
+    xhr.timeout = 60000;
+    xhr.ontimeout = () => reject(new AccountApiError('Upload timed out. Refresh your documents before retrying.', 0));
     xhr.open('POST', `${API_BASE}/api/me/documents?${qs}`);
     const token = getSessionToken();
     if (token) xhr.setRequestHeader('authorization', `Bearer ${token}`);

@@ -35,6 +35,7 @@ export const LegalLayout: React.FC<LegalLayoutProps> = ({ view, title, intro, se
         </div>
       </div>
 
+      {view !== 'accessibility' && LEGAL_ENTITY.name.startsWith('[') && <div role="status" className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm">Draft policies: the business identity and contact details still need to be completed and reviewed by the operator before checkout is enabled.</div>}
       {/* Switch between the three documents */}
       <nav aria-label="Legal documents" className="bg-white rounded-xl border border-slate-200 p-1 grid grid-cols-2 sm:grid-cols-4 gap-1 shadow-2xs">
         {PAGES.map(({ view: v, label, icon: Icon }) => (

@@ -1,4 +1,5 @@
-# Render Blueprint for the StudyBg payments API.
+# Render Blueprint for StudyBg. Invoices and retry jobs now use Postgres.
+# Existing Key Value is retained; this change does not delete or upgrade any resource.
 # Secrets are marked sync: false, so Render asks for them in its dashboard;
 # they never live in this repository.
 #
@@ -16,7 +17,16 @@ services:
     buildCommand: npm ci && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
+    autoDeployTrigger: checksPass
     envVars:
+      - key: CHECKOUT_ENABLED
+        value: "false"
+      - key: LEGAL_APPROVED
+        value: "false"
+      - key: SUPPORT_EMAIL
+        sync: false
+      - key: STAFF_EMAILS
+        sync: false
       - key: NODE_VERSION
         value: "22"
       - key: STRIPE_SECRET_KEY

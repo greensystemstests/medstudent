@@ -4,8 +4,8 @@ export function connectMail(apiKey) {
   return apiKey ? new Resend(apiKey) : null;
 }
 
-export async function sendReceiptEmail(resend, { from, to, buyerName, invoiceNumber, totalText, pdfBytes }) {
-  await resend.emails.send({
+export async function sendReceiptEmail(resend, { from, to, buyerName, invoiceNumber, totalText, pdfBytes, idempotencyKey }) {
+  return sendChecked(resend, {
     from,
     to,
     subject: `Your StudyBg receipt — Invoice ${invoiceNumber}`,
@@ -17,11 +17,11 @@ export async function sendReceiptEmail(resend, { from, to, buyerName, invoiceNum
       <p>— StudyBg</p>
     `,
     attachments: [{ filename: `StudyBg-Invoice-${invoiceNumber}.pdf`, content: Buffer.from(pdfBytes) }],
-  });
+  }, idempotencyKey);
 }
 
-export async function sendSaleNotification(resend, { from, to, buyerName, buyerEmail, totalText, invoiceNumber, applicant }) {
-  await resend.emails.send({
+export async function sendSaleNotification(resend, { from, to, buyerName, buyerEmail, totalText, invoiceNumber, applicant, idempotencyKey }) {
+  return sendChecked(resend, {
     from,
     to,
     subject: `New sale: ${totalText} — ${buyerName}`,
@@ -35,11 +35,11 @@ export async function sendSaleNotification(resend, { from, to, buyerName, buyerE
         <li><strong>Call requested:</strong> ${escapeHtml(applicant.callDate)}, ${escapeHtml(applicant.callWindow)}</li>
       </ul>
     `,
-  });
+  }, idempotencyKey);
 }
 
 export async function sendLoginCodeEmail(resend, { from, to, code, siteUrl }) {
-  await resend.emails.send({
+  return sendChecked(resend, {
     from,
     to,
     subject: `${code} is your StudyBg sign-in code`,
@@ -57,4 +57,10 @@ export async function sendLoginCodeEmail(resend, { from, to, code, siteUrl }) {
 
 function escapeHtml(str = '') {
   return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+}
+
+export async function sendChecked(resend, payload, idempotencyKey) {
+  const result = await resend.emails.send(payload, idempotencyKey ? { idempotencyKey } : undefined);
+  if (result?.error || !result?.data?.id) throw new Error(result?.error?.message || 'Email provider did not confirm acceptance.');
+  return result.data.id;
 }

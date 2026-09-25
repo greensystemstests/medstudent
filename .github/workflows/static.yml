@@ -39,7 +39,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U studybg"
+          --health-cmd "pg_isready -U studybg -d studybg_test"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -60,11 +60,14 @@ jobs:
       - name: API tests (PostgreSQL 16, disposable studybg_test database)
         # The concurrency tests (single-use sign-in codes, duplicate webhooks -> one invoice)
         # need independent PostgreSQL sessions, so this job must run them, never skip them.
+        shell: bash
         run: |
+          set -o pipefail
           npm test 2>&1 | tee api-tests.log
+          grep -q '^# fail 0$' api-tests.log
           grep -q '^# skipped 0$' api-tests.log || { echo "::error::Some API tests were skipped; the PostgreSQL concurrency tests must run."; exit 1; }
-          grep -q 'ok .* - concurrent code verification consumes a code exactly once' api-tests.log
-          grep -q 'ok .* - concurrent duplicate webhooks allocate only one invoice' api-tests.log
+          grep -Eq '^ *ok [0-9]+ - concurrent code verification consumes a code exactly once$' api-tests.log
+          grep -Eq '^ *ok [0-9]+ - concurrent duplicate webhooks allocate only one invoice$' api-tests.log
         env:
           TEST_DATABASE_URL: postgres://studybg:studybg@localhost:5432/studybg_test
           PGLITE_TEST: "false"

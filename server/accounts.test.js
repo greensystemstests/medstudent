@@ -8,6 +8,7 @@ import { connectDb, migrate } from './db.js';
 import { decryptFile, encryptFile, fileKeyFromEnv } from './fileCrypto.js';
 
 const DB_URL = process.env.TEST_DATABASE_URL;
+if(DB_URL&&!new URL(DB_URL).pathname.endsWith('_test'))throw new Error('Use a disposable database ending in _test');
 const PDF = Buffer.from('%PDF-1.4\n1 0 obj << /Type /Catalog >> endobj\ntrailer << /Root 1 0 R >>\n%%EOF\n');
 const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), crypto.randomBytes(64)]);
 
@@ -65,7 +66,7 @@ describe('accounts API', { skip: !DB_URL && 'TEST_DATABASE_URL not set' }, () =>
 
   before(async () => {
     db = connectDb(DB_URL);
-    await db.query('DROP TABLE IF EXISTS activity, documents, sessions, login_codes, users CASCADE');
+    await db.query('DROP TABLE IF EXISTS staff_audit,email_outbox,invoices,invoice_counter,application_consents,applications,activity, documents, sessions, login_codes, users CASCADE');
     await migrate(db);
     await migrate(db); // idempotent
     const app = createApp({

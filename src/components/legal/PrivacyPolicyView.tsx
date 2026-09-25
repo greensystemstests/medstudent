@@ -115,15 +115,13 @@ export const PrivacyPolicyView: React.FC<{ onNavigate: (view: AppView) => void }
         </p>
       </Sub>
       <Callout>
-        While you fill in the application, your answers are saved <strong>only in your own browser</strong> so you don't lose your
-        progress. We only receive them at the payment step, and then only what's needed to provide the service: your name, email, phone,
-        country of passport, chosen program, university and intake, exam preference and consultation preferences. Your grades and pickup
-        address stay in your browser until you share them with your advisor.
+        Your draft is kept in your browser while you fill it in. When you sign in and choose Save online, or prepare checkout,
+        we store your full application in your account, including grades, document-readiness answers, requested call window and
+        any proposed collection address. At checkout we retain a snapshot of the application and the policy version you accepted.
+        Stripe receives the payment amount and limited contact and application information; it does not receive uploaded documents.
       </Callout>
     </Section>
-
     <Section id="how-we-use" n={4} title="How we use it and why (legal bases)">
-      <p>We only use your information where the law allows it. For each purpose, this is what we use and the legal basis under the GDPR:</p>
       <Table
         head={['Purpose', 'Information used', 'Legal basis (GDPR)']}
         rows={[

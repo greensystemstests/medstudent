@@ -4,11 +4,13 @@ name: Deploy static content to Pages
 on:
   # Runs on pushes targeting the default branch
   push:
-    branches: ["claude/intelligent-curie-jsa86h"]
+    branches: ["claude/intelligent-curie-jsa86h", "codex/**"]
     # NOTE: add "main" here (or switch to it) once this branch is merged
     # into main and main becomes the branch you deploy from.
 
   # Allows you to run this workflow manually from the Actions tab
+  pull_request:
+    branches: ["claude/intelligent-curie-jsa86h"]
   workflow_dispatch:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
@@ -20,7 +22,7 @@ permissions:
 # Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
 # However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
 concurrency:
-  group: "pages"
+  group: "pages-${{ github.ref }}"
   cancel-in-progress: false
 
 jobs:
@@ -53,6 +55,8 @@ jobs:
         run: npm ci
       - name: Type check
         run: npm run lint
+      - name: Route rendering smoke check
+        run: npm run test:render
       - name: API tests
         run: npm test
         env:
@@ -63,14 +67,17 @@ jobs:
           # Public URL of the payments API (Render). Override with a repository variable if it moves.
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://studybg-api.onrender.com' }}
       - name: Setup Pages
+        if: github.ref == 'refs/heads/claude/intelligent-curie-jsa86h'
         uses: actions/configure-pages@v5
       - name: Upload artifact
+        if: github.ref == 'refs/heads/claude/intelligent-curie-jsa86h'
         uses: actions/upload-pages-artifact@v3
         with:
           # Upload only the built output, not the whole repo/source
           path: 'dist'
 
   deploy:
+    if: github.ref == 'refs/heads/claude/intelligent-curie-jsa86h'
     needs: build
     environment:
       name: github-pages

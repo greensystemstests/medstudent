@@ -1,4 +1,4 @@
-export type AppView = 'home' | 'wizard' | 'account' | 'privacy' | 'terms' | 'gdpr' | 'accessibility' | 'student' | 'staff';
+export type AppView = 'home' | 'wizard' | 'account' | 'privacy' | 'terms' | 'gdpr' | 'accessibility' | 'student' | 'staff' | 'staff-live' | 'calendar';
 
 /** A date that repeats every year. Month is 1–12. */
 export interface AnnualDate {
@@ -101,8 +101,9 @@ export interface WizardFormData {
   fullName: string;
   email: string;
   phone: string;
-  nationalityCategory: 'non_eu' | 'eu_eea' | 'uk_post_brexit';
+  nationalityCategory: '' | 'non_eu' | 'eu_eea' | 'uk_post_brexit';
   citizenshipCountry: string;
+  schoolCountry: string;
   highSchoolCurriculum: 'tawjihi' | 'ib' | 'a_levels' | 'american_diploma' | 'national_curriculum';
   graduationYear: string;
 
@@ -150,6 +151,9 @@ export interface PaymentRecord {
 }
 
 export interface ApplicationState {
+  version?: number;
+  status?: string;
+  updatedAt?: string;
   id: string;
   form: WizardFormData;
   currentStep: number;

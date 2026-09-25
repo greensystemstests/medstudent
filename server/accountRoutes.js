@@ -1,31 +1,36 @@
-import crypto from 'node:crypto';
-import express from 'express';
+import crypto from "node:crypto";
+import express from "express";
 import {
   createLoginCode,
   deleteDocument,
   deleteSession,
   documentUsage,
   getDocumentWithContent,
-  insertDocument,
+  insertDocumentWithinQuota,
   listActivity,
   listDocuments,
   logActivity,
   setFullNameIfMissing,
   userForToken,
   verifyLoginCode,
-} from './db.js';
-import { decryptFile, encryptFile, KEY_ID, sniffFileType } from './fileCrypto.js';
-import { sendLoginCodeEmail } from './mail.js';
-import { ONBOARDING_FEE, PAYMENT_SOURCE } from './pricing.js';
-import { rateLimit } from './rateLimit.js';
+} from "./db.js";
+import {
+  decryptFile,
+  encryptFile,
+  KEY_ID,
+  sniffFileType,
+} from "./fileCrypto.js";
+import { sendLoginCodeEmail } from "./mail.js";
+import { ONBOARDING_FEE, PAYMENT_SOURCE } from "./pricing.js";
+import { rateLimit } from "./rateLimit.js";
 
 export const DOCUMENT_CATEGORIES = {
-  passport: 'Passport',
-  diploma: 'High school diploma',
-  transcript: 'Science transcript',
-  medical: 'Medical certificate',
-  police: 'Police clearance',
-  other: 'Other document',
+  passport: "Passport",
+  diploma: "High school diploma",
+  transcript: "Science transcript",
+  medical: "Medical certificate",
+  police: "Police clearance",
+  other: "Other document",
 };
 
 export const MAX_FILE_BYTES = 10 * 1024 * 1024;
@@ -33,20 +38,26 @@ export const MAX_DOCUMENTS = 30;
 export const MAX_TOTAL_BYTES = 100 * 1024 * 1024;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const normalizeEmail = (value) => (typeof value === 'string' ? value.trim().toLowerCase().slice(0, 200) : '');
+const normalizeEmail = (value) =>
+  typeof value === "string" ? value.trim().toLowerCase().slice(0, 200) : "";
 
 function cleanFilename(name, ext) {
-  const base = String(name || 'document')
-    .replace(/[\u0000-\u001f\\/:*?"<>|]/g, '_')
-    .replace(/\.[A-Za-z0-9]{1,5}$/, '')
+  const base = String(name || "document")
+    .replace(/[\u0000-\u001f\\/:*?"<>|]/g, "_")
+    .replace(/\.[A-Za-z0-9]{1,5}$/, "")
     .trim()
     .slice(0, 100);
-  return `${base || 'document'}.${ext}`;
+  return `${base || "document"}.${ext}`;
 }
 
-const publicUser = (u) => ({ email: u.email, fullName: u.full_name || null, createdAt: u.created_at });
+const publicUser = (u) => ({
+  email: u.email,
+  fullName: u.full_name || null,
+  createdAt: u.created_at,
+});
 
 const publicDocument = (d) => ({
   id: d.id,
@@ -56,18 +67,24 @@ const publicDocument = (d) => ({
   mimeType: d.mime_type,
   sizeBytes: d.size_bytes,
   status: d.status,
+  reviewNote: d.review_note || "",
   uploadedAt: d.created_at,
 });
 
 /** Paid applications for this email, read straight from Stripe so they can't drift out of sync. */
 async function applicationsForEmail(stripe, email) {
-  const escaped = email.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  const escaped = email.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
   const result = await stripe.paymentIntents.search({
     query: `metadata['source']:'${PAYMENT_SOURCE}' AND metadata['applicant_email']:'${escaped}' AND status:'succeeded'`,
     limit: 20,
   });
   return result.data
-    .filter((pi) => pi.metadata?.applicant_email === email && pi.amount === ONBOARDING_FEE.amount && pi.currency === ONBOARDING_FEE.currency)
+    .filter(
+      (pi) =>
+        pi.metadata?.applicant_email === email &&
+        pi.amount === ONBOARDING_FEE.amount &&
+        pi.currency === ONBOARDING_FEE.currency,
+    )
     .map((pi) => ({
       paymentIntentId: pi.id,
       receiptRef: pi.id.slice(-10).toUpperCase(),
@@ -98,27 +115,35 @@ async function applicationsForEmail(stripe, email) {
  * @param {(line: string) => void} deps.log
  * @param {{ requestCode?: number, verify?: number, upload?: number }} [deps.rateLimits]  per-IP maximums (tests raise them)
  */
-export function mountAccountRoutes(app, { db, fileKey, deliverCode, stripe, log, rateLimits = {} }) {
+export function mountAccountRoutes(
+  app,
+  { db, fileKey, deliverCode, stripe, log, rateLimits = {} },
+) {
   const limits = { requestCode: 10, verify: 30, upload: 20, ...rateLimits };
   const accountsReady = Boolean(db && fileKey && deliverCode);
   const auth = express.Router();
   const me = express.Router();
 
   const ready = (_req, res, next) => {
-    if (!accountsReady) return res.status(503).json({ error: 'Accounts are being set up. Please try again soon.' });
-    res.set('Cache-Control', 'no-store');
+    if (!accountsReady)
+      return res
+        .status(503)
+        .json({ error: "Accounts are being set up. Please try again soon." });
+    res.set("Cache-Control", "no-store");
     next();
   };
 
   // Express 4 doesn't forward rejected promises from async handlers; this sends them to onError.
-  const safe = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+  const safe = (fn) => (req, res, next) =>
+    Promise.resolve(fn(req, res, next)).catch(next);
 
   const requireUser = async (req, res, next) => {
-    const header = req.get('authorization') || '';
-    const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+    const header = req.get("authorization") || "";
+    const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
     try {
       const user = token ? await userForToken(db, token) : null;
-      if (!user) return res.status(401).json({ error: 'Please sign in again.' });
+      if (!user)
+        return res.status(401).json({ error: "Please sign in again." });
       req.user = user;
       req.sessionToken = token;
       next();
@@ -127,160 +152,305 @@ export function mountAccountRoutes(app, { db, fileKey, deliverCode, stripe, log,
     }
   };
 
-  auth.post('/request-code', rateLimit({ windowMs: 10 * 60_000, max: limits.requestCode }), async (req, res) => {
-    const email = normalizeEmail(req.body?.email);
-    if (!EMAIL_RE.test(email)) return res.status(400).json({ error: 'Please enter a valid email address.' });
-    try {
-      const result = await createLoginCode(db, email);
-      if ('retryAfterSeconds' in result) {
-        return res.status(429).json({ error: `Please wait ${result.retryAfterSeconds}s before requesting another code.`, retryAfterSeconds: result.retryAfterSeconds });
+  auth.post(
+    "/request-code",
+    rateLimit({ windowMs: 10 * 60_000, max: limits.requestCode }),
+    async (req, res) => {
+      const email = normalizeEmail(req.body?.email);
+      if (!EMAIL_RE.test(email))
+        return res
+          .status(400)
+          .json({ error: "Please enter a valid email address." });
+      try {
+        const result = await createLoginCode(db, email);
+        if ("retryAfterSeconds" in result) {
+          return res
+            .status(429)
+            .json({
+              error: `Please wait ${result.retryAfterSeconds}s before requesting another code.`,
+              retryAfterSeconds: result.retryAfterSeconds,
+            });
+        }
+        try {
+          await deliverCode(email, result.code);
+        } catch (error) {
+          await db.query(
+            "DELETE FROM login_codes WHERE email=$1 AND code_hash=$2",
+            [
+              email,
+              crypto.createHash("sha256").update(result.code).digest("hex"),
+            ],
+          );
+          throw error;
+        }
+        // Same answer whether or not the email already has an account.
+        res.json({ sent: true });
+      } catch (err) {
+        log(`request-code error: ${err.message}`);
+        res
+          .status(502)
+          .json({
+            error: "We could not send the code right now. Please try again.",
+          });
       }
-      await deliverCode(email, result.code);
-      // Same answer whether or not the email already has an account.
-      res.json({ sent: true });
-    } catch (err) {
-      log(`request-code error: ${err.message}`);
-      res.status(502).json({ error: 'We could not send the code right now. Please try again.' });
-    }
-  });
+    },
+  );
 
-  auth.post('/verify', rateLimit({ windowMs: 10 * 60_000, max: limits.verify }), async (req, res) => {
-    const email = normalizeEmail(req.body?.email);
-    const code = typeof req.body?.code === 'string' ? req.body.code.replace(/\s/g, '') : '';
-    if (!EMAIL_RE.test(email)) return res.status(400).json({ error: 'Please enter a valid email address.' });
-    try {
-      const result = await verifyLoginCode(db, email, code);
-      if ('error' in result) return res.status(401).json({ error: result.error });
-      await logActivity(db, result.user.id, result.isNewUser ? 'account_created' : 'signed_in');
-      res.json({ token: result.token, user: publicUser(result.user) });
-    } catch (err) {
-      log(`verify error: ${err.message}`);
-      res.status(500).json({ error: 'Something went wrong. Please try again.' });
-    }
-  });
+  auth.post(
+    "/verify",
+    rateLimit({ windowMs: 10 * 60_000, max: limits.verify }),
+    async (req, res) => {
+      const email = normalizeEmail(req.body?.email);
+      const code =
+        typeof req.body?.code === "string"
+          ? req.body.code.replace(/\s/g, "")
+          : "";
+      if (!EMAIL_RE.test(email))
+        return res
+          .status(400)
+          .json({ error: "Please enter a valid email address." });
+      try {
+        const result = await verifyLoginCode(db, email, code);
+        if ("error" in result)
+          return res.status(401).json({ error: result.error });
+        await logActivity(
+          db,
+          result.user.id,
+          result.isNewUser ? "account_created" : "signed_in",
+        );
+        res.json({ token: result.token, user: publicUser(result.user) });
+      } catch (err) {
+        log(`verify error: ${err.message}`);
+        res
+          .status(500)
+          .json({ error: "Something went wrong. Please try again." });
+      }
+    },
+  );
 
-  auth.post('/logout', requireUser, safe(async (req, res) => {
-    await deleteSession(db, req.sessionToken);
-    await logActivity(db, req.user.id, 'signed_out');
-    res.json({ ok: true });
-  }));
+  auth.post(
+    "/logout",
+    requireUser,
+    safe(async (req, res) => {
+      await deleteSession(db, req.sessionToken);
+      await logActivity(db, req.user.id, "signed_out");
+      res.json({ ok: true });
+    }),
+  );
 
   me.use(requireUser);
 
-  me.get('/', safe(async (req, res) => {
-    let applications = [];
-    let applicationsAvailable = Boolean(stripe);
-    if (stripe) {
-      try {
-        applications = await applicationsForEmail(stripe, req.user.email);
-        if (applications[0]?.applicantName && !req.user.full_name) {
-          await setFullNameIfMissing(db, req.user.id, applications[0].applicantName);
-          req.user.full_name = applications[0].applicantName;
+  me.get(
+    "/",
+    safe(async (req, res) => {
+      let applications = [];
+      let applicationsAvailable = Boolean(stripe);
+      if (stripe) {
+        try {
+          applications = await applicationsForEmail(stripe, req.user.email);
+          if (applications[0]?.applicantName && !req.user.full_name) {
+            await setFullNameIfMissing(
+              db,
+              req.user.id,
+              applications[0].applicantName,
+            );
+            req.user.full_name = applications[0].applicantName;
+          }
+        } catch (err) {
+          log(`applications lookup error: ${err.message}`);
+          applicationsAvailable = false;
         }
-      } catch (err) {
-        log(`applications lookup error: ${err.message}`);
-        applicationsAvailable = false;
       }
-    }
-    res.json({ user: publicUser(req.user), applications, applicationsAvailable });
-  }));
+      const saved = await db.query(
+        "SELECT * FROM applications WHERE user_id=$1 AND paid_at IS NOT NULL ORDER BY paid_at DESC",
+        [req.user.id],
+      );
+      const savedPayments = saved.rows.map((a) => ({
+        paymentIntentId: a.payment_intent_id,
+        receiptRef: a.payment_intent_id.slice(-10).toUpperCase(),
+        amount: 18000,
+        currency: "eur",
+        paidAt: a.paid_at,
+        applicantName: a.form.fullName,
+        degree: a.form.degree,
+        university: a.form.universityId,
+        intake: a.form.intakeSeason,
+        examSession: a.form.examDate,
+        callDate: a.form.consultationDate,
+        callWindow: a.form.consultationWindow,
+      }));
+      applications = [
+        ...savedPayments,
+        ...applications.filter(
+          (a) =>
+            !savedPayments.some((s) => s.paymentIntentId === a.paymentIntentId),
+        ),
+      ];
+      if (savedPayments.length) applicationsAvailable = true;
+      res.json({
+        user: publicUser(req.user),
+        applications,
+        applicationsAvailable,
+      });
+    }),
+  );
 
-  me.get('/documents', safe(async (req, res) => {
-    const [documents, usage] = await Promise.all([listDocuments(db, req.user.id), documentUsage(db, req.user.id)]);
-    res.json({
-      documents: documents.map(publicDocument),
-      limits: { maxFileBytes: MAX_FILE_BYTES, maxDocuments: MAX_DOCUMENTS, maxTotalBytes: MAX_TOTAL_BYTES },
-      usage,
-      categories: DOCUMENT_CATEGORIES,
-    });
-  }));
+  me.get(
+    "/documents",
+    safe(async (req, res) => {
+      const [documents, usage] = await Promise.all([
+        listDocuments(db, req.user.id),
+        documentUsage(db, req.user.id),
+      ]);
+      res.json({
+        documents: documents.map(publicDocument),
+        limits: {
+          maxFileBytes: MAX_FILE_BYTES,
+          maxDocuments: MAX_DOCUMENTS,
+          maxTotalBytes: MAX_TOTAL_BYTES,
+        },
+        usage,
+        categories: DOCUMENT_CATEGORIES,
+      });
+    }),
+  );
 
   me.post(
-    '/documents',
+    "/documents",
     rateLimit({ windowMs: 60_000, max: limits.upload }),
     express.raw({ type: () => true, limit: MAX_FILE_BYTES }),
     safe(async (req, res) => {
-      const category = String(req.query.category || '');
-      if (!DOCUMENT_CATEGORIES[category]) return res.status(400).json({ error: 'Please choose what kind of document this is.' });
+      const category = String(req.query.category || "");
+      if (!DOCUMENT_CATEGORIES[category])
+        return res
+          .status(400)
+          .json({ error: "Please choose what kind of document this is." });
       const body = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
-      if (!body.length) return res.status(400).json({ error: 'The file is empty.' });
+      if (!body.length)
+        return res.status(400).json({ error: "The file is empty." });
       const type = sniffFileType(body);
-      if (!type) return res.status(415).json({ error: 'Only PDF, JPG and PNG files are accepted.' });
-
-      const usage = await documentUsage(db, req.user.id);
-      if (usage.count >= MAX_DOCUMENTS) return res.status(409).json({ error: `You can store up to ${MAX_DOCUMENTS} documents. Delete one to upload another.` });
-      if (usage.bytes + body.length > MAX_TOTAL_BYTES) return res.status(409).json({ error: 'Your storage is full. Delete a document to upload another.' });
+      if (!type)
+        return res
+          .status(415)
+          .json({ error: "Only PDF, JPG and PNG files are accepted." });
 
       const documentId = crypto.randomUUID();
-      const sealed = encryptFile(fileKey, body, { userId: req.user.id, documentId });
-      const filename = cleanFilename(req.query.filename, type.ext);
-      const doc = await insertDocument(db, {
-        id: documentId,
+      const sealed = encryptFile(fileKey, body, {
         userId: req.user.id,
-        category,
-        filename,
-        mimeType: type.mime,
-        sizeBytes: body.length,
-        keyId: KEY_ID,
-        ...sealed,
+        documentId,
       });
-      await logActivity(db, req.user.id, 'document_uploaded', `${DOCUMENT_CATEGORIES[category]}: ${filename}`);
+      const filename = cleanFilename(req.query.filename, type.ext);
+      const doc = await insertDocumentWithinQuota(
+        db,
+        {
+          id: documentId,
+          userId: req.user.id,
+          category,
+          filename,
+          mimeType: type.mime,
+          sizeBytes: body.length,
+          keyId: KEY_ID,
+          ...sealed,
+        },
+        { count: MAX_DOCUMENTS, bytes: MAX_TOTAL_BYTES },
+      );
       res.status(201).json({ document: publicDocument(doc) });
     }),
   );
 
-  me.get('/documents/:id/file', safe(async (req, res) => {
-    if (!UUID_RE.test(req.params.id)) return res.status(404).json({ error: 'Document not found.' });
-    const doc = await getDocumentWithContent(db, req.user.id, req.params.id);
-    if (!doc) return res.status(404).json({ error: 'Document not found.' });
+  me.get(
+    "/documents/:id/file",
+    safe(async (req, res) => {
+      if (!UUID_RE.test(req.params.id))
+        return res.status(404).json({ error: "Document not found." });
+      const doc = await getDocumentWithContent(db, req.user.id, req.params.id);
+      if (!doc) return res.status(404).json({ error: "Document not found." });
 
-    let plaintext;
-    try {
-      plaintext = decryptFile(fileKey, { iv: doc.iv, authTag: doc.auth_tag, content: doc.content }, { userId: req.user.id, documentId: doc.id });
-    } catch (err) {
-      log(`decrypt failed for document ${doc.id}: ${err.message}`);
-      return res.status(500).json({ error: 'This file could not be opened. Please contact us.' });
-    }
-    const download = req.query.download === '1';
-    await logActivity(db, req.user.id, download ? 'document_downloaded' : 'document_opened', `${DOCUMENT_CATEGORIES[doc.category] || doc.category}: ${doc.filename}`);
+      let plaintext;
+      try {
+        plaintext = decryptFile(
+          fileKey,
+          { iv: doc.iv, authTag: doc.auth_tag, content: doc.content },
+          { userId: req.user.id, documentId: doc.id },
+        );
+      } catch (err) {
+        log(`decrypt failed for document ${doc.id}: ${err.message}`);
+        return res
+          .status(500)
+          .json({ error: "This file could not be opened. Please contact us." });
+      }
+      const download = req.query.download === "1";
+      await logActivity(
+        db,
+        req.user.id,
+        download ? "document_downloaded" : "document_opened",
+        `${DOCUMENT_CATEGORIES[doc.category] || doc.category}: ${doc.filename}`,
+      );
 
-    const disposition = download ? 'attachment' : 'inline';
-    const asciiName = doc.filename.replace(/[^\x20-\x7e]/g, '_').replace(/"/g, '');
-    res.set({
-      'Content-Type': doc.mime_type,
-      'Content-Length': String(plaintext.length),
-      'Content-Disposition': `${disposition}; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(doc.filename)}`,
-      'X-Content-Type-Options': 'nosniff',
-      'Content-Security-Policy': "default-src 'none'; sandbox",
-    });
-    res.send(plaintext);
-  }));
+      const disposition = download ? "attachment" : "inline";
+      const asciiName = doc.filename
+        .replace(/[^\x20-\x7e]/g, "_")
+        .replace(/"/g, "");
+      res.set({
+        "Content-Type": doc.mime_type,
+        "Content-Length": String(plaintext.length),
+        "Content-Disposition": `${disposition}; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(doc.filename)}`,
+        "X-Content-Type-Options": "nosniff",
+        "Content-Security-Policy": "default-src 'none'; sandbox",
+      });
+      res.send(plaintext);
+    }),
+  );
 
-  me.delete('/documents/:id', safe(async (req, res) => {
-    if (!UUID_RE.test(req.params.id)) return res.status(404).json({ error: 'Document not found.' });
-    const doc = await deleteDocument(db, req.user.id, req.params.id);
-    if (!doc) return res.status(404).json({ error: 'Document not found.' });
-    await logActivity(db, req.user.id, 'document_deleted', `${DOCUMENT_CATEGORIES[doc.category] || doc.category}: ${doc.filename}`);
-    res.json({ ok: true });
-  }));
+  me.delete(
+    "/documents/:id",
+    safe(async (req, res) => {
+      if (!UUID_RE.test(req.params.id))
+        return res.status(404).json({ error: "Document not found." });
+      const doc = await deleteDocument(db, req.user.id, req.params.id);
+      if (!doc) return res.status(404).json({ error: "Document not found." });
+      await logActivity(
+        db,
+        req.user.id,
+        "document_deleted",
+        `${DOCUMENT_CATEGORIES[doc.category] || doc.category}: ${doc.filename}`,
+      );
+      res.json({ ok: true });
+    }),
+  );
 
-  me.get('/activity', safe(async (req, res) => {
-    const events = await listActivity(db, req.user.id);
-    res.json({ activity: events.map((e) => ({ id: e.id, type: e.type, detail: e.detail, at: e.created_at })) });
-  }));
+  me.get(
+    "/activity",
+    safe(async (req, res) => {
+      const events = await listActivity(db, req.user.id);
+      res.json({
+        activity: events.map((e) => ({
+          id: e.id,
+          type: e.type,
+          detail: e.detail,
+          at: e.created_at,
+        })),
+      });
+    }),
+  );
 
   // Upload over the size limit, malformed JSON, or an unexpected DB error: answer in JSON, never an HTML stack.
   const onError = (err, _req, res, _next) => {
-    if (err?.type === 'entity.too.large') {
-      return res.status(413).json({ error: `Files can be up to ${MAX_FILE_BYTES / 1024 / 1024} MB.` });
+    if (err?.type === "entity.too.large") {
+      return res
+        .status(413)
+        .json({
+          error: `Files can be up to ${MAX_FILE_BYTES / 1024 / 1024} MB.`,
+        });
     }
+    if (err.status === 409) return res.status(409).json({ error: err.message });
     log(`account API error: ${err?.message}`);
-    res.status(500).json({ error: 'Something went wrong. Please try again.' });
+    res.status(500).json({ error: "Something went wrong. Please try again." });
   };
   auth.use(onError);
   me.use(onError);
 
-  app.use('/api/auth', ready, auth);
-  app.use('/api/me', ready, me);
+  app.use("/api/auth", ready, auth);
+  app.use("/api/me", ready, me);
   return { accountsReady };
 }

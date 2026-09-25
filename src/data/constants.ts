@@ -20,8 +20,8 @@ export const UNIVERSITIES: University[] = [
     city: 'Sofia (Capital)',
     image: APP_IMAGES.muSofia,
     badge: 'Flagship Academic Medical Center',
-    tuitionFee: '€9,000 / year (Medicine)',
-    intakeSeats: '550 International Seats',
+    tuitionFee: 'Confirm current tuition with the university',
+    intakeSeats: 'Confirm current availability',
     englishRequirement: 'IELTS 6.5 / B2 or Entrance Test',
     entranceExamDates: 'July 15, Aug 20, Sep 12 (Online/On-campus)',
     applicationDeadline: { month: 9, day: 1 },
@@ -31,7 +31,7 @@ export const UNIVERSITIES: University[] = [
       'Over 100 years of academic clinical tradition',
       'Clinical rotations across 14 university hospitals',
       'Direct metro connection to Sofia International Airport',
-      'Full EU & GMC recognition (UK medical register eligible)'
+      'Check your intended country’s professional registration requirements'
     ]
   },
   {
@@ -41,8 +41,8 @@ export const UNIVERSITIES: University[] = [
     city: 'Plovdiv (Cultural Hub)',
     image: APP_IMAGES.muPlovdiv,
     badge: 'European Leader in Medical Simulation',
-    tuitionFee: '€9,000 / year (Medicine & Dental)',
-    intakeSeats: '400 International Seats',
+    tuitionFee: 'Confirm current tuition with the university',
+    intakeSeats: 'Confirm current availability',
     englishRequirement: 'Online University English Exam or B2',
     entranceExamDates: 'June 28, July 26, Aug 30',
     applicationDeadline: { month: 9, day: 5 },
@@ -52,7 +52,7 @@ export const UNIVERSITIES: University[] = [
       'State-of-the-art Medical Simulation Center',
       'Vibrant student community in European Capital of Culture',
       'Affordable living costs (avg. €450-€600/month)',
-      'High first-time pass rate on USMLE & PLAB exams'
+      'Review entrance-test requirements with the university'
     ]
   },
   {
@@ -62,8 +62,8 @@ export const UNIVERSITIES: University[] = [
     city: 'Varna (Black Sea Coast)',
     image: APP_IMAGES.muVarna,
     badge: 'Modern Coastal Campus & 3D Anatomy',
-    tuitionFee: '€9,000 / year (Medicine)',
-    intakeSeats: '300 International Seats',
+    tuitionFee: 'Confirm current tuition with the university',
+    intakeSeats: 'Confirm current availability',
     englishRequirement: 'High School English or B2 Certificate',
     entranceExamDates: 'July 8, Aug 12, Sep 4',
     applicationDeadline: { month: 8, day: 28 },
@@ -83,8 +83,8 @@ export const UNIVERSITIES: University[] = [
     city: 'Pleven (Central Bulgaria)',
     image: APP_IMAGES.muPleven,
     badge: 'Pioneers in Robotic da Vinci Surgery',
-    tuitionFee: '€8,500 / year (Medicine)',
-    intakeSeats: '150 International Seats',
+    tuitionFee: 'Confirm current tuition with the university',
+    intakeSeats: 'Confirm current availability',
     englishRequirement: 'High School Transcript or B2',
     entranceExamDates: 'Spring & Fall intake options',
     applicationDeadline: { month: 10, day: 15, note: 'February intake' },
@@ -309,33 +309,18 @@ export const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
 ];
 
 export const FAQS = [
-  {
-    q: 'Are Bulgarian medical degrees recognized in the UK, US, EU, and Arab world?',
-    a: 'Yes. Bulgarian medical degrees (MD / Doctor of Medicine) are fully recognized across the European Union under Directive 2005/36/EC. In the UK, graduates are eligible for direct registration with the GMC. In the US & Canada, universities are listed in the World Directory of Medical Schools (WDOMS/ECFMG eligible). In Jordan, UAE, and GCC nations, degrees from accredited state medical universities like MU Sofia and MU Plovdiv are officially recognized by Ministries of Higher Education.'
-  },
-  {
-    q: 'What is the required minimum grade in Biology and Chemistry?',
-    a: 'Bulgarian legislation requires high school graduates to achieve a combined average of at least 62% in high school Biology and Chemistry. Candidates with higher marks receive priority ranking in entrance exam scores.'
-  },
-  {
-    q: 'What does the €180 Onboarding & Advisory Fee cover?',
-    a: 'The €180 flat fee includes comprehensive document eligibility auditing, certified high school credential evaluation, university matching, an entrance exam syllabus prep pack, an individual 45-minute video consultation with an accredited Sofia legal advisor, and personal oversight throughout the 6-stage application journey.'
-  },
-  {
-    q: 'How does the Bulgarian Long-Stay Type-D Visa work for Non-EU students?',
-    a: 'Non-EU students receive a Certificate of Admission from the Bulgarian Ministry of Education and Science (MOES). With this official certificate, health insurance, criminal clearance, and housing confirmation, students apply for the Type-D Visa at their nearest Bulgarian Embassy or Consulate.'
-  },
-  {
-    q: 'How does the Annual Residence Permit (VRN) 84-day countdown work?',
-    a: 'Non-EU students hold a 1-year Bulgarian Continuous Residence Permit that must be renewed annually at the Migration Directorate (MVR) at least 14 days before expiry. Our portal automatically calculates your countdown, issues early alerts at 90/60/30 days, prepares the university confirmation certificate (Uverenie), and schedules your biometrics.'
-  }
+ {q:'Does a degree guarantee professional registration abroad?',a:'No. Check the current requirements of the professional regulator in the country where you intend to practise, including the specific university, programme, examinations and language requirements. StudyBg does not guarantee registration.'},
+ {q:'What is the minimum Biology and Chemistry grade?',a:'Requirements vary. Plovdiv’s published 2026/27 guide uses a 62% average in school Biology and Chemistry. Other universities and qualification routes differ. Read the official guide and request a transcript review.'},
+ {q:'What does the €180 fee cover?',a:'An application review, a 45-minute consultation request, university and document planning, and access to your saved application and documents. Tuition, examinations, translations, legalization, courier, housing and visa charges are separate.'},
+ {q:'Is my requested consultation time confirmed?',a:'No. You choose a preferred day and a time window in Sofia time. The admissions team must confirm availability and send the meeting details separately.'},
+ {q:'Does the portal automatically book visas or renew residence permits?',a:'No. These are planned services illustrated in the demo. Your live account currently supports saved applications, document uploads and staff review updates. Check immigration requirements with the relevant authority or a qualified adviser.'},
 ];
 
 // ---------------------------------------------------------------------------
 // Application wizard & checkout content
 // ---------------------------------------------------------------------------
 
-/** Statutory minimum (%) in BOTH Biology and Chemistry. */
+/** Plovdiv published 2026/27 average threshold; not a universal admission rule. */
 export const MIN_SCIENCE_GRADE = 62;
 
 /** Onboarding fee shown in the UI. The amount actually charged is fixed on the server (server/app.js). */
@@ -344,11 +329,11 @@ export const ONBOARDING_FEE_EUR = 180;
 /** What the €180 onboarding fee includes. Used on the pricing section and the payment page. */
 export const ONBOARDING_INCLUSIONS = [
   { title: 'Comprehensive Secondary Credential Audit', detail: 'Bio/Chem MOES compliance check.' },
-  { title: '1-on-1 Strategy Video Consultation', detail: '45 min with Senior Legal Officer Elena Dimitrova.' },
+  { title: '1-on-1 Strategy Video Consultation', detail: '45-minute consultation with the admissions team.' },
   { title: 'Entrance Exam Prep Package', detail: 'Past questions, MCQs & syllabus guides for Sofia & Plovdiv.' },
   { title: 'Sworn Translation Management in Sofia', detail: 'Direct cost passthrough with zero markups.' },
   { title: 'Non-EU Type-D Visa Dossier Blueprint', detail: 'Housing, health insurance & bank balance assistance.' },
-  { title: 'Continuous VRN 84-Day Renewal Tracker', detail: 'Automated residence compliance throughout all 6 study years.' },
+  { title: 'Application status updates', detail: 'View your saved application, documents and review activity in My Account.' },
 ];
 
 /** What is covered on the 45-minute consultation call. */
@@ -368,20 +353,13 @@ export const CONSULTATION_WINDOWS = [
 ];
 
 export const INTAKE_OPTIONS = [
+  { value: 'Next available intake', note: 'Confirm availability with your advisor' },
   { value: 'Autumn intake (October)', note: 'Main intake, all programs' },
   { value: 'Spring intake (February)', note: 'Limited programs & seats' },
 ];
 
-/**
- * Entrance exam sessions, as month/day. They roll over to next year automatically once the last
- * session has passed (see src/lib/admissions.ts); sessions already past this season show as closed.
- * Check these against the universities' official calendars each admission cycle.
- */
-export const EXAM_SESSIONS = [
-  { month: 7, day: 15, name: 'Session 1', note: 'Early intake' },
-  { month: 8, day: 20, name: 'Session 2', note: 'Recommended' },
-  { month: 9, day: 12, name: 'Session 3', note: 'Final session' },
-];
+/** Future sessions must be published with verified university-specific dates. */
+export const EXAM_SESSIONS = [];
 
 /** examDate value meaning "choose the session with my advisor on the call". */
 export const EXAM_DECIDE_WITH_ADVISOR = 'advisor';

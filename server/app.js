@@ -9,6 +9,7 @@ import {
   safe,
   ownApplication,
   createCheckout,
+  createCheckoutSession,
   httpError,
 } from "./workflow.js";
 import { recordPayment } from "./billing.js";
@@ -31,6 +32,32 @@ export function describeIntent(intent) {
     receiptRef: intent.id.slice(-10).toUpperCase(),
     createdAt: new Date(intent.created * 1000).toISOString(),
   };
+}
+
+/** Public shape of a Checkout Session: only what the browser needs to redirect or confirm. */
+export function describeSession(session) {
+  const pi =
+    session.payment_intent && typeof session.payment_intent === "object"
+      ? session.payment_intent
+      : null;
+  return {
+    sessionId: session.id,
+    status: session.status,
+    ...(session.status === "open" && session.url ? { url: session.url } : {}),
+    ...(pi ? describeIntent(pi) : { paid: false }),
+  };
+}
+/**
+ * Where Stripe sends the applicant back. The browser may suggest its own address, but only
+ * an origin on the allow-list is honoured; anything else falls back to the configured site.
+ */
+export function checkoutReturnBase(returnUrl, config) {
+  try {
+    const u = new URL(String(returnUrl));
+    if (config.allowedOrigins?.includes(u.origin))
+      return u.origin + (u.pathname || "/");
+  } catch {}
+  return `${(config.siteUrl || config.allowedOrigins?.[0] || "").replace(/\/+$/, "")}/`;
 }
 export function createApp({
   stripe,
@@ -233,6 +260,83 @@ export function createApp({
       if (describeIntent(pi).paid)
         await recordPayment(db, pi, billing?.invoiceStartNumber || 1);
       res.json(describeIntent(pi));
+    }),
+  );
+  app.post(
+    "/api/checkout-session",
+    rateLimit({ windowMs: 60_000, max: 20 }),
+    auth,
+    safe(async (req, res) => {
+      if (!paymentsReady)
+        throw httpError(503, "Online payments are not available yet.");
+      if (req.body.policyVersion !== POLICY_VERSION)
+        throw httpError(
+          409,
+          "Service terms have changed. Refresh and review them before checkout.",
+        );
+      const { session, intent } = await createCheckoutSession(
+        db,
+        stripe,
+        req.user,
+        req.body.applicationId,
+        req.body.version,
+        checkoutReturnBase(req.body.returnUrl, config),
+      );
+      if (intent) {
+        // A PaymentIntent is already attached: report it, never start a second payment.
+        const info = describeIntent(intent);
+        if (!info.paid)
+          throw httpError(
+            409,
+            "A payment is already in progress for this application. Reopen it from My Account to start again.",
+          );
+        await recordPayment(db, intent, billing.invoiceStartNumber || 1);
+        return res.json({ status: "complete", ...info });
+      }
+      const info = describeSession(session);
+      if (info.paid && session.payment_intent?.metadata)
+        await recordPayment(
+          db,
+          session.payment_intent,
+          billing.invoiceStartNumber || 1,
+        );
+      if (session.status === "complete" && !info.paid)
+        throw httpError(
+          409,
+          "Your payment is still processing. Please wait for confirmation.",
+        );
+      res.json(info);
+    }),
+  );
+  app.get(
+    "/api/checkout-session/:id",
+    auth,
+    safe(async (req, res) => {
+      if (!stripe)
+        throw httpError(503, "Payment status is temporarily unavailable.");
+      const row = await ownApplication(
+        db,
+        String(req.query.applicationId),
+        req.user.id,
+      );
+      if (row.checkout_session_id !== req.params.id)
+        throw httpError(404, "Payment not found.");
+      const session = await stripe.checkout.sessions.retrieve(req.params.id, {
+        expand: ["payment_intent"],
+      });
+      if (
+        session.metadata?.application_id !== row.id ||
+        session.metadata?.source !== PAYMENT_SOURCE
+      )
+        throw httpError(404, "Payment not found.");
+      const info = describeSession(session);
+      if (info.paid)
+        await recordPayment(
+          db,
+          session.payment_intent,
+          billing?.invoiceStartNumber || 1,
+        );
+      res.json(info);
     }),
   );
   app.use("/api", (_req, res) => res.status(404).json({ error: "Not found" }));

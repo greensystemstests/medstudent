@@ -15,7 +15,7 @@ Service: `studybg-api` (`srv-daqf8597lnhs73cq11p0`), workspace Green1. The servi
 
 - Set health-check path to `/api/health` and auto-deploy trigger to **After CI Checks Pass**. The connected Render operations do not expose these service-setting updates.
 - Preserve the existing `DATABASE_URL` and `FILE_ENCRYPTION_KEY`. Never regenerate the file key for an existing document store.
-- Configure Stripe secret/publishable keys in matching test/live mode and `STRIPE_WEBHOOK_SECRET` for `/api/stripe/webhook`.
+- Configure Stripe secret/publishable keys in matching test/live mode and `STRIPE_WEBHOOK_SECRET` for `/api/stripe/webhook`. Checkout is now Stripe-hosted (`POST /api/checkout-session`): set Stripe Branding and payment methods in the Stripe dashboard, and make sure the site origin that applicants use (`https://studybg.ac`) is in `ALLOWED_ORIGINS`, because Stripe sends them back there.
 - Configure verified Resend sender credentials, `RESEND_API_KEY`, `INVOICE_FROM_EMAIL`, and the intended `SALE_NOTIFICATION_EMAIL`.
 - Complete `COMPANY_LEGAL_NAME`, `COMPANY_EIK`, `COMPANY_ADDRESS`, `COMPANY_CITY`, appropriate `COMPANY_VAT_NUMBER`, and monitored `SUPPORT_EMAIL`. Match the website identity and invoice identity.
 - Set `STAFF_EMAILS` to the explicitly authorized reviewers. Empty denies staff access. Reviewers sign in normally, then use `/#/review`.
@@ -29,7 +29,7 @@ No new paid service is required by this branch. The old Redis service is retaine
 1. Run `npm ci`, `npm run lint`, `npm run test:render`, `TEST_DATABASE_URL=postgres://.../studybg_test npm test`, and `npm run build`. Only use a disposable `_test` database: tests clear its tables.
 2. Merge the reviewed branch to `claude/intelligent-curie-jsa86h`. GitHub Pages and Render must deploy the same reviewed commit. Do not manually trigger Render immediately after an auto-deploying push.
 3. Verify `/api/health` reports the expected build SHA and feature readiness. `/api/ready` should remain 503 while checkout is intentionally disabled.
-4. With operator-controlled test email accounts and Stripe test keys, verify sign-in, server draft persistence, cross-device resume, successful and declined payments, webhook replay, exactly one invoice, per-recipient email retry and staff document review. Confirm inbox delivery in Resend; an API acceptance response alone is not delivery proof.
+4. With operator-controlled test email accounts and Stripe test keys, verify sign-in, server draft persistence, cross-device resume, the redirect to Stripe and back (paid, declined, and leaving Stripe with the Back link), successful and declined payments, webhook replay, exactly one invoice, per-recipient email retry and staff document review. Confirm inbox delivery in Resend; an API acceptance response alone is not delivery proof.
 5. After approval, switch to matching live keys and the live webhook secret, then enable the two release gates. Recheck readiness and monitor failures. Never use a real applicant's personal documents for a smoke test.
 
 ## Operational limits and recovery

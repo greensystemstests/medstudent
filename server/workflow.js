@@ -12,6 +12,7 @@ import {
   UNIVERSITIES,
 } from "../shared/admissions.js";
 import { decryptFile } from "./fileCrypto.js";
+import { ONBOARDING_FEE } from "./pricing.js";
 
 export const safe = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
@@ -196,6 +197,118 @@ export async function createCheckout(db, stripe, user, id, version) {
     c.release();
   }
 }
+/**
+ * Stripe-hosted Checkout: the applicant is redirected to a Stripe payment page.
+ * Same guarantees as createCheckout (ownership, email match, version check, consent snapshot,
+ * fixed server price, advisory lock, idempotency), but the charge object is a Checkout Session.
+ * Stripe creates the PaymentIntent only when the customer pays, so it is linked to the
+ * application at payment time (see recordPayment), never trusted from the browser.
+ * Returns { session } for an open/complete session, or { intent } if a PaymentIntent is
+ * already attached to the application.
+ */
+export async function createCheckoutSession(
+  db,
+  stripe,
+  user,
+  id,
+  version,
+  returnBase,
+) {
+  if (!applicationIdValid(id))
+    throw httpError(400, "Invalid application reference.");
+  const c = await db.connect();
+  try {
+    await c.query("SELECT pg_advisory_lock(hashtextextended($1,0))", [
+      "application:" + id,
+    ]);
+    const row = await ownApplication(c, id, user.id);
+    if (row.form.email !== user.email)
+      throw httpError(400, "Application email does not match your account.");
+    if (row.version !== Number(version))
+      throw httpError(409, "Your application changed. Reload the saved draft.");
+    if (row.payment_intent_id)
+      return { intent: await stripe.paymentIntents.retrieve(row.payment_intent_id) };
+    if (row.checkout_session_id) {
+      const existing = await stripe.checkout.sessions.retrieve(
+        row.checkout_session_id,
+        { expand: ["payment_intent"] },
+      );
+      // Reuse a session that is still payable (or already completed); only an expired
+      // one is replaced. This never creates a second live session for one application.
+      if (existing.status !== "expired") return { session: existing };
+    } else if (
+      row.checkout_started_at &&
+      Date.now() - new Date(row.checkout_started_at).getTime() > 23 * 3600_000
+    )
+      throw httpError(
+        409,
+        "Payment creation needs review. Please contact support before trying again.",
+      );
+    if (!row.checkout_started_at) {
+      const errors = validateApplication(row.form);
+      if (errors.length) throw httpError(400, errors.join(" "));
+      await c.query("BEGIN");
+      try {
+        await c.query(
+          `INSERT INTO application_consents(application_id,user_id,policy_version,form_snapshot,application_version) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING`,
+          [id, user.id, POLICY_VERSION, row.form, row.version],
+        );
+        await c.query(
+          "UPDATE applications SET status='checkout',checkout_started_at=now(),submitted_at=coalesce(submitted_at,now()),updated_at=now() WHERE id=$1",
+          [id],
+        );
+        await c.query("COMMIT");
+      } catch (err) {
+        await c.query("ROLLBACK");
+        throw err;
+      }
+    }
+    const { description, metadata } = checkoutMetadata(row);
+    const session = await stripe.checkout.sessions.create(
+      {
+        mode: "payment",
+        client_reference_id: id,
+        customer_email: row.form.email,
+        line_items: [
+          {
+            quantity: 1,
+            price_data: {
+              currency: ONBOARDING_FEE.currency,
+              unit_amount: ONBOARDING_FEE.amount,
+              product_data: {
+                name: "StudyBg onboarding & advisory package",
+                description:
+                  "One-time fee. Includes your 45-minute consultation call.",
+              },
+            },
+          },
+        ],
+        // Metadata goes on the PaymentIntent too, because that is what the signed
+        // payment_intent.succeeded webhook carries. No receipt_email: the StudyBg
+        // invoice email is the receipt (Stripe's own receipts stay a dashboard choice).
+        payment_intent_data: { description, metadata },
+        metadata,
+        success_url: `${returnBase}?payment_return=1&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${returnBase}?payment_cancelled=1`,
+      },
+      {
+        // Changes only when the previous session expired, so a retried request after a
+        // timeout gets the very same session back instead of creating another.
+        idempotencyKey: `studybg:cs:${id}:${row.checkout_attempt}:${row.checkout_session_id || "first"}`,
+      },
+    );
+    await c.query(
+      "UPDATE applications SET checkout_session_id=$2,updated_at=now() WHERE id=$1",
+      [id, session.id],
+    );
+    return { session };
+  } finally {
+    await c.query("SELECT pg_advisory_unlock(hashtextextended($1,0))", [
+      "application:" + id,
+    ]);
+    c.release();
+  }
+}
 export function mountWorkflow(
   app,
   { db, fileKey, staffEmails = [], stripe, billing },
@@ -244,7 +357,11 @@ export function mountWorkflow(
           "application:" + req.params.id,
         ]);
         const row = await ownApplication(c, req.params.id, req.user.id);
-        if (row.checkout_started_at && !row.payment_intent_id)
+        if (
+          row.checkout_started_at &&
+          !row.payment_intent_id &&
+          !row.checkout_session_id
+        )
           throw httpError(
             409,
             "Payment creation needs reconciliation before this application can be reopened.",
@@ -254,6 +371,25 @@ export function mountWorkflow(
             409,
             "A paid application cannot be changed. Contact your advisor.",
           );
+        if (row.checkout_session_id && !row.payment_intent_id) {
+          if (!stripe) throw httpError(503, "Payment status is unavailable.");
+          let session = await stripe.checkout.sessions.retrieve(
+            row.checkout_session_id,
+          );
+          // Close the Stripe page first so it cannot be paid after the form changes.
+          if (session.status === "open") {
+            try {
+              session = await stripe.checkout.sessions.expire(session.id);
+            } catch {
+              session = await stripe.checkout.sessions.retrieve(session.id);
+            }
+          }
+          if (session.status !== "expired")
+            throw httpError(
+              409,
+              "This payment is processing or completed. Please wait for confirmation.",
+            );
+        }
         if (row.payment_intent_id) {
           if (!stripe) throw httpError(503, "Payment status is unavailable.");
           const pi = await stripe.paymentIntents.retrieve(
@@ -274,7 +410,7 @@ export function mountWorkflow(
             await stripe.paymentIntents.cancel(pi.id);
         }
         const updated = await c.query(
-          "UPDATE applications SET payment_intent_id=NULL,checkout_attempt=checkout_attempt+1,checkout_started_at=NULL,status='draft',version=version+1,updated_at=now() WHERE id=$1 RETURNING *",
+          "UPDATE applications SET payment_intent_id=NULL,checkout_session_id=NULL,checkout_attempt=checkout_attempt+1,checkout_started_at=NULL,status='draft',version=version+1,updated_at=now() WHERE id=$1 RETURNING *",
           [row.id],
         );
         return describeApplication(updated.rows[0]);

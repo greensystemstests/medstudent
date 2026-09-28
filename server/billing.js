@@ -22,7 +22,12 @@ export async function recordPayment(db, intent, startNumber = 1) {
       [intent.id],
     );
     const result = await c.query(
-      "UPDATE applications SET paid_at=coalesce(paid_at,now()),status='submitted',updated_at=now() WHERE id=$1 AND payment_intent_id=$2 AND form->>'email'=$3 AND paid_at IS NULL RETURNING user_id",
+      // Hosted Checkout: Stripe creates the PaymentIntent only when the customer pays, so an
+      // application with a Checkout Session and no PaymentIntent yet is linked here. The
+      // metadata (source + application_id + applicant email) is set by our server alone.
+      `UPDATE applications SET paid_at=coalesce(paid_at,now()),payment_intent_id=coalesce(payment_intent_id,$2),status='submitted',updated_at=now()
+       WHERE id=$1 AND (payment_intent_id=$2 OR (payment_intent_id IS NULL AND checkout_session_id IS NOT NULL))
+         AND form->>'email'=$3 AND paid_at IS NULL RETURNING user_id`,
       [intent.metadata.application_id, intent.id, email],
     );
     if (result.rows[0])

@@ -1079,13 +1079,6 @@ export const WizardView: React.FC<WizardViewProps> = ({
               <PaymentStep
                 app={app}
                 onSaved={(saved) => onChange(saved)}
-                onIntentCreated={(paymentIntentId) =>
-                  onChange((a) =>
-                    a.payment.paymentIntentId === paymentIntentId
-                      ? a
-                      : { ...a, payment: { ...a.payment, paymentIntentId } },
-                  )
-                }
                 onPaid={(info) =>
                   onChange((a) => ({
                     ...a,

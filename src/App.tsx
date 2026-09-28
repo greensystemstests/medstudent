@@ -25,7 +25,7 @@ import {
   WizardPrefill,
 } from "./lib/application";
 import { liveAccountApi } from "./lib/account";
-import { getPaymentStatus } from "./lib/api";
+import { getCheckoutSessionStatus, getPaymentStatus } from "./lib/api";
 import { createDemoAccountApi } from "./lib/demoAccount";
 import { ApplicationState, AppView } from "./types";
 
@@ -103,9 +103,22 @@ function readPaymentReturn(): string | null {
   return params.get("payment_return") ? params.get("payment_intent") : null;
 }
 
+/**
+ * Stripe's hosted page sends the applicant back with ?payment_return=1&session_id=... after paying,
+ * or ?payment_cancelled=1 if they leave without paying.
+ */
+function readCheckoutReturn(): { sessionId: string | null; cancelled: boolean } {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    sessionId: params.get("payment_return") ? params.get("session_id") : null,
+    cancelled: params.get("payment_cancelled") === "1",
+  };
+}
+
 export default function App() {
   const [demoMode] = useState(readDemoMode);
   const [returningPaymentIntent] = useState(readPaymentReturn);
+  const [checkoutReturn] = useState(readCheckoutReturn);
   const [application, setApplication] =
     useState<ApplicationState>(loadApplication);
   const guardView = useCallback(
@@ -118,7 +131,7 @@ export default function App() {
     [demoMode],
   );
   const [currentView, setCurrentView] = useState<AppView>(() =>
-    returningPaymentIntent
+    returningPaymentIntent || checkoutReturn.sessionId || checkoutReturn.cancelled
       ? "wizard"
       : guardView(viewFromHash(window.location.hash) ?? "home"),
   );
@@ -130,6 +143,51 @@ export default function App() {
   const [isQuickFitOpen, setIsQuickFitOpen] = useState(false);
 
   useEffect(() => saveApplication(application), [application]);
+
+  // Back from Stripe's hosted page: land on the payment step, and only unlock the confirmation once
+  // the server (which asks Stripe) says the payment really succeeded. Cards settle at once; slower
+  // methods can stay "complete but unpaid" for a while, so check a few times.
+  useEffect(() => {
+    if (!checkoutReturn.sessionId && !checkoutReturn.cancelled) return;
+    const url = new URL(window.location.href);
+    ["payment_return", "session_id", "payment_cancelled"].forEach((k) =>
+      url.searchParams.delete(k),
+    );
+    window.history.replaceState(null, "", url.toString());
+    setApplication((a) => ({ ...a, currentStep: PAYMENT_STEP }));
+    const sessionId = checkoutReturn.sessionId;
+    if (!sessionId) return;
+    let stopped = false;
+    (async () => {
+      for (let i = 0; i < 8 && !stopped; i++) {
+        try {
+          const info = await getCheckoutSessionStatus(sessionId, application.id);
+          if (info.paid) {
+            setApplication((a) => ({
+              ...a,
+              payment: {
+                status: "paid",
+                paymentIntentId: info.paymentIntentId,
+                receiptRef: info.receiptRef,
+                amount: info.amount,
+                currency: info.currency,
+                paidAt: new Date().toISOString(),
+              },
+            }));
+            return;
+          }
+          if (info.status !== "complete") return;
+        } catch {
+          return; // Stay on the payment step; pressing Pay again re-checks the session.
+        }
+        await new Promise((r) => setTimeout(r, 3000));
+      }
+    })();
+    return () => {
+      stopped = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Finish a redirect-based payment: ask the server (which asks Stripe) whether it really succeeded.
   useEffect(() => {

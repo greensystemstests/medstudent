@@ -24,6 +24,19 @@ export interface PaymentIntentInfo {
   clientSecret?: string;
 }
 
+/** A Stripe-hosted Checkout Session: redirect to `url`, or read `paid` once the applicant returns. */
+export interface CheckoutSessionInfo {
+  sessionId: string;
+  status: string;
+  paid: boolean;
+  url?: string;
+  paymentIntentId?: string;
+  amount?: number;
+  currency?: string;
+  receiptRef?: string;
+  createdAt?: string;
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -100,4 +113,26 @@ export const getPaymentStatus = (
 ) =>
   request<PaymentIntentInfo>(
     `/api/payment-intent/${encodeURIComponent(paymentIntentId)}?applicationId=${encodeURIComponent(applicationId)}`,
+  );
+
+/** Starts (or resumes) the Stripe-hosted payment page for a saved application. */
+export const createCheckoutSession = (app: ApplicationState) =>
+  request<CheckoutSessionInfo>("/api/checkout-session", {
+    method: "POST",
+    body: JSON.stringify({
+      applicationId: app.id,
+      version: app.version,
+      policyVersion: POLICY_VERSION,
+      // Where Stripe sends the applicant back. The server only honours allow-listed origins.
+      returnUrl: `${window.location.origin}${window.location.pathname}`,
+    }),
+  });
+
+/** Asks the server (which asks Stripe) whether the hosted payment really succeeded. */
+export const getCheckoutSessionStatus = (
+  sessionId: string,
+  applicationId: string,
+) =>
+  request<CheckoutSessionInfo>(
+    `/api/checkout-session/${encodeURIComponent(sessionId)}?applicationId=${encodeURIComponent(applicationId)}`,
   );

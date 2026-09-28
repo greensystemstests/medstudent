@@ -72,6 +72,7 @@ export async function migrate(db) {
       submitted_at timestamptz, paid_at timestamptz, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now()
     );
     CREATE INDEX IF NOT EXISTS applications_user_idx ON applications(user_id, updated_at DESC);
+    ALTER TABLE applications ADD COLUMN IF NOT EXISTS checkout_session_id text UNIQUE;
     CREATE TABLE IF NOT EXISTS application_consents (
       id bigserial PRIMARY KEY, application_id text NOT NULL REFERENCES applications(id),
       user_id uuid NOT NULL REFERENCES users(id), policy_version text NOT NULL,

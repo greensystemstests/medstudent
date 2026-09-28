@@ -7,7 +7,7 @@ import {
   describe,
   test,
 } from "node:test";
-import { createApp } from "./app.js";
+import { createApp, checkoutReturnBase } from "./app.js";
 import { connectDb, migrate, createLoginCode, verifyLoginCode } from "./db.js";
 import { computeVat } from "./invoice.js";
 import { fileKeyFromEnv } from "./fileCrypto.js";
@@ -36,10 +36,68 @@ const seller = {
 };
 function stripeFake() {
   const intents = new Map(),
-    keys = new Map();
+    keys = new Map(),
+    sessions = new Map(),
+    sessionKeys = new Map();
+  const withIntent = (s, opts) =>
+    opts?.expand?.includes("payment_intent") && s.payment_intent
+      ? { ...s, payment_intent: intents.get(s.payment_intent) }
+      : s;
   return {
     intents,
     keys,
+    sessions,
+    sessionKeys,
+    /** Simulates the customer paying on Stripe's page: Stripe creates the PaymentIntent now. */
+    payCheckout(sessionId, overrides = {}) {
+      const s = sessions.get(sessionId);
+      const pi = {
+        id: `pi_hosted${intents.size + 1}`,
+        status: "succeeded",
+        created: 1790000000,
+        amount: s.params.line_items[0].price_data.unit_amount,
+        currency: s.params.line_items[0].price_data.currency,
+        description: s.params.payment_intent_data.description,
+        metadata: s.params.payment_intent_data.metadata,
+        ...overrides,
+      };
+      intents.set(pi.id, pi);
+      s.status = "complete";
+      s.payment_status = "paid";
+      s.payment_intent = pi.id;
+      return pi;
+    },
+    checkout: {
+      sessions: {
+        async create(params, { idempotencyKey }) {
+          if (sessionKeys.has(idempotencyKey))
+            return sessions.get(sessionKeys.get(idempotencyKey));
+          const id = `cs_test${sessionKeys.size + 1}`;
+          const s = {
+            id,
+            status: "open",
+            payment_status: "unpaid",
+            url: `https://checkout.stripe.com/c/pay/${id}`,
+            payment_intent: null,
+            metadata: params.metadata,
+            params,
+          };
+          sessionKeys.set(idempotencyKey, id);
+          sessions.set(id, s);
+          return s;
+        },
+        async retrieve(id, opts) {
+          if (!sessions.has(id)) throw new Error("Missing session");
+          return withIntent(sessions.get(id), opts);
+        },
+        async expire(id) {
+          const s = sessions.get(id);
+          if (s.status !== "open") throw new Error("Session is not open");
+          s.status = "expired";
+          return s;
+        },
+      },
+    },
     paymentIntents: {
       async create(params, { idempotencyKey }) {
         if (keys.has(idempotencyKey))
@@ -339,6 +397,200 @@ describe(
       assert.equal(
         (await db.query("SELECT * FROM application_consents")).rows.length,
         2,
+      );
+    });
+    async function hosted(a, extra = {}) {
+      return call("/api/checkout-session", {
+        method: "POST",
+        json: {
+          applicationId: a.id,
+          version: a.version,
+          policyVersion: POLICY_VERSION,
+          returnUrl: "https://studybg.ac/",
+          amount: 1,
+          ...extra,
+        },
+      });
+    }
+    const sessionStatus = (sid, a, auth = token) =>
+      call(`/api/checkout-session/${sid}?applicationId=${a.id}`, { auth });
+    test("hosted checkout: fixed server price, Stripe redirect, locked form, one session per application", async () => {
+      const a = await draft();
+      const r = await hosted(a);
+      assert.equal(r.status, 200, await r.clone().text());
+      const body = await r.json();
+      assert.match(body.url, /^https:\/\/checkout\.stripe\.com\//);
+      assert.equal(body.paid, false);
+      const p = stripe.sessions.get(body.sessionId).params;
+      assert.equal(p.mode, "payment");
+      assert.equal(p.line_items[0].price_data.unit_amount, 18000);
+      assert.equal(p.line_items[0].price_data.currency, "eur");
+      assert.equal(p.client_reference_id, a.id);
+      assert.equal(p.customer_email, "synthetic@example.com");
+      assert.equal(p.payment_intent_data.metadata.source, "studybg-wizard");
+      assert.equal(p.payment_intent_data.metadata.application_id, a.id);
+      assert.equal(p.payment_intent_data.receipt_email, undefined);
+      assert.equal(
+        p.success_url,
+        "https://studybg.ac/?payment_return=1&session_id={CHECKOUT_SESSION_ID}",
+      );
+      assert.equal(p.cancel_url, "https://studybg.ac/?payment_cancelled=1");
+      const again = await (await hosted(a)).json();
+      assert.equal(again.sessionId, body.sessionId);
+      assert.equal(stripe.sessionKeys.size, 1);
+      const { rows } = await db.query(
+        "SELECT status,checkout_session_id,payment_intent_id FROM applications",
+      );
+      assert.equal(rows[0].status, "checkout");
+      assert.equal(rows[0].checkout_session_id, body.sessionId);
+      assert.equal(rows[0].payment_intent_id, null);
+      assert.equal(
+        (await db.query("SELECT * FROM application_consents")).rows.length,
+        1,
+      );
+      assert.equal(
+        (await call(`/api/applications/${a.id}`, { method: "POST", json: a }))
+          .status,
+        409,
+      );
+    });
+    test("hosted checkout return address only ever honours allow-listed origins", () => {
+      const config = {
+        allowedOrigins: ["https://studybg.ac"],
+        siteUrl: "https://studybg.ac",
+      };
+      assert.equal(
+        checkoutReturnBase("https://studybg.ac/apply/?x=1#/y", config),
+        "https://studybg.ac/apply/",
+      );
+      for (const bad of [
+        "https://evil.example/steal",
+        "javascript:alert(1)",
+        "not a url",
+        undefined,
+      ])
+        assert.equal(checkoutReturnBase(bad, config), "https://studybg.ac/");
+    });
+    test("hosted checkout: signed webhook links the intent, submits the application, issues exactly one invoice", async () => {
+      const a = await draft();
+      const { sessionId } = await (await hosted(a)).json();
+      const pi = stripe.payCheckout(sessionId);
+      assert.equal((await webhook(pi)).status, 200);
+      assert.equal((await webhook(pi)).status, 200);
+      const { rows } = await db.query(
+        "SELECT status,payment_intent_id,paid_at FROM applications",
+      );
+      assert.equal(rows[0].status, "submitted");
+      assert.equal(rows[0].payment_intent_id, pi.id);
+      assert.ok(rows[0].paid_at);
+      const invoices = await db.query("SELECT * FROM invoices");
+      assert.equal(invoices.rows.length, 1);
+      assert.equal(invoices.rows[0].invoice_number, "501");
+      const s = await (await sessionStatus(sessionId, a)).json();
+      assert.equal(s.paid, true);
+      assert.equal(s.amount, 18000);
+      assert.equal(s.paymentIntentId, pi.id);
+    });
+    test("hosted checkout: the return check confirms payment with Stripe even if the webhook is late", async () => {
+      const a = await draft();
+      const { sessionId } = await (await hosted(a)).json();
+      const pending = await (await sessionStatus(sessionId, a)).json();
+      assert.equal(pending.paid, false);
+      assert.equal(pending.status, "open");
+      stripe.payCheckout(sessionId);
+      const done = await (await sessionStatus(sessionId, a)).json();
+      assert.equal(done.paid, true);
+      assert.equal(
+        (await db.query("SELECT * FROM invoices")).rows.length,
+        1,
+      );
+      assert.equal(
+        (await db.query("SELECT status FROM applications")).rows[0].status,
+        "submitted",
+      );
+    });
+    test("hosted checkout: a wrong amount is never treated as paid; other users and other sessions get 404", async () => {
+      const a = await draft();
+      const { sessionId } = await (await hosted(a)).json();
+      stripe.payCheckout(sessionId, { amount: 100 });
+      const s = await (await sessionStatus(sessionId, a)).json();
+      assert.equal(s.paid, false);
+      assert.equal((await db.query("SELECT * FROM invoices")).rows.length, 0);
+      assert.equal(
+        (await sessionStatus(sessionId, a, otherToken)).status,
+        404,
+      );
+      assert.equal((await sessionStatus("cs_unknown", a)).status, 404);
+    });
+    test("hosted checkout refuses a stale policy version and unauthenticated calls", async () => {
+      const a = await draft();
+      assert.equal((await hosted(a, { policyVersion: "old" })).status, 409);
+      assert.equal(
+        (
+          await call("/api/checkout-session", {
+            method: "POST",
+            auth: null,
+            json: { applicationId: a.id },
+          })
+        ).status,
+        401,
+      );
+    });
+    test("hosted checkout will not start a second payment when a PaymentIntent already exists", async () => {
+      const a = await draft();
+      await checkout(a);
+      assert.equal((await hosted(a)).status, 409);
+      assert.equal(stripe.sessionKeys.size, 0);
+    });
+    test("reopening an unpaid application expires the Stripe page, then a fresh session is created", async () => {
+      const a = await draft();
+      const first = await (await hosted(a)).json();
+      const reopened = await (
+        await call(`/api/applications/${a.id}/reopen`, {
+          method: "POST",
+          json: {},
+        })
+      ).json();
+      assert.equal(stripe.sessions.get(first.sessionId).status, "expired");
+      const row = (
+        await db.query(
+          "SELECT checkout_session_id,status FROM applications",
+        )
+      ).rows[0];
+      assert.equal(row.checkout_session_id, null);
+      assert.equal(row.status, "draft");
+      const second = await (await hosted(reopened)).json();
+      assert.notEqual(second.sessionId, first.sessionId);
+      assert.equal(
+        (await db.query("SELECT * FROM application_consents")).rows.length,
+        2,
+      );
+    });
+    test("reopening is refused once the Stripe page has been paid", async () => {
+      const a = await draft();
+      const { sessionId } = await (await hosted(a)).json();
+      stripe.payCheckout(sessionId);
+      const r = await call(`/api/applications/${a.id}/reopen`, {
+        method: "POST",
+        json: {},
+      });
+      assert.equal(r.status, 409);
+    });
+    test("an expired Stripe page is replaced by a new one, never a second live session", async () => {
+      const a = await draft();
+      const first = await (await hosted(a)).json();
+      stripe.sessions.get(first.sessionId).status = "expired";
+      const second = await (await hosted(a)).json();
+      assert.notEqual(second.sessionId, first.sessionId);
+      assert.equal(second.status, "open");
+      assert.equal(
+        (await db.query("SELECT checkout_session_id FROM applications")).rows[0]
+          .checkout_session_id,
+        second.sessionId,
+      );
+      assert.equal(
+        (await db.query("SELECT * FROM application_consents")).rows.length,
+        1,
       );
     });
     test("an uncertain create is durably reserved and cannot generate a new charge after idempotency expires", async () => {

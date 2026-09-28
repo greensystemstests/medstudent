@@ -98,6 +98,7 @@ const app = createApp({
   accounts: { db, fileKey, deliverCode },
   config: {
     publishableKey,
+    siteUrl,
     checkoutEnabled: process.env.CHECKOUT_ENABLED === "true",
     legalApproved:
       process.env.LEGAL_APPROVED === "true" &&

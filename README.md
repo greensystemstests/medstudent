@@ -60,7 +60,7 @@ API: `POST /api/auth/request-code`, `POST /api/auth/verify`, `POST /api/auth/log
 
 | Page | URL |
 |---|---|
-| Public site | `/` |
+| Public site (free eligibility check, university comparison, €180 Admissions Gateway) | `/` |
 | Application (8 steps + payment) | `/#/apply` |
 | Student account / sign in | `/#/account` |
 | Official admissions calendar links | `/#/calendar` |
@@ -72,8 +72,9 @@ API: `POST /api/auth/request-code`, `POST /api/auth/verify`, `POST /api/auth/log
 
 ## Application flow
 
-1. Applicant & high school → 2. Faculty & intake → 3. Science grades & English (university-specific review) →
-4. Documents → 5. Entrance exam → 6. Sworn translation & courier → 7. Review, book the call & consents → 8. Payment.
+1. About you & your school → 2. University & intake → 3. Grades & English (university-specific review) →
+4. Documents (diploma and transcript now; medical/police certificates only later, if the route needs them) → 5. Entrance exam →
+6. Translation help (optional) → 7. Review & request your call → 8. Payment (€180 Admissions Gateway).
 
 Every step is validated before the next one opens, and the stepper can't jump past the first incomplete step.
 Progress is saved in the browser (`localStorage`). After signing in, Save online stores the full draft in Postgres with optimistic version checks. My Account lists drafts and submitted applications. Checkout records the accepted policy version and form snapshot.

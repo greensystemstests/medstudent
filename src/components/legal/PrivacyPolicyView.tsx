@@ -1,6 +1,6 @@
 import React from 'react';
 import { scrollBehavior } from '../../lib/a11y';
-import { LEGAL_ENTITY } from '../../data/legal';
+import { LEGAL_ENTITY, shown } from '../../data/legal';
 import { AppView } from '../../types';
 import { Callout, ControllerBlock, Email, LegalLayout, List, PageLink, Section, Sub, Table } from './LegalLayout';
 
@@ -331,7 +331,7 @@ export const PrivacyPolicyView: React.FC<{ onNavigate: (view: AppView) => void }
     <Section id="contact" n={16} title="Contact and complaints">
       <p>
         For any question about your personal information, write to <Email address={LEGAL_ENTITY.privacyEmail} />, or post to{' '}
-        {LEGAL_ENTITY.name}, {LEGAL_ENTITY.address}.
+        {shown(LEGAL_ENTITY.name)}, {shown(LEGAL_ENTITY.address)}.
       </p>
       <p>
         If you're unhappy with how we handle your information, please tell us first so we can put it right. You can also complain to the

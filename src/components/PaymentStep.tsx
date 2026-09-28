@@ -31,6 +31,9 @@ import {
   CONSULTATION_AGENDA,
   ONBOARDING_FEE_EUR,
   ONBOARDING_INCLUSIONS,
+  GATEWAY_NAME,
+  GATEWAY_EXCLUSIONS,
+  INDEPENDENCE_STATEMENT,
   UNIVERSITIES,
 } from "../data/constants";
 import {
@@ -175,7 +178,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
           <span>Secure checkout</span>
         </div>
         <h2 className="text-lg font-bold font-heading text-slate-900">
-          Step 8: Your Onboarding Package & Payment
+          Step 8: Your {GATEWAY_NAME} and payment
         </h2>
         <p className="text-xs text-slate-500 mt-1">
           Here's exactly what your one-time {total} fee covers, and what happens
@@ -193,10 +196,10 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
               aria-hidden
             />
             <div className="text-[0.6875rem] font-bold uppercase tracking-wider text-emerald-300">
-              StudyBg Direct Admissions
+              StudyBg
             </div>
             <div className="mt-1 font-heading font-bold text-lg">
-              Onboarding & Advisory Package
+              {GATEWAY_NAME}
             </div>
             <div className="flex items-baseline gap-2 mt-3">
               <span className="text-4xl font-extrabold font-heading text-emerald-400">
@@ -264,7 +267,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
                   <Clock className="w-3.5 h-3.5 text-[#006644]" /> 45 min
                 </span>
                 <span className="inline-flex items-center gap-1">
-                  <Video className="w-3.5 h-3.5 text-[#006644]" /> Zoom video
+                  <Video className="w-3.5 h-3.5 text-[#006644]" /> Video call
                 </span>
               </div>
             </div>
@@ -286,7 +289,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
                 </div>
                 <div className="text-slate-500 mt-0.5 flex items-center gap-1">
                   <Globe2 className="w-3 h-3" />
-                  We'll confirm the exact time and send your Zoom link to{" "}
+                  We'll confirm the exact time and send the meeting link to{" "}
                   {form.email}.
                 </div>
               </div>
@@ -364,7 +367,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
               )}
 
               {!signed ? (
-                <SignIn
+                <SignIn embedded
                   api={liveAccountApi}
                   defaultEmail={form.email}
                   onSignedIn={() => setSigned(true)}
@@ -434,6 +437,22 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                   3D Secure bank verification supported.
                 </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 space-y-2 text-xs text-slate-700">
+                <p>
+                  <strong>Not included:</strong>{" "}
+                  {GATEWAY_EXCLUSIONS.join("; ").toLowerCase()}.
+                </p>
+                <p>{INDEPENDENCE_STATEMENT}</p>
+                <p>
+                  You can also apply directly to the university without StudyBg.
+                  You have a 14-day right to withdraw; see the{" "}
+                  <a href="#/terms" target="_blank" rel="noopener" className="font-semibold text-[#006644] underline">
+                    Terms
+                  </a>
+                  .
+                </p>
               </div>
             </div>
           </div>

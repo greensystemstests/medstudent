@@ -307,7 +307,8 @@ export async function transaction(pool, work) {
   }
 }
 
-export async function insertDocumentWithinQuota(db, doc, limits) {
+/** `activityDetail` is what the owner sees in their activity log, e.g. "Passport: scan.pdf". */
+export async function insertDocumentWithinQuota(db, doc, limits, activityDetail = doc.filename) {
   return transaction(db, async (client) => {
     await client.query("SELECT id FROM users WHERE id=$1 FOR UPDATE", [
       doc.userId,
@@ -325,7 +326,7 @@ export async function insertDocumentWithinQuota(db, doc, limits) {
       );
     }
     const saved = await insertDocument(client, doc);
-    await logActivity(client, doc.userId, "document_uploaded", doc.filename);
+    await logActivity(client, doc.userId, "document_uploaded", activityDetail);
     return saved;
   });
 }

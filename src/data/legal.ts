@@ -18,6 +18,14 @@ export const LEGAL_ENTITY = {
 };
 
 /** Shown at the top of each legal page. Update whenever the text changes. */
-export const LEGAL_LAST_UPDATED = '24 September 2026';
+export const LEGAL_LAST_UPDATED = '28 September 2026';
 
 export const hasRealEmail = (value: string) => /^[^\s@[\]]+@[^\s@[\]]+\.[^\s@[\]]+$/.test(value);
+
+/** True while a field still holds its [bracketed] setup placeholder. */
+export const isPlaceholder = (value: string) => value.includes('[');
+
+/** What visitors see instead of a setup placeholder, so raw developer text never reaches customers. */
+export const PENDING_DETAIL = 'to be published before we accept payments';
+
+export const shown = (value: string) => (isPlaceholder(value) ? PENDING_DETAIL : value);

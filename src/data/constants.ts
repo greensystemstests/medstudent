@@ -309,11 +309,13 @@ export const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
 ];
 
 export const FAQS = [
- {q:'Does a degree guarantee professional registration abroad?',a:'No. Check the current requirements of the professional regulator in the country where you intend to practise, including the specific university, programme, examinations and language requirements. StudyBg does not guarantee registration.'},
- {q:'What is the minimum Biology and Chemistry grade?',a:'Requirements vary. Plovdiv’s published 2026/27 guide uses a 62% average in school Biology and Chemistry. Other universities and qualification routes differ. Read the official guide and request a transcript review.'},
- {q:'What does the €180 fee cover?',a:'An application review, a 45-minute consultation request, university and document planning, and access to your saved application and documents. Tuition, examinations, translations, legalization, courier, housing and visa charges are separate.'},
- {q:'Is my requested consultation time confirmed?',a:'No. You choose a preferred day and a time window in Sofia time. The admissions team must confirm availability and send the meeting details separately.'},
- {q:'Does the portal automatically book visas or renew residence permits?',a:'No. These are planned services illustrated in the demo. Your live account currently supports saved applications, document uploads and staff review updates. Check immigration requirements with the relevant authority or a qualified adviser.'},
+  {q:'Why pay StudyBg instead of applying myself?',a:'You don\'t have to. Every university accepts applications directly, and if you\'re comfortable reading the official requirements, preparing your documents and tracking the deadlines yourself, that\'s a perfectly good route. StudyBg is for applicants who want an independent person to review their file, explain the requirements for their situation and keep the steps organised in one place.'},
+  {q:'Is the eligibility check really free?',a:'Yes. It runs in your browser, asks five questions and needs no sign-up or payment. Nothing is sent to us unless you later choose to continue with an application. The result is preliminary guidance, not an admission decision.'},
+  {q:'What does the €180 cover?',a:'An application and qualification review, a 45-minute video consultation, a document and deadline plan for your route, and your StudyBg account with secure document uploads and review notes. Tuition, entrance exams, translations, legalisation, courier, visa and living costs are separate.'},
+  {q:'What is the minimum Biology and Chemistry grade?',a:'It depends on the university and your qualification. Plovdiv\'s published 2026/27 guide uses a 62% average in school Biology and Chemistry. Other universities assess applicants differently, for example through entrance exams. Always check the official page for your route.'},
+  {q:'Is my consultation time confirmed when I choose it?',a:'Not yet. You choose a preferred day and time window (Sofia time); we confirm the exact time by email.'},
+  {q:'Does a Bulgarian degree guarantee I can practise in my country?',a:'No. Check the current rules of the professional regulator where you plan to practise, including recognised universities, exams and language requirements. StudyBg doesn\'t guarantee professional registration.'},
+  {q:'Do you book visas or renew residence permits?',a:'No. We help you understand which requirements to check. Visa and residence decisions are made by the relevant authorities, and appointments are booked by you. Automated reminders shown in the demo are planned, not live.'},
 ];
 
 // ---------------------------------------------------------------------------
@@ -326,24 +328,49 @@ export const MIN_SCIENCE_GRADE = 62;
 /** Onboarding fee shown in the UI. The amount actually charged is fixed on the server (server/app.js). */
 export const ONBOARDING_FEE_EUR = 180;
 
-/** What the €180 onboarding fee includes. Used on the pricing section and the payment page. */
+/** One name for the paid service, used everywhere (site, payment page, Terms). */
+export const GATEWAY_NAME = 'Admissions Gateway';
+
+/**
+ * What the €180 Admissions Gateway includes. Used on the homepage, the payment page and in the Terms (section 2),
+ * so the three always match. Only list deliverables the team actually provides; changing this list changes the
+ * accepted terms, so bump POLICY_VERSION in shared/admissions.js when you edit it.
+ */
 export const ONBOARDING_INCLUSIONS = [
-  { title: 'Comprehensive Secondary Credential Audit', detail: 'Bio/Chem MOES compliance check.' },
-  { title: '1-on-1 Strategy Video Consultation', detail: '45-minute consultation with the admissions team.' },
-  { title: 'Entrance Exam Prep Package', detail: 'Past questions, MCQs & syllabus guides for Sofia & Plovdiv.' },
-  { title: 'Sworn Translation Management in Sofia', detail: 'Direct cost passthrough with zero markups.' },
-  { title: 'Non-EU Type-D Visa Dossier Blueprint', detail: 'Housing, health insurance & bank balance assistance.' },
-  { title: 'Application status updates', detail: 'View your saved application, documents and review activity in My Account.' },
+  { title: 'Application and qualification review', detail: 'We read your saved application and school results against the published requirements of the university route you chose, and tell you what looks ready and what needs checking.' },
+  { title: '45-minute video consultation', detail: 'You request a day and time window; we confirm the exact time by email.' },
+  { title: 'Your document and deadline plan', detail: 'Which documents your route needs, in what order (legalisation, translation, submission) and which official deadlines to watch.' },
+  { title: 'Your StudyBg account', detail: 'Saved applications, secure document uploads, review notes from our team and a record of every action.' },
 ];
+
+/** What happens after a successful payment. Only steps the platform and team actually carry out. */
+export const AFTER_PAYMENT_STEPS = [
+  'You see a payment confirmation straight away, and we email your receipt.',
+  'We email you to confirm the exact time of your consultation call.',
+  'Our review notes and document statuses appear in My Account as we work through your file.',
+];
+
+/** Costs the €180 does not cover. Mirrors the Terms (section 2, "Not included"). */
+export const GATEWAY_EXCLUSIONS = [
+  'University tuition, application, registration and entrance-exam fees',
+  'Sworn translation, apostille, legalisation and notary fees',
+  'Courier and postage',
+  'Visa, residence-permit and other government fees',
+  'Travel, accommodation, health insurance and living costs',
+];
+
+/** Short independence and no-guarantee statement shown next to prices and payment buttons. Full wording: Terms, section 3. */
+export const INDEPENDENCE_STATEMENT =
+  'StudyBg is an independent admissions support service, not a university or an official representative of a Bulgarian university. Universities and the relevant authorities make their own decisions. StudyBg does not guarantee admission, exam results, visas, residence permits or professional registration.';
 
 /** What is covered on the 45-minute consultation call. */
 export const CONSULTATION_AGENDA = [
-  { title: 'Eligibility & credential review', detail: 'We go through your grades and documents against Bulgarian MOES rules.' },
-  { title: 'University & program strategy', detail: 'Compare faculties, tuition and seats, and confirm the right intake for you.' },
-  { title: 'Entrance exam plan', detail: 'Choose your exam session and walk through the prep package.' },
-  { title: 'Legalization roadmap', detail: 'Apostille, sworn translation and courier dispatch for your country.' },
-  { title: 'Visa & relocation', detail: 'Type-D visa file, housing, health insurance and proof of funds (non-EU).' },
-  { title: 'Your questions', detail: 'Costs, student life in Bulgaria, and exactly what happens next.' },
+  { title: 'Your qualification', detail: 'Your grades and school documents against the published requirements of your chosen university.' },
+  { title: 'Choosing a route', detail: 'How the four universities compare for your situation, and which intake to aim for.' },
+  { title: 'Entrance requirements', detail: 'What the university asks for (such as entrance tests or language evidence) and where to find the official dates.' },
+  { title: 'Documents', detail: 'Legalisation, sworn translation and submission steps for the country that issued your documents.' },
+  { title: 'Visa questions', detail: 'Which requirements to check with the authorities for your citizenship (we don\'t book visa appointments).' },
+  { title: 'Your questions', detail: 'Costs, timing, and exactly what happens next.' },
 ];
 
 export const CONSULTATION_WINDOWS = [

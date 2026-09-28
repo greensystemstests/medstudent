@@ -128,6 +128,11 @@ export default function App() {
   );
   const [pendingSection, setPendingSection] = useState<string | null>(null);
   const [isQuickFitOpen, setIsQuickFitOpen] = useState(false);
+  const [quickFitUniversity, setQuickFitUniversity] = useState<string | undefined>();
+  const openQuickFit = (universityId?: string) => {
+    setQuickFitUniversity(universityId);
+    setIsQuickFitOpen(true);
+  };
 
   useEffect(() => saveApplication(application), [application]);
 
@@ -274,20 +279,14 @@ export default function App() {
         hasPaidApplication={isPaid}
         onNavigate={navigate}
         onNavigateToSection={navigateToSection}
-        onOpenQuickFit={() => setIsQuickFitOpen(true)}
+        onOpenQuickFit={() => openQuickFit()}
       />
 
       {/* Only where it affects what the visitor is doing: applying or signing in. */}
       {(currentView === "wizard" || currentView === "account") && <ServiceNotice />}
       <main className="flex-1" id="main-content" tabIndex={-1}>
         {currentView === "home" && (
-          <PublicSiteView
-            onNavigate={navigate}
-            onOpenQuickFit={() => setIsQuickFitOpen(true)}
-            onSelectUniversity={(uniId, degree) =>
-              startWithPrefill({ selectedUniversityId: uniId, degree })
-            }
-          />
+          <PublicSiteView onNavigate={navigate} onOpenQuickFit={openQuickFit} />
         )}
 
         {currentView === "wizard" && (
@@ -340,6 +339,7 @@ export default function App() {
 
       <QuickFitModal
         isOpen={isQuickFitOpen}
+        initialUniversityId={quickFitUniversity}
         onClose={() => setIsQuickFitOpen(false)}
         onStartApplication={startWithPrefill}
       />

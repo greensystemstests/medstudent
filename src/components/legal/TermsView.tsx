@@ -1,7 +1,7 @@
 import React from 'react';
 import { scrollBehavior } from '../../lib/a11y';
 import { ONBOARDING_FEE_EUR, ONBOARDING_INCLUSIONS } from '../../data/constants';
-import { LEGAL_ENTITY } from '../../data/legal';
+import { LEGAL_ENTITY, shown } from '../../data/legal';
 import { AppView } from '../../types';
 import { Callout, ControllerBlock, Email, LegalLayout, List, PageLink, Section, Sub } from './LegalLayout';
 
@@ -29,7 +29,7 @@ export const TermsView: React.FC<{ onNavigate: (view: AppView) => void }> = ({ o
   <LegalLayout
     view="terms"
     title="Terms & Conditions"
-    intro={`The agreement between you and StudyBg when you use studybg.ac and buy the €${ONBOARDING_FEE_EUR} onboarding & advisory package. Please read these terms before you pay. If you are a consumer, nothing in them takes away your rights under mandatory consumer protection law.`}
+    intro={`The agreement between you and StudyBg when you use studybg.ac and buy the €${ONBOARDING_FEE_EUR} Admissions Gateway (our onboarding & advisory package). Please read these terms before you pay. If you are a consumer, nothing in them takes away your rights under mandatory consumer protection law.`}
     sections={SECTIONS}
     onNavigate={onNavigate}
   >
@@ -46,7 +46,7 @@ export const TermsView: React.FC<{ onNavigate: (view: AppView) => void }> = ({ o
     <Section id="service" n={2} title="Our service">
       <p>
         StudyBg is an independent advisory and application-support service for students who want to study English-taught Medicine,
-        Dentistry or Pharmacy at Bulgarian universities. The onboarding & advisory package (the “<strong>Package</strong>”) includes:
+        Dentistry or Pharmacy at Bulgarian universities. Our onboarding & advisory package, the Admissions Gateway (the “<strong>Package</strong>”), includes:
       </p>
       <List
         items={ONBOARDING_INCLUSIONS.map((item) => (
@@ -185,7 +185,7 @@ export const TermsView: React.FC<{ onNavigate: (view: AppView) => void }> = ({ o
 
     <Section id="ip" n={12} title="Our content">
       <p>
-        The site, its design and content, and the exam preparation materials are owned by StudyBg or its licensors. You may use them for
+        The site, its design and content, and any materials we provide to you are owned by StudyBg or its licensors. You may use them for
         your own personal preparation and application. You may not copy, share or sell them to others.
       </p>
     </Section>
@@ -231,9 +231,9 @@ export const TermsView: React.FC<{ onNavigate: (view: AppView) => void }> = ({ o
       <p className="text-slate-500">(Complete and return this form only if you wish to withdraw from the contract.)</p>
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-2 text-sm font-mono leading-relaxed">
         <p>
-          To: {LEGAL_ENTITY.name}, {LEGAL_ENTITY.address}, {LEGAL_ENTITY.contactEmail}
+          To: {shown(LEGAL_ENTITY.name)}, {shown(LEGAL_ENTITY.address)}, {shown(LEGAL_ENTITY.contactEmail)}
         </p>
-        <p>I hereby give notice that I withdraw from my contract for the provision of the following service: StudyBg onboarding &amp; advisory package</p>
+        <p>I hereby give notice that I withdraw from my contract for the provision of the following service: StudyBg Admissions Gateway (onboarding &amp; advisory package)</p>
         <p>Ordered on: ______________________</p>
         <p>Name of consumer: ______________________</p>
         <p>Address of consumer: ______________________</p>

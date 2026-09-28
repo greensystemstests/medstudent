@@ -79,31 +79,37 @@ const DOCUMENT_ITEMS: {
   key: keyof WizardFormData;
   label: string;
   note: string;
+  when: "now" | "later";
 }[] = [
   {
     key: "hasDiploma",
-    label: "High School Diploma (Tawjihi / A-Levels / IB / national)",
-    note: "Confirm the applicable certification and legalization route",
+    label: "School leaving certificate / diploma",
+    note: "Needed for your review (Tawjihi, A-Levels, IB or national diploma).",
+    when: "now",
   },
   {
     key: "hasTranscript",
-    label: "Detailed Science Marksheet / Transcript",
-    note: "Showing individual Biology and Chemistry grades",
-  },
-  {
-    key: "hasMedicalCertificate",
-    label: "Medical Health Certificate (if required)",
-    note: "Confirm format and validity with the university",
-  },
-  {
-    key: "hasPoliceClearance",
-    label: "Police Clearance Certificate (Criminal Record)",
-    note: "Confirm whether required for your route before obtaining it",
+    label: "Transcript showing your subject grades",
+    note: "Needed for your review. It should show Biology and Chemistry separately.",
+    when: "now",
   },
   {
     key: "hasHagueApostilleAccess",
-    label: "Access to a Hague Apostille office (or embassy legalization)",
-    note: "Discuss the applicable procedure with your advisor",
+    label: "I can get an apostille or embassy legalisation in my country",
+    note: "Later. We'll confirm which one applies to your documents.",
+    when: "later",
+  },
+  {
+    key: "hasMedicalCertificate",
+    label: "Medical certificate",
+    note: "Later, only if your route requires it. Don't obtain it yet.",
+    when: "later",
+  },
+  {
+    key: "hasPoliceClearance",
+    label: "Police clearance certificate",
+    note: "Later, only if your route requires it. Don't obtain it yet.",
+    when: "later",
   },
 ];
 
@@ -160,6 +166,7 @@ export const WizardView: React.FC<WizardViewProps> = ({
     currentStep < PAYMENT_STEP ? validateStep(currentStep, form) : [];
   const selectedUni = UNIVERSITIES.find((u) => u.id === form.universityId);
   const average = scienceAverage(form);
+  const docsLater = DOCUMENT_ITEMS.filter((d) => d.when === "later" && form[d.key]).length;
   const gradesOk =
     average != null &&
     validateStep(3, { ...form, englishProficiency: "native" }).length === 0;
@@ -322,8 +329,8 @@ export const WizardView: React.FC<WizardViewProps> = ({
             {currentStep === 1 && (
               <div className="space-y-6 animate-in fade-in duration-200">
                 <StepHeading
-                  title="Step 1: About You, Nationality & Secondary Education"
-                  subtitle="Bulgarian immigration and MOES require distinct legalization protocols for Non-EU vs EU/EEA citizens."
+                  title="Step 1: About you and your school"
+                  subtitle="We ask where your passport and your school qualification come from because they decide your document and visa steps. Everything here is required unless marked optional."
                 />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
@@ -386,17 +393,17 @@ export const WizardView: React.FC<WizardViewProps> = ({
                         [
                           "non_eu",
                           "Non-EU / Third Country",
-                          "Requires Type-D Student Visa & MOES Certificate",
+                          "A long-stay student visa is usually needed; we help you check",
                         ],
                         [
                           "eu_eea",
                           "EU / EEA Citizen",
-                          "Freedom of movement; simplified registration",
+                          "No student visa; residence registration after arrival",
                         ],
                         [
                           "uk_post_brexit",
                           "UK (Post-Brexit)",
-                          "FCDO Apostille + Bulgarian Type-D Visa",
+                          "Treated as non-EU; visa requirements to check",
                         ],
                       ] as const
                     ).map(([value, title, note]) => (
@@ -503,8 +510,8 @@ export const WizardView: React.FC<WizardViewProps> = ({
             {currentStep === 2 && (
               <div className="space-y-6 animate-in fade-in duration-200">
                 <StepHeading
-                  title="Step 2: Target Faculty, Program & Intake"
-                  subtitle="Select your preferred Bulgarian state university and degree program taught entirely in English."
+                  title="Step 2: University and intake"
+                  subtitle="Choose the route you want reviewed. You can change it later, and we'll compare alternatives on your call."
                 />
                 <div>
                   <span
@@ -645,8 +652,8 @@ export const WizardView: React.FC<WizardViewProps> = ({
             {currentStep === 3 && (
               <div className="space-y-6 animate-in fade-in duration-200">
                 <StepHeading
-                  title="Step 3: Science Grades & English Proficiency"
-                  subtitle="Requirements vary by university and qualification. These grades prepare your file for review."
+                  title="Step 3: Grades and English"
+                  subtitle="We use these to prepare your review. They don't decide admission on their own: each university sets its own rules."
                 />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {(
@@ -753,8 +760,8 @@ export const WizardView: React.FC<WizardViewProps> = ({
             {currentStep === 4 && (
               <div className="space-y-6 animate-in fade-in duration-200">
                 <StepHeading
-                  title="Step 4: Certified Documents & Legalization Readiness"
-                  subtitle="Confirm you have, or can obtain, each document below. Your diploma and transcript are needed for review; other requirements depend on your route."
+                  title="Step 4: Documents you have or can get"
+                  subtitle="Just tick what applies; nothing is uploaded here. Only your diploma and transcript are needed now. Don't order a medical or police certificate until we've confirmed your route needs it."
                 />
                 <div className="space-y-3">
                   {DOCUMENT_ITEMS.map((item) => (
@@ -771,10 +778,15 @@ export const WizardView: React.FC<WizardViewProps> = ({
                         className="mt-1 w-4 h-4 accent-[#006644]"
                       />
                       <div className="text-xs">
-                        <div className="font-bold text-slate-800">
+                        <div className="font-bold text-slate-800 flex flex-wrap items-center gap-2">
                           {item.label}
+                          <span
+                            className={`text-[0.6875rem] font-semibold px-1.5 py-0.5 rounded ${item.when === "now" ? "bg-emerald-100 text-emerald-900" : "bg-slate-200 text-slate-700"}`}
+                          >
+                            {item.when === "now" ? "Needed now" : "Later"}
+                          </span>
                         </div>
-                        <div className="text-slate-500 text-[0.6875rem]">
+                        <div className="text-slate-600 text-[0.6875rem]">
                           {item.note}
                         </div>
                       </div>
@@ -788,8 +800,8 @@ export const WizardView: React.FC<WizardViewProps> = ({
             {currentStep === 5 && (
               <div className="space-y-6 animate-in fade-in duration-200">
                 <StepHeading
-                  title="Step 5: Entrance Exam Session"
-                  subtitle="The official entrance examination is multiple-choice in Biology & Chemistry."
+                  title="Step 5: Entrance exam"
+                  subtitle="Entrance tests and their dates differ by university and are published by the university. We'll go through the options for your route on your call."
                 />
                 <div
                   role="group"
@@ -833,76 +845,18 @@ export const WizardView: React.FC<WizardViewProps> = ({
                       Decide with my advisor
                     </div>
                     <div className="text-[0.6875rem] text-slate-500">
-                      We'll pick the best upcoming session on your call
+                      We'll look at the published options for your route together
                     </div>
                   </button>
                 </div>
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs space-y-2">
-                  <div className="font-bold text-slate-800 flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-[#006644]" />
-                    StudyBg Exam Prep Syllabus Included
-                  </div>
-                  <p className="text-slate-600 leading-relaxed">
-                    500+ past Biology and Chemistry MCQs with detailed
-                    explanations, aligned with the Bulgarian medical faculties'
-                    curriculum.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* STEP 6 */}
-            {currentStep === 6 && (
-              <div className="space-y-6 animate-in fade-in duration-200">
-                <StepHeading
-                  title="Step 6: Bulgarian Sworn Translation & Sofia Legal Courier"
-                  subtitle="Documents must be translated by an MFA-registered sworn translator in Sofia."
-                />
-                <label className="flex items-start gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={form.swornTranslationRequested}
-                    onChange={(e) =>
-                      update({ swornTranslationRequested: e.target.checked })
-                    }
-                    className="mt-1 w-4 h-4 accent-[#006644]"
-                  />
-                  <div className="text-xs">
-                    <div className="font-bold text-slate-800">
-                      StudyBg manages my sworn translation
-                    </div>
-                    <div className="text-slate-500 text-[0.6875rem]">
-                      Translator's fee passed through at cost, zero markup.
-                    </div>
-                  </div>
-                </label>
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
-                  <label
-                    className="block text-xs font-bold text-slate-700 uppercase"
-                    htmlFor="address"
-                  >
-                    Document pickup address (for DHL Express)
-                  </label>
-                  <div className="flex items-start gap-2">
-                    <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-2.5" />
-                    <textarea
-                      id="address"
-                      rows={3}
-                      autoComplete="street-address"
-                      placeholder="Street, building, city, postcode, country"
-                      value={form.dhlPickupAddress}
-                      onChange={(e) =>
-                        update({ dhlPickupAddress: e.target.value })
-                      }
-                      className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:border-[#006644] outline-none"
-                    />
-                  </div>
-                  <div className="text-[0.6875rem] text-slate-500 flex items-center gap-1.5">
-                    <Truck className="w-3.5 h-3.5 text-[#006644]" />A DHL
-                    Express or other courier booking must be confirmed
-                    separately. Entering an address does not book a collection.
-                  </div>
-                </div>
+                <Notice>
+                  See the{" "}
+                  <a href="#/calendar" className="font-semibold text-[#006644] underline">
+                    admissions calendar
+                  </a>{" "}
+                  for each university’s official page. We don’t list exam dates
+                  until the university has published them.
+                </Notice>
               </div>
             )}
 
@@ -910,8 +864,8 @@ export const WizardView: React.FC<WizardViewProps> = ({
             {currentStep === 7 && (
               <div className="space-y-6 animate-in fade-in duration-200">
                 <StepHeading
-                  title="Step 7: Review Your Application & Book Your Call"
-                  subtitle="Check your details, choose when you'd like your 45-minute consultation, and confirm the declarations."
+                  title="Step 7: Review and request your call"
+                  subtitle="Check your answers, pick a preferred time for your 45-minute consultation, and confirm the three statements. Nothing is charged at this step."
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -955,9 +909,13 @@ export const WizardView: React.FC<WizardViewProps> = ({
                         ? "decide with advisor"
                         : examSessionLabel(form.examDate)}
                     </div>
-                    <div>All 5 documents confirmed</div>
-                    <div className="truncate">
-                      Pickup: {form.dhlPickupAddress}
+                    <div>
+                      Diploma and transcript confirmed
+                      {docsLater > 0 && ` · ${docsLater} later item${docsLater === 1 ? "" : "s"} ticked`}
+                    </div>
+                    <div>
+                      Translation help:{" "}
+                      {form.swornTranslationRequested ? "requested" : "not requested"}
                     </div>
                   </ReviewCard>
                 </div>
@@ -1145,8 +1103,8 @@ export const WizardView: React.FC<WizardViewProps> = ({
                     {selectedUni && ` • ${selectedUni.city}`}
                   </div>
                   {selectedUni && (
-                    <div className="text-xs text-[#006644] font-semibold mt-1">
-                      Tuition: {selectedUni.tuitionFee}
+                    <div className="text-xs text-slate-600 mt-1">
+                      Tuition: confirm on the university’s official page
                     </div>
                   )}
                 </div>
@@ -1171,7 +1129,7 @@ export const WizardView: React.FC<WizardViewProps> = ({
                   <div className="flex justify-between">
                     <span>Onboarding fee</span>
                     <span className="font-bold text-[#006644]">
-                      €180 (paid at step 8)
+                      €180, only at step 8
                     </span>
                   </div>
                 </div>
@@ -1180,8 +1138,8 @@ export const WizardView: React.FC<WizardViewProps> = ({
                     <div className="font-bold text-slate-800">
                       StudyBg admissions team
                     </div>
-                    <div className="text-[0.6875rem] text-slate-500">
-                      Your Sofia legal advisor
+                    <div className="text-[0.6875rem] text-slate-600">
+                      Reviews your application after payment
                     </div>
                   </div>
                 </div>

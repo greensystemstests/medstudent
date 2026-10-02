@@ -16,7 +16,9 @@ The browser never holds the Stripe secret key and never decides the amount. The 
 - `GET  /api/config`: publishable key + the fixed fee (€180.00 EUR)
 - `POST /api/payment-intent`: requires a verified session and a server-saved application version. Reserves and creates an immutable €180 PaymentIntent with a stable idempotency key. Cancel the unpaid checkout from My Account before editing.
 - `GET  /api/payment-intent/:id?applicationId=…`: asks Stripe whether the payment really succeeded. The wizard only unlocks the confirmation page on this answer.
-- `POST /api/stripe/webhook`: verified Stripe events (`payment_intent.succeeded` / `payment_failed`), logged to the service logs. On a successful payment this is also where the invoice and emails below are triggered — the API never trusts the browser to say "I paid," only this signed, server-to-server event.
+- `POST /api/checkout-session`: same checks as above, but returns the `url` of a **Stripe-hosted Checkout page** (`ui_mode: hosted_page`). The payment step redirects there; Stripe sends the applicant back to `SITE_URL/?checkout=success&session_id=…#/apply` (or `?checkout=cancel`). This is the flow the site uses. See [STRIPE_INTEGRATION_TODO.md](STRIPE_INTEGRATION_TODO.md).
+- `GET  /api/checkout-session/:id?applicationId=…`: used by the return page; asks Stripe whether the session was paid and records it (same as the webhook, whichever comes first).
+- `POST /api/stripe/webhook`: verified Stripe events (`checkout.session.completed`, `checkout.session.async_payment_succeeded`, `payment_intent.succeeded`), logged to the service logs. On a successful payment this is also where the invoice and emails below are triggered — the API never trusts the browser to say "I paid," only this signed, server-to-server event.
 
 ### Invoices & receipt emails
 
@@ -105,7 +107,8 @@ npm run build
 1. **Render → studybg-api → Environment**: set `STRIPE_SECRET_KEY` and `STRIPE_PUBLISHABLE_KEY`
    (test keys first, live keys when ready. Both must be the same mode).
 2. **Stripe → Developers → Webhooks**: add endpoint `https://<render-url>/api/stripe/webhook` for
-   `payment_intent.succeeded` and `payment_intent.payment_failed`, then set its signing secret as `STRIPE_WEBHOOK_SECRET` on Render.
+   `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `payment_intent.succeeded` and
+   `payment_intent.payment_failed`, then set its signing secret as `STRIPE_WEBHOOK_SECRET` on Render.
 3. Decide whether to also enable Stripe’s own customer receipt emails; the StudyBg invoice email is already separate.
 4. The frontend build reads the API address from the `VITE_API_BASE_URL` repository variable
    (GitHub → Settings → Secrets and variables → Actions → Variables); the workflow falls back to the Render URL.

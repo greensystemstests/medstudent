@@ -53,6 +53,7 @@ interface WizardViewProps {
   onNavigate: (view: AppView) => void;
   onStartNewApplication: () => void;
   demoMode: boolean;
+  checkoutNotice?: "cancel" | "pending" | null;
 }
 
 const inputClass =
@@ -119,6 +120,7 @@ export const WizardView: React.FC<WizardViewProps> = ({
   onNavigate,
   onStartNewApplication,
   demoMode,
+  checkoutNotice = null,
 }) => {
   const { form } = app;
   const [showErrors, setShowErrors] = useState(false);
@@ -1036,6 +1038,7 @@ export const WizardView: React.FC<WizardViewProps> = ({
             {currentStep === PAYMENT_STEP && (
               <PaymentStep
                 app={app}
+                checkoutNotice={checkoutNotice}
                 onSaved={(saved) => onChange(saved)}
                 onIntentCreated={(paymentIntentId) =>
                   onChange((a) =>

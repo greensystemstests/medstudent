@@ -103,6 +103,7 @@ const app = createApp({
       process.env.LEGAL_APPROVED === "true" &&
       Boolean(seller && process.env.SUPPORT_EMAIL),
     supportEmail: process.env.SUPPORT_EMAIL?.trim(),
+    siteUrl,
     staffEmails: (process.env.STAFF_EMAILS || "")
       .split(",")
       .map((e) => e.trim().toLowerCase())

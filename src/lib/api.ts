@@ -101,3 +101,20 @@ export const getPaymentStatus = (
   request<PaymentIntentInfo>(
     `/api/payment-intent/${encodeURIComponent(paymentIntentId)}?applicationId=${encodeURIComponent(applicationId)}`,
   );
+
+/** Opens a Stripe-hosted Checkout page for a saved application; the browser then redirects to `url`. */
+export const createCheckoutSession = (app: ApplicationState) =>
+  request<{ sessionId: string; url: string }>("/api/checkout-session", {
+    method: "POST",
+    body: JSON.stringify({
+      applicationId: app.id,
+      version: app.version,
+      policyVersion: POLICY_VERSION,
+    }),
+  });
+
+/** After returning from Stripe Checkout: asks the server (which asks Stripe) whether it was paid. */
+export const getCheckoutStatus = (sessionId: string, applicationId: string) =>
+  request<PaymentIntentInfo | { paid: false; status: string }>(
+    `/api/checkout-session/${encodeURIComponent(sessionId)}?applicationId=${encodeURIComponent(applicationId)}`,
+  );

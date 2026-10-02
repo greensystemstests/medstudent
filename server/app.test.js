@@ -69,6 +69,57 @@ function stripeFake() {
         return { data: [] };
       },
     },
+    sessions: new Map(),
+    checkout: {
+      sessions: {
+        async create(params, { idempotencyKey }) {
+          if (keys.has(idempotencyKey))
+            return this._all.get(keys.get(idempotencyKey));
+          const id = `cs_test${keys.size + 1}`;
+          const session = {
+            id,
+            url: `https://checkout.stripe.test/${id}`,
+            status: "open",
+            payment_status: "unpaid",
+            payment_intent: null,
+            ...params,
+          };
+          keys.set(idempotencyKey, id);
+          this._all.set(id, session);
+          return session;
+        },
+        async retrieve(id) {
+          if (!this._all.has(id)) throw new Error("Missing session");
+          return this._all.get(id);
+        },
+        async expire(id) {
+          const session = this._all.get(id);
+          session.status = "expired";
+          return session;
+        },
+        _all: new Map(),
+      },
+    },
+    /** Simulates the customer paying on the Stripe-hosted page. */
+    payHosted(sessionId) {
+      const session = this.checkout.sessions._all.get(sessionId);
+      const item = session.line_items[0].price_data;
+      const id = `pi_hosted${intents.size + 1}`;
+      intents.set(id, {
+        id,
+        status: "succeeded",
+        amount: item.unit_amount,
+        currency: item.currency,
+        created: 1790000000,
+        ...session.payment_intent_data,
+      });
+      Object.assign(session, {
+        status: "complete",
+        payment_status: "paid",
+        payment_intent: id,
+      });
+      return session;
+    },
     webhooks: {
       constructEvent(body, sig) {
         if (sig !== "valid") throw new Error("bad signature");
@@ -192,6 +243,26 @@ describe(
       });
       assert.equal(r.status, 200, await r.clone().text());
       return r.json();
+    }
+    async function hostedCheckout(a) {
+      const r = await call("/api/checkout-session", {
+        method: "POST",
+        json: {
+          applicationId: a.id,
+          version: a.version,
+          policyVersion: POLICY_VERSION,
+        },
+      });
+      assert.equal(r.status, 200, await r.clone().text());
+      return r.json();
+    }
+    async function sessionWebhook(session) {
+      return call("/api/stripe/webhook", {
+        method: "POST",
+        auth: null,
+        json: { type: "checkout.session.completed", data: { object: session } },
+        headers: { "stripe-signature": "valid" },
+      });
     }
     async function webhook(pi) {
       return call("/api/stripe/webhook", {
@@ -323,6 +394,116 @@ describe(
         ).status,
         404,
       );
+    });
+    test("hosted Checkout: Checkout Studio settings, fixed server price, form lock and session reuse", async () => {
+      const a = await draft();
+      const first = await hostedCheckout(a);
+      const again = await hostedCheckout(a);
+      assert.equal(first.sessionId, again.sessionId);
+      assert.match(first.url, /^https:\/\/checkout\.stripe\.test\//);
+      const s = await stripe.checkout.sessions.retrieve(first.sessionId);
+      assert.equal(s.ui_mode, "hosted_page");
+      assert.equal(s.mode, "payment");
+      assert.equal(s.billing_address_collection, "auto");
+      assert.deepEqual(s.phone_number_collection, { enabled: true });
+      assert.deepEqual(s.automatic_tax, { enabled: false });
+      assert.equal(s.allow_promotion_codes, false);
+      assert.equal(s.submit_type, "auto");
+      assert.deepEqual(s.saved_payment_method_options, {
+        payment_method_save: "enabled",
+      });
+      assert.equal(s.integration_identifier, "hosted_web_0001");
+      assert.equal(s.origin_context, "web");
+      assert.equal(s.payment_method_collection, undefined);
+      assert.equal(s.line_items[0].price_data.unit_amount, 18000);
+      assert.equal(s.line_items[0].price_data.currency, "eur");
+      assert.equal(s.client_reference_id, a.id);
+      assert.equal(s.payment_intent_data.metadata.application_id, a.id);
+      assert.match(s.success_url, /checkout=success&session_id=\{CHECKOUT_SESSION_ID\}/);
+      // The form is locked and the consent snapshot recorded, as with the embedded flow.
+      assert.equal(
+        (await call(`/api/applications/${a.id}`, { method: "POST", json: a }))
+          .status,
+        409,
+      );
+      assert.equal(
+        (await db.query("SELECT * FROM application_consents")).rows.length,
+        1,
+      );
+      // The embedded endpoint can't start a second payment for the same application.
+      const r = await call("/api/payment-intent", {
+        method: "POST",
+        json: { applicationId: a.id, version: a.version, policyVersion: POLICY_VERSION },
+      });
+      assert.equal(r.status, 409);
+    });
+    test("hosted Checkout: paid session settles once via webhook and return page", async () => {
+      const a = await draft();
+      const { sessionId } = await hostedCheckout(a);
+      // Before payment the return page reports not paid.
+      let status = await (
+        await call(`/api/checkout-session/${sessionId}?applicationId=${a.id}`)
+      ).json();
+      assert.equal(status.paid, false);
+      const session = stripe.payHosted(sessionId);
+      // Stripe also sends payment_intent.succeeded; order must not matter.
+      assert.equal(
+        (await webhook(stripe.intents.get(session.payment_intent))).status,
+        200,
+      );
+      assert.equal((await sessionWebhook(session)).status, 200);
+      assert.equal((await sessionWebhook(session)).status, 200);
+      status = await (
+        await call(`/api/checkout-session/${sessionId}?applicationId=${a.id}`)
+      ).json();
+      assert.equal(status.paid, true);
+      assert.equal(status.amount, 18000);
+      const app = (
+        await db.query("SELECT * FROM applications WHERE id=$1", [a.id])
+      ).rows[0];
+      assert.ok(app.paid_at);
+      assert.equal(app.status, "submitted");
+      assert.equal(app.payment_intent_id, session.payment_intent);
+      const inv = await db.query("SELECT * FROM invoices");
+      assert.equal(inv.rows.length, 1);
+      assert.equal(Number(inv.rows[0].invoice_number), 501);
+      assert.equal(
+        (await db.query("SELECT * FROM email_outbox")).rows.length,
+        2,
+      );
+      // Another user can't read this payment's status.
+      assert.equal(
+        (
+          await call(`/api/checkout-session/${sessionId}?applicationId=${a.id}`, {
+            auth: otherToken,
+          })
+        ).status,
+        404,
+      );
+      // A paid application can't open another payment page.
+      const fresh = await (await call(`/api/applications/${a.id}`)).json();
+      const r = await call("/api/checkout-session", {
+        method: "POST",
+        json: { applicationId: a.id, version: fresh.version, policyVersion: POLICY_VERSION },
+      });
+      assert.equal(r.status, 409);
+    });
+    test("hosted Checkout: reopening to edit closes the open Stripe page", async () => {
+      const a = await draft();
+      const { sessionId } = await hostedCheckout(a);
+      const r = await call(`/api/applications/${a.id}/reopen`, {
+        method: "POST",
+        json: {},
+      });
+      assert.equal(r.status, 200, await r.clone().text());
+      assert.equal(
+        (await stripe.checkout.sessions.retrieve(sessionId)).status,
+        "expired",
+      );
+      const reopened = await r.json();
+      assert.equal(reopened.status, "draft");
+      const next = await hostedCheckout(reopened);
+      assert.notEqual(next.sessionId, sessionId);
     });
     test("cancels unpaid checkout before editing; retains each accepted version", async () => {
       const a = await draft(),

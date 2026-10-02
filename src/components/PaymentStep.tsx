@@ -1,16 +1,7 @@
 import { SignIn } from "./AccountView";
 import { liveAccountApi } from "../lib/account";
 import { getApplication, saveOnline } from "../lib/api";
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  Elements,
-  PaymentElement,
-  useElements,
-  useStripe,
-} from "@stripe/react-stripe-js";
-// The /pure entry only loads Stripe.js when the payment step opens, not on every page.
-import { loadStripe } from "@stripe/stripe-js/pure";
-import type { Stripe, StripeElementsOptions } from "@stripe/stripe-js";
+import React, { useEffect, useState } from "react";
 import {
   AlertCircle,
   CalendarClock,
@@ -38,9 +29,8 @@ import {
 } from "../data/constants";
 import {
   ApiError,
-  createOrUpdatePaymentIntent,
+  createCheckoutSession,
   getPaymentConfig,
-  getPaymentStatus,
   PaymentConfig,
   PaymentIntentInfo,
 } from "../lib/api";
@@ -54,13 +44,8 @@ interface PaymentStepProps {
   onIntentCreated: (paymentIntentId: string) => void;
   /** Called only after the server has confirmed with Stripe that the payment succeeded. */
   onPaid: (info: PaymentIntentInfo) => void;
-}
-
-const stripeCache = new Map<string, Promise<Stripe | null>>();
-function getStripe(publishableKey: string) {
-  if (!stripeCache.has(publishableKey))
-    stripeCache.set(publishableKey, loadStripe(publishableKey));
-  return stripeCache.get(publishableKey)!;
+  /** Set when the browser has just come back from the Stripe-hosted payment page. */
+  checkoutNotice?: "cancel" | "pending" | null;
 }
 
 export const formatMoney = (amountMinor: number, currency = "eur") =>
@@ -69,39 +54,12 @@ export const formatMoney = (amountMinor: number, currency = "eur") =>
     currency: currency.toUpperCase(),
   }).format(amountMinor / 100);
 
-const appearance: StripeElementsOptions["appearance"] = {
-  theme: "stripe",
-  variables: {
-    colorPrimary: "#006644",
-    colorText: "#0b1c30",
-    colorTextSecondary: "#64748b",
-    colorDanger: "#dc2626",
-    colorBackground: "#ffffff",
-    fontFamily: 'Inter, system-ui, -apple-system, "Segoe UI", sans-serif',
-    fontSizeBase: "15px",
-    borderRadius: "10px",
-    spacingUnit: "4px",
-  },
-  rules: {
-    ".Input": { border: "1px solid #cbd5e1", boxShadow: "none" },
-    ".Input:focus": { borderColor: "#006644", boxShadow: "0 0 0 1px #006644" },
-    ".Label": { fontWeight: "600", fontSize: "12px", color: "#334155" },
-    ".Tab": { border: "1px solid #e2e8f0", boxShadow: "none" },
-    ".Tab--selected": {
-      borderColor: "#006644",
-      boxShadow: "0 0 0 1px #006644",
-    },
-  },
-};
-
 export const PaymentStep: React.FC<PaymentStepProps> = ({
   app,
   onSaved,
-  onIntentCreated,
-  onPaid,
+  checkoutNotice = null,
 }) => {
   const [config, setConfig] = useState<PaymentConfig | null>(null);
-  const [intent, setIntent] = useState<PaymentIntentInfo | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
 
@@ -129,19 +87,12 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
       if (remote && remote.status !== "draft") saved = remote;
       else saved = await saveOnline(app);
       onSaved(saved);
-      const pi = await createOrUpdatePaymentIntent(saved);
-      setIntent(pi);
-      onSaved({
-        ...saved,
-        status: "checkout",
-        currentStep: 8,
-        payment: { ...saved.payment, paymentIntentId: pi.paymentIntentId },
-      });
-      onIntentCreated(pi.paymentIntentId);
-      if (pi.paid) onPaid(pi);
+      const checkout = await createCheckoutSession(saved);
+      onSaved({ ...saved, status: "checkout", currentStep: 8 });
+      // Leave for the Stripe-hosted payment page; Stripe sends the browser back here afterwards.
+      window.location.assign(checkout.url);
     } catch (e) {
       setLoadError((e as Error).message);
-    } finally {
       setPreparing(false);
     }
   }
@@ -149,23 +100,6 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
   const amount = config?.amount ?? ONBOARDING_FEE_EUR * 100;
   const currency = config?.currency ?? "eur";
   const total = formatMoney(amount, currency);
-
-  const elementsOptions = useMemo<StripeElementsOptions | undefined>(
-    () =>
-      intent?.clientSecret
-        ? {
-            clientSecret: intent.clientSecret,
-            appearance,
-            fonts: [
-              {
-                cssSrc:
-                  "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap",
-              },
-            ],
-          }
-        : undefined,
-    [intent?.clientSecret],
-  );
 
   return (
     <div
@@ -360,7 +294,8 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
 
               {config?.testMode && (
                 <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-[0.6875rem] text-amber-900">
-                  <strong>Test mode:</strong> no real money moves. Use card{" "}
+                  <strong>Test mode:</strong> no real money moves. On the Stripe
+                  page, use card{" "}
                   <code className="font-mono">4242 4242 4242 4242</code>, any
                   future expiry and any CVC.
                 </div>
@@ -392,38 +327,41 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
                     <RefreshCw className="w-3.5 h-3.5" /> Try again
                   </button>
                 </div>
-              ) : config && elementsOptions ? (
-                <Elements
-                  key={elementsOptions.clientSecret}
-                  stripe={getStripe(config.publishableKey)}
-                  options={elementsOptions}
-                >
-                  <CheckoutForm app={app} total={total} onPaid={onPaid} />
-                </Elements>
               ) : (
                 <div className="space-y-3" aria-busy={preparing}>
+                  {checkoutNotice && (
+                    <p
+                      role="status"
+                      className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+                    >
+                      {checkoutNotice === "cancel"
+                        ? "Payment cancelled on the Stripe page. Nothing was charged. You can try again when you're ready."
+                        : "We're waiting for Stripe to confirm your payment. This page updates automatically; if you were charged, don't pay again."}
+                    </p>
+                  )}
                   <button
                     type="button"
                     disabled={preparing || !config}
                     onClick={prepare}
-                    className="w-full px-4 py-3 bg-[#006644] text-white rounded-xl disabled:opacity-50"
+                    id="pay-button"
+                    className="w-full min-h-11 px-4 py-3 bg-[#006644] hover:bg-[#005538] text-white font-bold rounded-xl disabled:opacity-50 inline-flex items-center justify-center gap-2"
                   >
-                    {preparing
-                      ? "Preparing checkout…"
-                      : "Save application & prepare checkout"}
+                    {preparing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                        Opening secure payment page…
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="w-4 h-4" aria-hidden="true" />
+                        Pay {total} on Stripe
+                      </>
+                    )}
                   </button>
-                  <div className="h-10 rounded-lg bg-slate-100 animate-pulse" />
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="h-10 rounded-lg bg-slate-100 animate-pulse" />
-                    <div className="h-10 rounded-lg bg-slate-100 animate-pulse" />
-                  </div>
-                  <div
-                    className="text-[0.6875rem] text-slate-500 flex items-center gap-1.5"
-                    role="status"
-                  >
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Your
-                    application is saved before payment.
-                  </div>
+                  <p className="text-[0.6875rem] text-slate-600">
+                    We save your application, then take you to Stripe’s secure
+                    payment page. You’ll come back here when you’re done.
+                  </p>
                 </div>
               )}
 
@@ -459,115 +397,5 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
         </div>
       </div>
     </div>
-  );
-};
-
-const CheckoutForm: React.FC<{
-  app: ApplicationState;
-  total: string;
-  onPaid: (info: PaymentIntentInfo) => void;
-}> = ({ app, total, onPaid }) => {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [ready, setReady] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [processing, setProcessing] = useState(false);
-
-  // Some payment methods settle asynchronously; poll the server until Stripe reports a final state.
-  const verify = async (paymentIntentId: string) => {
-    for (let i = 0; i < 10; i++) {
-      const status = await getPaymentStatus(paymentIntentId, app.id);
-      if (status.paid) return onPaid(status);
-      if (status.status !== "processing") break;
-      setProcessing(true);
-      await new Promise((r) => setTimeout(r, 3000));
-    }
-    setProcessing(false);
-    setMessage(
-      "Your payment has not completed yet. If you were charged, contact us with your email and we will sort it out.",
-    );
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!stripe || !elements || submitting) return;
-    setSubmitting(true);
-    setMessage(null);
-
-    const returnUrl = new URL(window.location.href);
-    returnUrl.search = "";
-    returnUrl.hash = "";
-    returnUrl.searchParams.set("payment_return", "1");
-
-    const { error, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      confirmParams: { return_url: returnUrl.toString() },
-      // Cards (incl. 3D Secure) finish in place; only redirect-based methods leave the page.
-      redirect: "if_required",
-    });
-
-    if (error) {
-      setMessage(
-        error.type === "card_error" || error.type === "validation_error"
-          ? (error.message ?? "Your card was declined.")
-          : "Something went wrong while processing your payment. Check the payment status before trying again.",
-      );
-      setSubmitting(false);
-      return;
-    }
-
-    try {
-      if (paymentIntent) await verify(paymentIntent.id);
-    } catch (err) {
-      setMessage(
-        err instanceof Error ? err.message : "Could not confirm your payment.",
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4" id="checkout-form">
-      <PaymentElement
-        onReady={() => setReady(true)}
-        options={{
-          layout: "tabs",
-          defaultValues: {
-            billingDetails: { name: app.form.fullName, email: app.form.email },
-          },
-        }}
-      />
-
-      {message && (
-        <div
-          className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800 flex items-start gap-2"
-          role="alert"
-        >
-          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-          <span>{message}</span>
-        </div>
-      )}
-
-      <button
-        type="submit"
-        disabled={!stripe || !ready || submitting}
-        id="pay-button"
-        className="w-full py-3 px-4 rounded-xl text-sm font-bold text-white bg-[#006644] hover:bg-[#005538] disabled:opacity-60 disabled:cursor-not-allowed shadow-sm transition-all flex items-center justify-center gap-2"
-      >
-        {submitting ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            {processing ? "Waiting for your bank…" : "Processing payment…"}
-          </>
-        ) : (
-          <>
-            <Lock className="w-4 h-4" />
-            Pay {total}
-          </>
-        )}
-      </button>
-    </form>
   );
 };

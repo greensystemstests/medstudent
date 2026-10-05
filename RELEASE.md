@@ -14,7 +14,7 @@ Final verification on 25 September 2026 on `codex/studybg-production-readiness`,
 Service: `studybg-api` (`srv-daqf8597lnhs73cq11p0`), workspace Green1. The service was provisioned directly, so editing `render.yaml` does not update its dashboard settings.
 
 - Set health-check path to `/api/health` and auto-deploy trigger to **After CI Checks Pass**. The connected Render operations do not expose these service-setting updates.
-- Preserve the existing `DATABASE_URL` and `FILE_ENCRYPTION_KEY`. Never regenerate the file key for an existing document store.
+- Preserve the existing `DATABASE_URL` and `FILE_ENCRYPTION_KEY`. Never regenerate the file key for an existing document store. If the database moves (e.g. Render to Neon), copy any data you need to keep first, keep the same `FILE_ENCRYPTION_KEY`, and use a direct (non-pooled) connection string.
 - Configure Stripe secret/publishable keys in matching test/live mode and `STRIPE_WEBHOOK_SECRET` for `/api/stripe/webhook`.
 - Configure verified Resend sender credentials, `RESEND_API_KEY`, `INVOICE_FROM_EMAIL`, and the intended `SALE_NOTIFICATION_EMAIL`.
 - Complete `COMPANY_LEGAL_NAME`, `COMPANY_EIK`, `COMPANY_ADDRESS`, `COMPANY_CITY`, appropriate `COMPANY_VAT_NUMBER`, and monitored `SUPPORT_EMAIL`. Match the website identity and invoice identity.

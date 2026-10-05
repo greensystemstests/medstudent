@@ -2,18 +2,47 @@ import crypto from "node:crypto";
 import pg from "pg";
 
 /**
- * @param {string | undefined} url  DATABASE_URL (Render Postgres). null when unset, so the API
+ * Neon's pooled endpoint (host contains "-pooler") runs PgBouncer in transaction mode. Checkout and
+ * invoice sending use session-level advisory locks (pg_advisory_lock), which a transaction pooler can
+ * release on a different backend than the one that took them. Refuse it at startup rather than
+ * race silently: use Neon's direct (non-pooled) connection string.
+ */
+export function assertDirectConnection(url) {
+  let host;
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    return; // not a URL form we can inspect; let pg report any real problem
+  }
+  if (/-pooler(\.|$)/.test(host))
+    throw new Error(
+      "DATABASE_URL points at Neon's pooled endpoint (host contains '-pooler'). " +
+        "Use the direct connection string instead (turn off 'Connection pooling' in the Neon connect dialog); " +
+        "session-level advisory locks are not safe through a transaction pooler.",
+    );
+}
+
+/**
+ * @param {string | undefined} url  DATABASE_URL (Neon or Render Postgres). null when unset, so the API
  *   still runs (payments work) and account features answer 503 until it's configured.
  */
 export function connectDb(url) {
   if (!url) return null;
-  // Render's external connection strings require TLS; the internal ones (same region) don't.
-  const needsTls = /sslmode=require|\.render\.com/.test(url);
-  return new pg.Pool({
+  assertDirectConnection(url);
+  // Neon and Render's external connection strings require TLS; Render's internal ones (same region) don't.
+  const needsTls = /sslmode=require|\.render\.com|\.neon\.tech/.test(url);
+  const pool = new pg.Pool({
     connectionString: url,
     max: 5,
     ssl: needsTls ? { rejectUnauthorized: false } : false,
   });
+  // Managed Postgres drops idle connections (Neon suspends idle compute; providers restart for
+  // maintenance). Without a listener node-postgres rethrows that as an uncaught exception and the
+  // process dies; the pool simply opens a fresh connection on the next query.
+  pool.on("error", (err) =>
+    console.error("Postgres idle connection error:", err.message),
+  );
+  return pool;
 }
 
 export async function migrate(db) {

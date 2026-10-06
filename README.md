@@ -129,9 +129,15 @@ npm run build
 
 ## Turning on student accounts
 
-1. **Render → studybg-db** (Postgres) → *Connections* → copy the **Internal Database URL**.
+1. **Neon** → create a project in **AWS Frankfurt (eu-central-1)** (same region as the Render service), Postgres 16.
+   Open *Connect*, **turn off "Connection pooling"**, and copy the connection string. The host must *not* contain
+   `-pooler`: checkout locks use session-level advisory locks, which Neon's pooler can't keep safe, so the server
+   refuses to start with a pooled URL. Tables are created automatically on first start.
+   Neon's free plan includes 0.5 GB of storage and suspends the database after 5 minutes without queries
+   (the first request after that waits a moment while it wakes). Uploaded student documents are stored in the
+   database (up to 10 MB each), so move the project to Neon's pay-as-you-go Launch plan before real students upload files.
 2. **Render → studybg-api → Environment**, set:
-   - `DATABASE_URL`: the URL from step 1
+   - `DATABASE_URL`: the string from step 1
    - `FILE_ENCRYPTION_KEY`: click *Generate*. **Back this value up somewhere safe and never change it**;
      without it, stored documents can't be decrypted.
    - `RESEND_API_KEY` + `INVOICE_FROM_EMAIL`: needed to email sign-in codes (same as for receipts).

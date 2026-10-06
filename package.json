@@ -11,7 +11,7 @@
     "start": "node server/index.js",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "test": "node --test --test-concurrency=1 server/app.test.js server/accounts.test.js",
+    "test": "node --test --test-concurrency=1 server/app.test.js server/accounts.test.js server/db.test.js",
     "test:render": "node scripts/render-smoke.mjs"
   },
   "dependencies": {

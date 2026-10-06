@@ -9,6 +9,8 @@ import {
   safe,
   ownApplication,
   createCheckout,
+  createHostedCheckout,
+  settleCheckoutSession,
   httpError,
 } from "./workflow.js";
 import { recordPayment } from "./billing.js";
@@ -96,6 +98,16 @@ export function createApp({
         // Acknowledge only after the ledger and per-recipient jobs are durably recorded.
         await recordPayment(db, intent, billing?.invoiceStartNumber || 1);
       }
+      if (
+        event.type === "checkout.session.completed" ||
+        event.type === "checkout.session.async_payment_succeeded"
+      )
+        await settleCheckoutSession(
+          db,
+          stripe,
+          intent,
+          billing?.invoiceStartNumber || 1,
+        );
       log(JSON.stringify({ event: event.type, paymentIntentId: intent?.id }));
       res.json({ received: true });
     }),
@@ -209,6 +221,58 @@ export function createApp({
       if (describeIntent(pi).paid)
         await recordPayment(db, pi, billing.invoiceStartNumber || 1);
       res.json({ ...describeIntent(pi), clientSecret: pi.client_secret });
+    }),
+  );
+  // Stripe-hosted Checkout: the browser redirects to the returned url.
+  app.post(
+    "/api/checkout-session",
+    rateLimit({ windowMs: 60_000, max: 20 }),
+    auth,
+    safe(async (req, res) => {
+      if (!paymentsReady)
+        throw httpError(503, "Online payments are not available yet.");
+      if (req.body.policyVersion !== POLICY_VERSION)
+        throw httpError(
+          409,
+          "Service terms have changed. Refresh and review them before checkout.",
+        );
+      const session = await createHostedCheckout(
+        db,
+        stripe,
+        req.user,
+        req.body.applicationId,
+        req.body.version,
+        config.siteUrl || "https://studybg.ac",
+      );
+      res.json({ sessionId: session.id, url: session.url });
+    }),
+  );
+  // Called by the return page; the webhook does the same, whichever arrives first.
+  app.get(
+    "/api/checkout-session/:id",
+    auth,
+    safe(async (req, res) => {
+      if (!stripe)
+        throw httpError(503, "Payment status is temporarily unavailable.");
+      const row = await ownApplication(
+        db,
+        String(req.query.applicationId),
+        req.user.id,
+      );
+      if (!row.checkout_session_id || row.checkout_session_id !== req.params.id)
+        throw httpError(404, "Payment not found.");
+      const session = await stripe.checkout.sessions.retrieve(req.params.id);
+      const pi = await settleCheckoutSession(
+        db,
+        stripe,
+        session,
+        billing?.invoiceStartNumber || 1,
+      );
+      if (pi) return res.json(describeIntent(pi));
+      res.json({
+        paid: false,
+        status: session.status === "expired" ? "expired" : "processing",
+      });
     }),
   );
   app.get(

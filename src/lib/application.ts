@@ -15,14 +15,14 @@ export const TOTAL_STEPS = 8;
 export const PAYMENT_STEP = 8;
 
 export const STEP_TITLES = [
-  "Applicant & High School",
-  "Faculty & Intake",
-  "Science Grades & English",
-  "Certified Documents",
-  "Entrance Exam",
-  "Sworn Translation & Courier",
-  "Review & Book Your Call",
-  "Secure Payment (€180)",
+  "About you & your school",
+  "University & intake",
+  "Grades & English",
+  "Documents",
+  "Entrance exam",
+  "Translation help (optional)",
+  "Review & request your call",
+  "Payment (€180)",
 ];
 
 const STORAGE_KEY = "studybg.application.v1";

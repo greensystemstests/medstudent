@@ -353,6 +353,7 @@ export function mountAccountRoutes(
           ...sealed,
         },
         { count: MAX_DOCUMENTS, bytes: MAX_TOTAL_BYTES },
+        `${DOCUMENT_CATEGORIES[category]}: ${filename}`,
       );
       res.status(201).json({ document: publicDocument(doc) });
     }),

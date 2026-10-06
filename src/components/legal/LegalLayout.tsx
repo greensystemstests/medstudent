@@ -1,7 +1,7 @@
 import React from 'react';
 import { scrollBehavior } from '../../lib/a11y';
 import { Accessibility, FileText, Scale, ShieldCheck } from 'lucide-react';
-import { hasRealEmail, LEGAL_ENTITY, LEGAL_LAST_UPDATED } from '../../data/legal';
+import { LEGAL_ENTITY, LEGAL_LAST_UPDATED, PENDING_DETAIL, hasRealEmail, isPlaceholder, shown } from '../../data/legal';
 import { AppView } from '../../types';
 
 export type LegalView = 'privacy' | 'terms' | 'gdpr' | 'accessibility';
@@ -35,7 +35,7 @@ export const LegalLayout: React.FC<LegalLayoutProps> = ({ view, title, intro, se
         </div>
       </div>
 
-      {view !== 'accessibility' && LEGAL_ENTITY.name.startsWith('[') && <div role="status" className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm">Draft policies: the business identity and contact details still need to be completed and reviewed by the operator before checkout is enabled.</div>}
+      {view !== 'accessibility' && isPlaceholder(LEGAL_ENTITY.name) && <div role="status" className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm">These policies are drafts. Our company details and contact email will be added here before we accept any payments.</div>}
       {/* Switch between the three documents */}
       <nav aria-label="Legal documents" className="bg-white rounded-xl border border-slate-200 p-1 grid grid-cols-2 sm:grid-cols-4 gap-1 shadow-2xs">
         {PAGES.map(({ view: v, label, icon: Icon }) => (
@@ -147,7 +147,7 @@ export const Email: React.FC<{ address: string }> = ({ address }) =>
       {address}
     </a>
   ) : (
-    <span className="font-semibold">{address}</span>
+    <span className="font-semibold">our contact email ({PENDING_DETAIL})</span>
   );
 
 /** Link to another page of the site that opens in place. */
@@ -159,10 +159,10 @@ export const PageLink: React.FC<{ to: AppView; onNavigate: (view: AppView) => vo
 
 export const ControllerBlock: React.FC = () => (
   <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm space-y-0.5">
-    <div className="font-bold text-slate-900">{LEGAL_ENTITY.name}</div>
-    <div><span lang="bg">ЕИК</span> / UIC: {LEGAL_ENTITY.eik}</div>
+    <div className="font-bold text-slate-900">Company name: {shown(LEGAL_ENTITY.name)}</div>
+    <div><span lang="bg">ЕИК</span> / UIC: {shown(LEGAL_ENTITY.eik)}</div>
     {LEGAL_ENTITY.vatNumber && <div>VAT number: {LEGAL_ENTITY.vatNumber}</div>}
-    <div>{LEGAL_ENTITY.address}</div>
+    <div>Registered address: {shown(LEGAL_ENTITY.address)}</div>
     <div>
       Privacy contact: <Email address={LEGAL_ENTITY.privacyEmail} />
     </div>

@@ -43,7 +43,7 @@ export const ApplicationConfirmation: React.FC<Props> = ({
     {
       icon: Mail,
       title: "Call confirmation by email",
-      detail: `We confirm your exact call time and send the Zoom link to ${form.email}.`,
+      detail: `We confirm your exact call time and send the meeting link to ${form.email}.`,
     },
     {
       icon: Video,
@@ -52,9 +52,9 @@ export const ApplicationConfirmation: React.FC<Props> = ({
     },
     {
       icon: Truck,
-      title: "Document legalization & DHL dispatch",
+      title: "Your document plan",
       detail:
-        "Discuss any required legalization, translation and courier arrangements on your call. Separate quotes and your confirmation are required.",
+        "On your call we go through legalisation, translation and submission for your route. Any third-party costs are quoted to you first.",
     },
   ];
 
@@ -69,10 +69,10 @@ export const ApplicationConfirmation: React.FC<Props> = ({
             <CheckCircle2 className="w-8 h-8 text-[#006644]" />
           </div>
           <h1 className="text-2xl font-bold font-heading text-slate-900">
-            Payment received. Your application is in!
+            Payment received. Your application is with us.
           </h1>
           <p className="text-sm text-slate-600 mt-2 max-w-xl mx-auto">
-            Thank you, {form.fullName.split(" ")[0]}. Your onboarding package
+            Thank you, {form.fullName.split(" ")[0]}. Your Admissions Gateway
             for {form.degree} at {uni?.name ?? "your chosen university"} is
             active.
           </p>
@@ -193,7 +193,7 @@ export const ApplicationConfirmation: React.FC<Props> = ({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <span className="text-xs text-slate-600">
-              StudyBg admissions team is your Sofia legal advisor.
+              Review notes from our team will appear in My Account.
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-2">

@@ -1,4 +1,5 @@
 import { SavedApplications } from './ApplicationWorkspace';
+import { documentStatus, TONE_CLASS } from '../lib/statusLabels';
 import { ApplicationState } from '../types';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { scrollBehavior } from '../lib/a11y';
@@ -82,7 +83,14 @@ export const AccountView: React.FC<AccountViewProps> = ({ api, defaultEmail, onN
 /* Sign in                                                                     */
 /* -------------------------------------------------------------------------- */
 
-export const SignIn: React.FC<{ api: AccountApi; defaultEmail?: string; onSignedIn: () => void }> = ({ api, defaultEmail, onSignedIn }) => {
+export const SignIn: React.FC<{
+  api: AccountApi;
+  defaultEmail?: string;
+  onSignedIn: () => void;
+  /** Inside another page (payment step, save panel, staff review) the page already has its h1. */
+  embedded?: boolean;
+}> = ({ api, defaultEmail, onSignedIn, embedded = false }) => {
+  const Heading = embedded ? 'h2' : 'h1';
   const [step, setStep] = useState<'email' | 'code'>('email');
   const [email, setEmail] = useState(defaultEmail ?? '');
   const [code, setCode] = useState('');
@@ -134,7 +142,7 @@ export const SignIn: React.FC<{ api: AccountApi; defaultEmail?: string; onSigned
           <div className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center mb-3">
             <ShieldCheck className="w-6 h-6 text-emerald-300" />
           </div>
-          <h1 className="text-xl font-bold font-heading">My StudyBg account</h1>
+          <Heading className="text-xl font-bold font-heading">My StudyBg account</Heading>
           <p className="text-sm text-slate-200 mt-1">See your application and keep your documents in one secure place.</p>
         </div>
 
@@ -765,13 +773,18 @@ const DocumentsTab: React.FC<{
                     <div className="text-sm font-semibold text-slate-900 truncate" title={doc.filename}>
                       {doc.filename}
                     </div>
-                    {doc.reviewNote && <p className="text-sm text-slate-700">{doc.reviewNote}</p>}
+                    {doc.reviewNote && (
+                      <p className="text-sm text-slate-800 mt-0.5">
+                        <span className="font-semibold">Note from our team: </span>
+                        {doc.reviewNote}
+                      </p>
+                    )}
                     <div className="text-[0.6875rem] text-slate-500 flex flex-wrap items-center gap-x-2">
                       <span className="font-semibold text-slate-700">{doc.categoryLabel}</span>
                       <span>{formatBytes(doc.sizeBytes)}</span>
                       <span>{new Date(doc.uploadedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                      <span className="inline-flex items-center gap-1 text-[#006644] font-semibold">
-                        <CheckCircle2 className="w-3 h-3" /> {doc.status.replaceAll('_', ' ')}
+                      <span className={`inline-flex items-center px-1.5 rounded border font-semibold ${TONE_CLASS[documentStatus(doc.status).tone]}`}>
+                        {documentStatus(doc.status).label}
                       </span>
                     </div>
                   </div>

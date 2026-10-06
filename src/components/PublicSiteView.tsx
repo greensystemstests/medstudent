@@ -1,718 +1,520 @@
 import React, { useState } from "react";
-import { StudyBgLogo } from "./StudyBgLogo";
 import {
-  CheckCircle2,
   ArrowRight,
-  Sparkles,
-  ShieldCheck,
-  Clock,
-  FileText,
-  Calendar,
-  ChevronRight,
-  GraduationCap,
-  Euro,
-  Building2,
-  Award,
-  Globe,
-  AlertTriangle,
-  HelpCircle,
-  Stethoscope,
+  CalendarDays,
+  CheckCircle2,
   ChevronDown,
-  Plane,
-  FileCheck,
-  Search,
+  ClipboardCheck,
+  ExternalLink,
+  FolderLock,
+  MapPin,
+  Scale,
+  ShieldCheck,
+  Sparkles,
+  X,
 } from "lucide-react";
 import {
-  UNIVERSITIES,
-  FAQS,
-  APP_IMAGES,
-  ONBOARDING_INCLUSIONS,
-} from "../data/constants";
-import { AppView, University } from "../types";
+  UNIVERSITIES as SOURCES,
+  SOURCE_REVIEW_DATE,
+} from "../../shared/admissions.js";
 import {
-  formatLongDate,
-  intakeYearLabel,
-  universityDeadline,
-} from "../lib/admissions";
-import { scrollBehavior } from "../lib/a11y";
+  AFTER_PAYMENT_STEPS,
+  FAQS,
+  GATEWAY_EXCLUSIONS,
+  GATEWAY_NAME,
+  INDEPENDENCE_STATEMENT,
+  ONBOARDING_FEE_EUR,
+  ONBOARDING_INCLUSIONS,
+  UNIVERSITIES,
+} from "../data/constants";
+import { AppView } from "../types";
+import { formatLongDate } from "../lib/admissions";
+
+type Programme = "Medicine" | "Dentistry" | "Pharmacy";
 
 interface PublicSiteViewProps {
   onNavigate: (view: AppView) => void;
-  onOpenQuickFit: () => void;
-  onSelectUniversity: (
-    uniId: string,
-    degree?: "Medicine" | "Dentistry" | "Pharmacy",
-  ) => void;
+  /** Opens the free eligibility check, optionally with a university already chosen. */
+  onOpenQuickFit: (universityId?: string) => void;
 }
+
+/**
+ * Decision-support wording only: geography plus what the official source says. No rankings or
+ * "best for" claims — the university decides, and facts are checked against its own pages.
+ */
+const WORTH_COMPARING: Record<string, string> = {
+  "mu-sofia":
+    "Worth comparing if you want to study in the capital, Bulgaria’s largest city, and plan to look into its teaching-hospital network.",
+  "mu-plovdiv":
+    "Worth comparing if you want Bulgaria’s second-largest city and a published school-grade threshold you can check before applying.",
+  "mu-varna":
+    "Worth comparing if you’d prefer a city on the Black Sea coast.",
+  "mu-pleven":
+    "Worth comparing if you’d like a smaller city in northern Bulgaria, or you’re looking at a February start.",
+};
+
+const reviewDate = formatLongDate(new Date(`${SOURCE_REVIEW_DATE}T12:00:00`));
+
+const scrollTo = (id: string) =>
+  document.getElementById(id)?.scrollIntoView({ block: "start" });
+
+const JOURNEY: {
+  title: string;
+  text: string;
+  who: string;
+  link?: { label: string; action: "quickfit" | "universities" | "gateway" | "calendar" };
+}[] = [
+  {
+    title: "Check your situation",
+    text: "Your passport country, where your school qualification comes from, and your science grades.",
+    who: "Free check, on your own",
+    link: { label: "Start the free check", action: "quickfit" },
+  },
+  {
+    title: "Compare universities",
+    text: "Four state medical universities, each with its own requirements and dates.",
+    who: "You, with our comparison",
+    link: { label: "Compare the four routes", action: "universities" },
+  },
+  {
+    title: "Prepare documents",
+    text: "Diploma and transcript first; legalisation and sworn translation depend on the issuing country.",
+    who: "StudyBg helps plan this in the Gateway",
+    link: { label: "See what the Gateway covers", action: "gateway" },
+  },
+  {
+    title: "Prepare for entrance requirements",
+    text: "Entrance tests and language evidence differ by university. Dates are published by each university.",
+    who: "You, with the official calendar",
+    link: { label: "Open the admissions calendar", action: "calendar" },
+  },
+  {
+    title: "Apply and check visa requirements",
+    text: "You submit to the university. Non-EU applicants check visa requirements with the authorities.",
+    who: "You and the university; StudyBg explains the steps",
+  },
+  {
+    title: "Plan arrival and enrollment",
+    text: "Enrollment, housing and residence registration after admission.",
+    who: "Discussed on your call. Arrival tools are planned, not live",
+  },
+];
 
 export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
   onNavigate,
   onOpenQuickFit,
-  onSelectUniversity,
 }) => {
-  const [selectedProgramFilter, setSelectedProgramFilter] = useState<
-    "All" | "Medicine" | "Dentistry" | "Pharmacy"
-  >("All");
+  const [programme, setProgramme] = useState<"All" | Programme>("All");
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
 
-  const filteredUniversities =
-    selectedProgramFilter === "All"
-      ? UNIVERSITIES
-      : UNIVERSITIES.filter((u) =>
-          u.programs.includes(selectedProgramFilter as any),
-        );
+  const routes = SOURCES.filter(
+    (u) => programme === "All" || u.programs.includes(programme),
+  ).map((source) => ({
+    source,
+    profile: UNIVERSITIES.find((u) => u.id === source.id),
+  }));
+
+  const runJourneyLink = (action: "quickfit" | "universities" | "gateway" | "calendar") => {
+    if (action === "quickfit") onOpenQuickFit();
+    else if (action === "calendar") onNavigate("calendar");
+    else scrollTo(action === "universities" ? "universities-section" : "pricing-section");
+  };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-[#0f1e36] via-[#0b1c30] to-[#00281b] text-white pt-12 pb-20 px-4 sm:px-6 lg:px-8">
-        {/* Subtle background overlay */}
-        <div className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px]"></div>
-
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            {/* Left Column: Headline, Subtitle, CTAs */}
-            <div className="lg:col-span-7 space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-semibold tracking-wide">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>INDEPENDENT ADMISSIONS SUPPORT</span>
-              </div>
-
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold font-heading tracking-tight leading-[1.15]">
-                Study Medicine & Dentistry in Bulgaria —{" "}
-                <span className="text-emerald-400">
-                  English-taught programmes
-                </span>
-              </h1>
-
-              <p className="text-base sm:text-lg text-slate-300 max-w-2xl leading-relaxed font-normal">
-                Compare universities, prepare your documents and request an
-                admissions consultation. StudyBg is an independent service.
-                Admission, visas and professional registration are decided by
-                the relevant institutions.
-              </p>
-
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-3 pt-2">
-                <button
-                  onClick={() => onNavigate("wizard")}
-                  className="px-6 py-3.5 bg-[#006644] hover:bg-[#007a52] text-white font-semibold rounded-xl shadow-lg hover:shadow-emerald-900/40 transition-all flex items-center gap-2 text-sm"
-                  id="hero-apply-btn"
-                >
-                  <span>Start 8-Step Application (€180)</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-
-                <button
-                  onClick={onOpenQuickFit}
-                  className="px-5 py-3.5 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl border border-white/20 transition-all flex items-center gap-2 text-sm"
-                  id="hero-quick-fit-btn"
-                >
-                  <Sparkles className="w-4 h-4 text-emerald-300" />
-                  <span>Check My Eligibility (Free)</span>
-                </button>
-              </div>
-
-              {/* Trust Badges */}
-              <div className="pt-4 border-t border-slate-700/60 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs text-slate-300">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>University-specific requirements</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Check professional registration</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Review official admission guides</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Clear onboarding fee</span>
-                </div>
-              </div>
+    <div className="bg-[#F8FAFC]">
+      {/* ------------------------------------------------------------------ */}
+      {/* Hero: one job — get the visitor to take the free check.              */}
+      {/* ------------------------------------------------------------------ */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#0f1e36] via-[#0b1c30] to-[#00281b] text-white pt-10 pb-16 sm:pt-14 sm:pb-20 px-4 sm:px-6 lg:px-8">
+        <div
+          className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px]"
+          aria-hidden="true"
+        />
+        <div className="max-w-7xl mx-auto relative grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+          <div className="lg:col-span-7 space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-semibold">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" aria-hidden="true" />
+              <span>Independent admissions support · Medicine &amp; Dentistry</span>
             </div>
 
-            {/* Right Column: Hero Visual Card with Verified Metrics */}
-            <div className="lg:col-span-5">
-              <div className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 rounded-2xl border border-slate-700 p-6 shadow-2xl backdrop-blur-md relative overflow-hidden">
-                <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-slate-700">
-                  <div className="flex items-center gap-3">
-                    <StudyBgLogo
-                      variant="mark"
-                      size="md"
-                      className="p-0.5 bg-slate-900/80 rounded-lg border border-slate-700"
-                    />
-                    <div>
-                      <div className="font-heading font-bold text-sm text-white flex items-center gap-1.5">
-                        <span>StudyBg Admissions Snapshot</span>
-                      </div>
-                      <div className="text-xs text-slate-400">
-                        Admission planning
-                      </div>
-                    </div>
-                  </div>
-                  <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold border border-emerald-500/30">
-                    Dates require confirmation
-                  </span>
-                </div>
+            <h1 className="text-3xl sm:text-5xl font-extrabold font-heading tracking-tight leading-[1.15]">
+              Want to study medicine in Bulgaria?{" "}
+              <span className="text-emerald-400">Find out where you stand first.</span>
+            </h1>
 
-                {/* Hero Graphic */}
-                <div className="mt-4 relative rounded-xl overflow-hidden aspect-video border border-slate-700">
-                  <img
-                    src={APP_IMAGES.muSofia}
-                    alt="Medical University Rectorate"
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-3">
-                    <span className="text-xs font-medium text-slate-200">
-                      University illustration
-                    </span>
-                  </div>
-                </div>
-
-                {/* Key Metrics Grid */}
-                <div className="grid grid-cols-2 gap-3 mt-4">
-                  <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
-                    <div className="text-xs text-slate-400">Annual Tuition</div>
-                    <div className="text-xl font-extrabold text-emerald-400 font-heading">
-                      Varies by degree
-                    </div>
-                    <div className="text-[0.6875rem] text-slate-500">
-                      See the official tuition schedule
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
-                    <div className="text-xs text-slate-400">
-                      University options
-                    </div>
-                    <div className="text-xl font-extrabold text-white font-heading">
-                      4 universities
-                    </div>
-                    <div className="text-[0.6875rem] text-slate-500">
-                      Across 4 medical faculties
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
-                    <div className="text-xs text-slate-400">Visa planning</div>
-                    <div className="text-xl font-extrabold text-sky-400 font-heading">
-                      Case by case
-                    </div>
-                    <div className="text-[0.6875rem] text-slate-500">
-                      For non-EU candidates
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
-                    <div className="text-xs text-slate-400">Onboarding Fee</div>
-                    <div className="text-xl font-extrabold text-amber-400 font-heading">
-                      €180 Flat
-                    </div>
-                    <div className="text-[0.6875rem] text-slate-500">
-                      Includes consultation request
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Quick Access Strip */}
-      <div className="bg-white border-b border-slate-200 py-4 px-4 sm:px-6 shadow-xs">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Calendar
-              className="w-5 h-5 text-[#006644] shrink-0"
-              aria-hidden="true"
-            />
-            <span className="text-sm font-semibold text-slate-800">
-              Application windows vary by university and applicant route.
-            </span>
-          </div>
-          <button
-            onClick={() => onNavigate("calendar")}
-            className="text-xs font-semibold text-[#006644] hover:underline flex items-center gap-1 py-1"
-          >
-            <span>View official admissions calendar</span>
-            <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
-          </button>
-        </div>
-      </div>
-
-      {/* The 6-Stage Journey Section */}
-      <section
-        id="six-stages-section"
-        className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto"
-      >
-        <div className="text-center max-w-3xl mx-auto mb-12">
-          <span className="text-xs font-bold uppercase tracking-wider text-[#006644] bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-            End-to-End Structured Process
-          </span>
-          <h2 className="text-2xl sm:text-4xl font-extrabold font-heading text-slate-900 mt-3">
-            The 6-Stage Bulgarian Medical Journey
-          </h2>
-          <p className="text-slate-600 mt-2 text-sm sm:text-base">
-            From your secondary school certificate in your home country to
-            continuous residency and clinical graduation in Bulgaria.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Stage 1 */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs hover:shadow-md transition-shadow relative">
-            <div className="flex items-center justify-between mb-4">
-              <span className="w-8 h-8 rounded-lg bg-emerald-100 text-[#006644] font-bold text-sm flex items-center justify-center font-heading">
-                01
-              </span>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800">
-                1–3 Days
-              </span>
-            </div>
-            <h3 className="font-heading font-bold text-base text-slate-900 mb-1">
-              Eligibility & Science GPA Audit
-            </h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              We review your qualification against the selected university’s
-              published requirements. For Plovdiv, the published 2026/27
-              school-science threshold uses the Biology and Chemistry average;
-              other routes differ.
+            <p className="text-base sm:text-lg text-slate-300 max-w-2xl leading-relaxed">
+              Not sure which Bulgarian medical university may fit your situation?
+              Start with a free preliminary check before deciding whether to use
+              StudyBg.
             </p>
-          </div>
 
-          {/* Stage 2 */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs hover:shadow-md transition-shadow relative">
-            <div className="flex items-center justify-between mb-4">
-              <span className="w-8 h-8 rounded-lg bg-emerald-100 text-[#006644] font-bold text-sm flex items-center justify-center font-heading">
-                02
-              </span>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800">
-                2–3 Weeks
-              </span>
-            </div>
-            <h3 className="font-heading font-bold text-base text-slate-900 mb-1">
-              Hague Apostille & Sworn Sofia Legalization
-            </h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Assisting with MOFA Hague Apostille verification in your home
-              country, certified sworn translation into Bulgarian in Sofia, and
-              physical filing at MOES.
-            </p>
-          </div>
-
-          {/* Stage 3 */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs hover:shadow-md transition-shadow relative">
-            <div className="flex items-center justify-between mb-4">
-              <span className="w-8 h-8 rounded-lg bg-emerald-100 text-[#006644] font-bold text-sm flex items-center justify-center font-heading">
-                03
-              </span>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800">
-                Online / In Sofia
-              </span>
-            </div>
-            <h3 className="font-heading font-bold text-base text-slate-900 mb-1">
-              Entrance Exam & Academic Ranking
-            </h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Multiple-choice exam in Biology & Chemistry (plus English test if
-              non-native). Access comprehensive past exam question banks and
-              proctored mock testing.
-            </p>
-          </div>
-
-          {/* Stage 4 */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs hover:shadow-md transition-shadow relative">
-            <div className="flex items-center justify-between mb-4">
-              <span className="w-8 h-8 rounded-lg bg-emerald-100 text-[#006644] font-bold text-sm flex items-center justify-center font-heading">
-                04
-              </span>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800">
-                4–6 Weeks
-              </span>
-            </div>
-            <h3 className="font-heading font-bold text-base text-slate-900 mb-1">
-              MOES Certificate & Type-D Visa
-            </h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Sofia Ministry issues the Certificate of Academic Admission.
-              Non-EU candidates lodge their Bulgarian Long-Stay Type-D visa
-              application with our consular dossier.
-            </p>
-          </div>
-
-          {/* Stage 5 */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs hover:shadow-md transition-shadow relative">
-            <div className="flex items-center justify-between mb-4">
-              <span className="w-8 h-8 rounded-lg bg-emerald-100 text-[#006644] font-bold text-sm flex items-center justify-center font-heading">
-                05
-              </span>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800">
-                Arrival & Matriculation
-              </span>
-            </div>
-            <h3 className="font-heading font-bold text-base text-slate-900 mb-1">
-              On-Campus Enrollment & Housing
-            </h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              In-person registration at the Dean’s Office, student ID and
-              library card issuance, local SIM card, student bank account, and
-              certified housing contracts.
-            </p>
-          </div>
-
-          {/* Stage 6 */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs hover:shadow-md transition-shadow relative">
-            <div className="flex items-center justify-between mb-4">
-              <span className="w-8 h-8 rounded-lg bg-emerald-100 text-[#006644] font-bold text-sm flex items-center justify-center font-heading">
-                06
-              </span>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800">
-                All 6 Years
-              </span>
-            </div>
-            <h3 className="font-heading font-bold text-base text-slate-900 mb-1">
-              Planning beyond admission
-            </h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Discuss relocation and renewal responsibilities with your advisor.
-              Automated renewal reminders and appointment booking are planned
-              features; the portal preview is a demo.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Medical Universities Showcase */}
-      <section
-        id="universities-section"
-        className="py-16 bg-slate-100/70 border-y border-slate-200 px-4 sm:px-6 lg:px-8"
-      >
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-[#006644] bg-emerald-100/60 px-3 py-1 rounded-full border border-emerald-200">
-                Independent State Institutions
-              </span>
-              <h2 className="text-2xl sm:text-4xl font-extrabold font-heading text-slate-900 mt-2">
-                Bulgaria’s 4 Premier Medical Faculties
-              </h2>
-              <p className="text-slate-600 text-sm mt-1">
-                State universities offering 6-year Master of Medicine and
-                5.5-year Dental programs in English.
-              </p>
-            </div>
-
-            {/* Filter Pills */}
-            <div
-              role="group"
-              aria-label="Filter universities by program"
-              className="flex flex-wrap items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs"
-            >
-              {(["All", "Medicine", "Dentistry", "Pharmacy"] as const).map(
-                (prog) => (
-                  <button
-                    key={prog}
-                    aria-pressed={selectedProgramFilter === prog}
-                    onClick={() => setSelectedProgramFilter(prog)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                      selectedProgramFilter === prog
-                        ? "bg-[#006644] text-white shadow-xs"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                    }`}
-                  >
-                    {prog}
-                  </button>
-                ),
-              )}
-            </div>
-          </div>
-
-          {/* Grid of Universities */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {filteredUniversities.map((uni) => (
-              <div
-                key={uni.id}
-                className="bg-white rounded-2xl border border-slate-200 shadow-xs hover:shadow-lg transition-all overflow-hidden flex flex-col"
-              >
-                {/* Image and badges */}
-                <div className="relative aspect-16/9 overflow-hidden bg-slate-900">
-                  <img
-                    src={uni.image}
-                    alt={uni.name}
-                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="absolute top-3 left-3 bg-[#0f1e36]/90 backdrop-blur-xs text-white text-xs font-semibold px-3 py-1 rounded-lg border border-slate-700">
-                    {uni.city}
-                  </div>
-                  <div className="absolute bottom-3 left-3 right-3 bg-gradient-to-t from-black/80 to-transparent p-2 rounded-lg">
-                    <span className="text-xs text-emerald-300 font-semibold">
-                      {uni.badge}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                  <div>
-                    <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-                      <h3 className="font-heading font-bold text-lg text-slate-900">
-                        {uni.name}
-                      </h3>
-                      <span className="text-xs font-extrabold text-[#006644] bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
-                        {uni.tuitionFee}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-600 leading-relaxed mb-3">
-                      {uni.description}
-                    </p>
-
-                    {/* Strengths */}
-                    <div className="space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
-                      {uni.strengths.map((str, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-start gap-2 text-slate-700"
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                          <span>{str}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Metadata key details */}
-                  <div className="grid grid-cols-2 gap-2 text-xs border-t border-slate-100 pt-3 text-slate-600">
-                    <div>
-                      <span className="font-semibold text-slate-900">
-                        Seats:
-                      </span>{" "}
-                      {uni.intakeSeats}
-                    </div>
-                    <div>
-                      <span className="font-semibold text-slate-900">
-                        Deadline:
-                      </span>{" "}
-                      {universityDeadline(uni)}
-                    </div>
-                  </div>
-
-                  {/* Action buttons */}
-                  <div className="flex items-center gap-2 pt-2">
-                    <button
-                      onClick={() => {
-                        onSelectUniversity(
-                          uni.id,
-                          selectedProgramFilter === "All"
-                            ? undefined
-                            : selectedProgramFilter,
-                        );
-                        onNavigate("wizard");
-                      }}
-                      className="flex-1 py-2.5 px-4 bg-[#006644] hover:bg-[#005538] text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors shadow-xs"
-                    >
-                      <span>Apply to {uni.shortName}</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={onOpenQuickFit}
-                      className="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition-colors"
-                    >
-                      Check GPA
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing & Ethical Agency Comparison Section */}
-      <section
-        id="pricing-section"
-        className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto"
-      >
-        <div className="text-center max-w-3xl mx-auto mb-12">
-          <span className="text-xs font-bold uppercase tracking-wider text-[#006644] bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-            Ethical Direct Admissions
-          </span>
-          <h2 className="text-2xl sm:text-4xl font-extrabold font-heading text-slate-900 mt-3">
-            Your €180 onboarding package
-          </h2>
-          <p className="text-slate-600 mt-2 text-sm">
-            Review the included service and separate third-party costs before
-            choosing a package. Admission and visa outcomes are not guaranteed.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-          {/* StudyBg Plan */}
-          <div className="lg:col-span-6 bg-gradient-to-b from-[#0f1e36] to-[#00281b] text-white rounded-2xl p-8 border border-emerald-500/30 shadow-xl flex flex-col justify-between relative overflow-hidden">
-            <div className="absolute top-0 right-0 bg-[#006644] text-white text-xs font-bold uppercase tracking-wider px-4 py-1 rounded-bl-xl">
-              Independent advisory service
-            </div>
-
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="font-heading font-bold text-xl">
-                  StudyBg Direct Admissions & Portal
-                </span>
-              </div>
-              <div className="flex items-baseline gap-2 mb-4">
-                <span className="text-4xl sm:text-5xl font-extrabold font-heading text-emerald-400">
-                  €180
-                </span>
-                <span className="text-slate-300 text-sm">
-                  One-Time Onboarding Fee
-                </span>
-              </div>
-              <p className="text-xs text-slate-300 leading-relaxed mb-6">
-                Covers an application review, a consultation request and your
-                application workspace. University and third-party charges are
-                separate.
-              </p>
-
-              <div className="space-y-3 text-xs text-slate-200">
-                {ONBOARDING_INCLUSIONS.map((item) => (
-                  <div key={item.title} className="flex items-start gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    <span>
-                      <strong>{item.title}:</strong> {item.detail}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="pt-8">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 pt-1">
               <button
-                onClick={() => onNavigate("wizard")}
-                className="w-full py-3.5 px-4 bg-[#006644] hover:bg-[#007a52] text-white font-bold rounded-xl text-sm transition-all shadow-lg flex items-center justify-center gap-2"
+                onClick={() => onOpenQuickFit()}
+                className="min-h-11 px-6 py-3.5 bg-[#00a86b] hover:bg-[#00bf7a] text-[#04150f] font-bold rounded-xl shadow-lg transition-colors inline-flex items-center justify-center gap-2 text-sm"
+                id="hero-quick-fit-btn"
               >
-                <span>Enroll in Gateway for €180</span>
-                <ArrowRight className="w-4 h-4" />
+                <Sparkles className="w-4 h-4" aria-hidden="true" />
+                <span>Check your eligibility — Free</span>
+              </button>
+              <button
+                onClick={() => scrollTo("pricing-section")}
+                className="min-h-11 px-5 py-3.5 text-white font-semibold rounded-xl border border-white/25 hover:bg-white/10 transition-colors inline-flex items-center justify-center gap-2 text-sm"
+                id="hero-gateway-btn"
+              >
+                <span>Explore the €{ONBOARDING_FEE_EUR} {GATEWAY_NAME}</span>
+                <ArrowRight className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
+            <p className="text-sm text-slate-300">
+              5 questions · runs in your browser · no sign-up, no payment
+            </p>
           </div>
 
-          {/* Traditional Predatory Agencies */}
-          <div className="lg:col-span-6 bg-white rounded-2xl p-8 border border-slate-200 shadow-xs flex flex-col justify-between text-slate-800">
-            <div>
-              <div className="flex items-center gap-2 mb-2 text-rose-600 font-semibold text-xs uppercase tracking-wider">
-                <AlertTriangle className="w-4 h-4" />
-                <span>Plan your total budget</span>
-              </div>
-              <h3 className="font-heading font-bold text-xl text-slate-900 mb-1">
-                Costs outside the onboarding fee
-              </h3>
-              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 mb-4">
-                <span className="text-3xl sm:text-4xl font-extrabold font-heading text-slate-500">
-                  Quoted separately
-                </span>
-                <span className="text-rose-600 font-semibold text-xs">
-                  Third-party charges
-                </span>
-              </div>
-              <p className="text-xs text-slate-600 leading-relaxed mb-6">
-                Ask for a written quote before ordering additional services. The
-                €180 fee does not include the costs listed below.
+          {/* What the free check actually does (mirrors QuickFitModal). */}
+          <div className="lg:col-span-5">
+            <div className="bg-slate-900/80 rounded-2xl border border-slate-700 p-6 shadow-2xl">
+              <h2 className="font-heading font-bold text-base text-white">
+                What the free check shows you
+              </h2>
+              <ol className="mt-4 space-y-3 text-sm text-slate-200">
+                {[
+                  "How your Biology and Chemistry grades compare with any threshold your chosen university publishes",
+                  "Which parts of your situation still need checking, and why",
+                  "Where your passport and school country change the document steps",
+                  "A link to that university’s official requirements",
+                ].map((line, i) => (
+                  <li key={line} className="flex gap-3">
+                    <span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold flex items-center justify-center shrink-0">
+                      {i + 1}
+                    </span>
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ol>
+              <p className="mt-4 text-xs text-slate-400 border-t border-slate-700 pt-3">
+                Preliminary guidance only. Universities make admission decisions.
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-              <div className="space-y-3 text-xs text-slate-600">
-                <div className="flex items-start gap-2.5">
-                  <span className="w-4 h-4 rounded-full bg-rose-100 text-rose-600 font-bold flex items-center justify-center shrink-0 mt-0.5">
-                    ✕
-                  </span>
-                  <span>
-                    <strong>University charges:</strong> Tuition, entrance
-                    examinations and university application fees.
-                  </span>
+      {/* ------------------------------------------------------------------ */}
+      {/* Why StudyBg                                                          */}
+      {/* ------------------------------------------------------------------ */}
+      <section
+        id="why-section"
+        aria-labelledby="why-title"
+        className="py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto"
+      >
+        <h2 id="why-title" className="text-2xl sm:text-3xl font-extrabold font-heading text-slate-900">
+          Why StudyBg?
+        </h2>
+        <p className="text-slate-600 mt-2 max-w-3xl">
+          Four universities, four sets of rules, documents from your own country,
+          and deadlines that don’t line up. Here’s where we help.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+          {[
+            {
+              icon: Scale,
+              title: "Compare the four routes",
+              text: "See each university side by side, with a link to its official admissions page and the date we last checked it.",
+            },
+            {
+              icon: ClipboardCheck,
+              title: "Understand what they’ll ask for",
+              text: "Get an independent read of the qualification and document requirements for your situation, in plain language.",
+            },
+            {
+              icon: FolderLock,
+              title: "Keep everything in one place",
+              text: "Your application, documents and our review notes live in your StudyBg account, not scattered across emails.",
+            },
+          ].map(({ icon: Icon, title, text }) => (
+            <div key={title} className="bg-white rounded-2xl border border-slate-200 p-5">
+              <Icon className="w-6 h-6 text-[#006644]" aria-hidden="true" />
+              <h3 className="font-heading font-bold text-slate-900 mt-3">{title}</h3>
+              <p className="text-sm text-slate-600 mt-1 leading-relaxed">{text}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-5 text-sm text-slate-700 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+          <strong>You can apply directly to each university.</strong> StudyBg is
+          an independent service for applicants who want structured guidance and
+          support.
+        </p>
+      </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* University comparison (stacked cards; no horizontal table)           */}
+      {/* ------------------------------------------------------------------ */}
+      <section
+        id="universities-section"
+        aria-labelledby="universities-title"
+        className="py-14 bg-slate-100/70 border-y border-slate-200 px-4 sm:px-6 lg:px-8"
+      >
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-6">
+            <div>
+              <h2 id="universities-title" className="text-2xl sm:text-3xl font-extrabold font-heading text-slate-900">
+                Compare the four medical universities
+              </h2>
+              <p className="text-slate-600 mt-2 max-w-3xl text-sm sm:text-base">
+                Requirements are set by each university and change between
+                years. Each card links to the official page it’s based on. The
+                university makes the final decision.
+              </p>
+            </div>
+            <div
+              role="group"
+              aria-label="Show universities offering"
+              className="flex flex-wrap items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-200 self-start"
+            >
+              {(["All", "Medicine", "Dentistry", "Pharmacy"] as const).map((p) => (
+                <button
+                  key={p}
+                  aria-pressed={programme === p}
+                  onClick={() => setProgramme(p)}
+                  className={`min-h-11 px-3.5 rounded-lg text-sm font-semibold transition-colors ${
+                    programme === p
+                      ? "bg-[#006644] text-white"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <ul className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {routes.map(({ source, profile }) => (
+              <li key={source.id} className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 flex flex-col gap-4">
+                <div>
+                  <h3 className="font-heading font-bold text-lg text-slate-900">{source.name}</h3>
+                  {profile && (
+                    <p className="text-sm text-slate-600 flex items-center gap-1.5 mt-0.5">
+                      <MapPin className="w-4 h-4 text-slate-500" aria-hidden="true" />
+                      {profile.city.replace(/\s*\(.*\)$/, "")}
+                    </p>
+                  )}
                 </div>
-                <div className="flex items-start gap-2.5">
-                  <span className="w-4 h-4 rounded-full bg-rose-100 text-rose-600 font-bold flex items-center justify-center shrink-0 mt-0.5">
-                    ✕
-                  </span>
-                  <span>
-                    <strong>Document preparation:</strong> Translation,
-                    certification, legalization and courier charges.
-                  </span>
+                <dl className="grid grid-cols-1 sm:grid-cols-[8.5rem_1fr] gap-x-3 gap-y-2 text-sm">
+                  <dt className="font-semibold text-slate-900">Programmes</dt>
+                  <dd className="text-slate-700">
+                    {source.programs.join(", ")}{" "}
+                    <span className="text-slate-500">(confirm language and places for your citizenship)</span>
+                  </dd>
+                  <dt className="font-semibold text-slate-900">Published rule</dt>
+                  <dd className="text-slate-700">{source.rule}</dd>
+                  <dt className="font-semibold text-slate-900">Tuition</dt>
+                  <dd className="text-slate-700">Confirm on the official page</dd>
+                </dl>
+                <p className="text-sm text-slate-700 bg-slate-50 rounded-xl p-3">
+                  {WORTH_COMPARING[source.id]}
+                </p>
+                <div className="mt-auto flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                  <button
+                    onClick={() => onOpenQuickFit(source.id)}
+                    className="min-h-11 px-4 bg-[#006644] hover:bg-[#005538] text-white font-semibold rounded-xl text-sm inline-flex items-center justify-center gap-1.5"
+                  >
+                    Check my fit for {profile?.shortName ?? source.name}
+                  </button>
+                  <a
+                    href={source.source}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="min-h-11 inline-flex items-center gap-1.5 text-sm font-semibold text-[#006644] underline underline-offset-2"
+                  >
+                    Official admissions page
+                    <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span className="sr-only"> (opens in a new tab)</span>
+                  </a>
                 </div>
-                <div className="flex items-start gap-2.5">
-                  <span className="w-4 h-4 rounded-full bg-rose-100 text-rose-600 font-bold flex items-center justify-center shrink-0 mt-0.5">
-                    ✕
-                  </span>
-                  <span>
-                    <strong>Living expenses:</strong> Housing, travel, insurance
-                    and day-to-day costs.
-                  </span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <span className="w-4 h-4 rounded-full bg-rose-100 text-rose-600 font-bold flex items-center justify-center shrink-0 mt-0.5">
-                    ✕
-                  </span>
-                  <span>
-                    <strong>Immigration costs:</strong> Visa, residence permit
-                    and any separately agreed professional services.
-                  </span>
-                </div>
+                <p className="text-xs text-slate-500">Last checked: {reviewDate}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Six steps                                                            */}
+      {/* ------------------------------------------------------------------ */}
+      <section
+        id="six-stages-section"
+        aria-labelledby="journey-title"
+        className="py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto"
+      >
+        <h2 id="journey-title" className="text-2xl sm:text-3xl font-extrabold font-heading text-slate-900">
+          How it works, in six steps
+        </h2>
+        <p className="text-slate-600 mt-2 max-w-3xl">
+          Who does what, so there are no surprises.
+        </p>
+        <ol className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+          {JOURNEY.map((step, i) => (
+            <li key={step.title} className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col">
+              <div className="flex items-center gap-3">
+                <span className="w-8 h-8 rounded-lg bg-emerald-100 text-[#006644] font-bold text-sm flex items-center justify-center shrink-0">
+                  {i + 1}
+                </span>
+                <h3 className="font-heading font-bold text-slate-900">{step.title}</h3>
+              </div>
+              <p className="text-sm text-slate-600 mt-2 leading-relaxed">{step.text}</p>
+              <p className="text-xs font-semibold text-slate-500 mt-2">{step.who}</p>
+              {step.link && (
+                <button
+                  onClick={() => runJourneyLink(step.link!.action)}
+                  className="mt-auto pt-2 min-h-11 self-start text-sm font-semibold text-[#006644] underline underline-offset-2 inline-flex items-center gap-1"
+                >
+                  {step.link.label}
+                  <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+                </button>
+              )}
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* The €180 Admissions Gateway: price, contents, after-payment, exclusions */}
+      {/* ------------------------------------------------------------------ */}
+      <section
+        id="pricing-section"
+        aria-labelledby="gateway-title"
+        className="py-14 bg-white border-y border-slate-200 px-4 sm:px-6 lg:px-8"
+      >
+        <div className="max-w-7xl mx-auto">
+          <h2 id="gateway-title" className="text-2xl sm:text-3xl font-extrabold font-heading text-slate-900">
+            The {GATEWAY_NAME}: €{ONBOARDING_FEE_EUR}, once
+          </h2>
+          <p className="text-slate-600 mt-2 max-w-3xl">
+            For when you’ve decided on Bulgaria and want someone independent to
+            go through your file with you. One payment, no subscription.
+          </p>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6 items-start">
+            <div className="lg:col-span-7 rounded-2xl bg-gradient-to-b from-[#0f1e36] to-[#00281b] text-white p-6 sm:p-8">
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <span className="text-4xl sm:text-5xl font-extrabold font-heading text-emerald-400">
+                  €{ONBOARDING_FEE_EUR}
+                </span>
+                <span className="text-slate-300 text-sm">one-time fee, taxes included</span>
+              </div>
+              <h3 className="mt-6 text-sm font-bold uppercase tracking-wider text-emerald-300">
+                What’s included
+              </h3>
+              <ul className="mt-3 space-y-3 text-sm text-slate-200">
+                {ONBOARDING_INCLUSIONS.map((item) => (
+                  <li key={item.title} className="flex items-start gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" aria-hidden="true" />
+                    <span>
+                      <strong className="text-white">{item.title}.</strong> {item.detail}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <h3 className="mt-6 text-sm font-bold uppercase tracking-wider text-emerald-300">
+                After you pay
+              </h3>
+              <ol className="mt-3 space-y-2 text-sm text-slate-200 list-decimal pl-5">
+                {AFTER_PAYMENT_STEPS.map((s) => (
+                  <li key={s}>{s}</li>
+                ))}
+              </ol>
+              <div className="mt-8 flex flex-col sm:flex-row sm:items-center gap-3">
+                <button
+                  onClick={() => onNavigate("wizard")}
+                  id="gateway-start-btn"
+                  className="shrink-0 whitespace-nowrap min-h-11 px-5 py-3 bg-[#00a86b] hover:bg-[#00bf7a] text-[#04150f] font-bold rounded-xl text-sm inline-flex items-center justify-center gap-2"
+                >
+                  Start my application
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                </button>
+                <p className="text-sm text-slate-300">
+                  You fill in 7 short steps first. Payment is the last step, after
+                  you’ve reviewed everything.
+                </p>
               </div>
             </div>
 
-            <div className="pt-8 border-t border-slate-100 mt-6">
-              <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded-xl">
-                💡 <strong>Your choice:</strong> You can also review and use
-                each university’s own application process. StudyBg does not
-                claim exclusive or official representative status.
+            <div className="lg:col-span-5 space-y-4">
+              <div className="rounded-2xl border border-slate-200 p-6">
+                <h3 className="font-heading font-bold text-slate-900">Not included in the €{ONBOARDING_FEE_EUR}</h3>
+                <p className="text-sm text-slate-600 mt-1">
+                  Paid to the organisations concerned. If we help arrange one of
+                  these, we tell you the cost before you agree to it.
+                </p>
+                <ul className="mt-3 space-y-2 text-sm text-slate-700">
+                  {GATEWAY_EXCLUSIONS.map((x) => (
+                    <li key={x} className="flex items-start gap-2">
+                      <X className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" aria-hidden="true" />
+                      <span>{x}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-700 space-y-3">
+                <p className="flex gap-2">
+                  <ShieldCheck className="w-5 h-5 text-[#006644] shrink-0" aria-hidden="true" />
+                  <span>{INDEPENDENCE_STATEMENT}</span>
+                </p>
+                <p>
+                  Full details are in our{" "}
+                  <a
+                    href="#/terms"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onNavigate("terms");
+                    }}
+                    className="font-semibold text-[#006644] underline"
+                  >
+                    Terms &amp; Conditions
+                  </a>
+                  , including your 14-day withdrawal right.
+                </p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* FAQs Section */}
+      {/* ------------------------------------------------------------------ */}
+      {/* FAQ                                                                  */}
+      {/* ------------------------------------------------------------------ */}
       <section
         id="faqs-section"
-        className="py-16 bg-slate-50 border-t border-slate-200 px-4 sm:px-6 lg:px-8"
+        aria-labelledby="faq-title"
+        className="py-14 px-4 sm:px-6 lg:px-8"
       >
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-10">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#006644] bg-emerald-100/60 px-3 py-1 rounded-full border border-emerald-200">
-              Clear Answers
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold font-heading text-slate-900 mt-2">
-              Frequently Asked Questions & Non-EU Regulations
-            </h2>
-          </div>
-
-          <div className="space-y-3">
+        <div className="max-w-3xl mx-auto">
+          <h2 id="faq-title" className="text-2xl sm:text-3xl font-extrabold font-heading text-slate-900">
+            Questions people ask before they start
+          </h2>
+          <div className="space-y-3 mt-6">
             {FAQS.map((faq, index) => {
               const isOpen = expandedFaq === index;
               return (
-                <div
-                  key={index}
-                  className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden transition-all"
-                >
-                  <button
-                    onClick={() => setExpandedFaq(isOpen ? null : index)}
-                    className="w-full text-left p-4.5 sm:p-5 flex items-center justify-between gap-4 focus:outline-none"
-                  >
-                    <span className="font-heading font-bold text-sm text-slate-900">
-                      {faq.q}
-                    </span>
-                    <ChevronDown
-                      className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
-                        isOpen ? "rotate-180 text-[#006644]" : ""
-                      }`}
-                    />
-                  </button>
+                <div key={faq.q} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                  <h3>
+                    <button
+                      onClick={() => setExpandedFaq(isOpen ? null : index)}
+                      aria-expanded={isOpen}
+                      aria-controls={`faq-${index}`}
+                      className="w-full min-h-11 text-left p-4 sm:p-5 flex items-center justify-between gap-4"
+                    >
+                      <span className="font-heading font-bold text-sm sm:text-base text-slate-900">{faq.q}</span>
+                      <ChevronDown
+                        className={`w-4 h-4 text-slate-500 shrink-0 transition-transform ${isOpen ? "rotate-180 text-[#006644]" : ""}`}
+                        aria-hidden="true"
+                      />
+                    </button>
+                  </h3>
                   {isOpen && (
-                    <div className="px-5 pb-5 pt-0 text-xs text-slate-600 leading-relaxed border-t border-slate-50">
+                    <div id={`faq-${index}`} className="px-4 sm:px-5 pb-5 text-sm text-slate-600 leading-relaxed">
                       {faq.a}
                     </div>
                   )}
@@ -722,6 +524,39 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
           </div>
         </div>
       </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Closing call to action: same single primary action as the hero.      */}
+      {/* ------------------------------------------------------------------ */}
+      <section className="px-4 sm:px-6 lg:px-8 pb-16">
+        <div className="max-w-4xl mx-auto rounded-2xl bg-[#0f1e36] text-white p-6 sm:p-10 text-center">
+          <h2 className="text-2xl sm:text-3xl font-extrabold font-heading">
+            Still deciding? Start with the free check.
+          </h2>
+          <p className="text-slate-300 mt-2 max-w-2xl mx-auto">
+            Five questions, a clear list of what’s ready and what needs
+            checking, and a link to the official requirements. Then decide if
+            you want our help.
+          </p>
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button
+              onClick={() => onOpenQuickFit()}
+              className="min-h-11 w-full sm:w-auto px-6 py-3 bg-[#00a86b] hover:bg-[#00bf7a] text-[#04150f] font-bold rounded-xl text-sm inline-flex items-center justify-center gap-2"
+            >
+              <Sparkles className="w-4 h-4" aria-hidden="true" />
+              Check your eligibility — Free
+            </button>
+            <button
+              onClick={() => onNavigate("calendar")}
+              className="min-h-11 w-full sm:w-auto px-5 py-3 border border-white/25 hover:bg-white/10 rounded-xl text-sm font-semibold inline-flex items-center justify-center gap-2"
+            >
+              <CalendarDays className="w-4 h-4" aria-hidden="true" />
+              Admissions calendar
+            </button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };
+

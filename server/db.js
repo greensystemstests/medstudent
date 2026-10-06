@@ -101,6 +101,7 @@ export async function migrate(db) {
       submitted_at timestamptz, paid_at timestamptz, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now()
     );
     CREATE INDEX IF NOT EXISTS applications_user_idx ON applications(user_id, updated_at DESC);
+    ALTER TABLE applications ADD COLUMN IF NOT EXISTS checkout_session_id text UNIQUE;
     CREATE TABLE IF NOT EXISTS application_consents (
       id bigserial PRIMARY KEY, application_id text NOT NULL REFERENCES applications(id),
       user_id uuid NOT NULL REFERENCES users(id), policy_version text NOT NULL,
@@ -336,7 +337,8 @@ export async function transaction(pool, work) {
   }
 }
 
-export async function insertDocumentWithinQuota(db, doc, limits) {
+/** `activityDetail` is what the owner sees in their activity log, e.g. "Passport: scan.pdf". */
+export async function insertDocumentWithinQuota(db, doc, limits, activityDetail = doc.filename) {
   return transaction(db, async (client) => {
     await client.query("SELECT id FROM users WHERE id=$1 FOR UPDATE", [
       doc.userId,
@@ -354,7 +356,7 @@ export async function insertDocumentWithinQuota(db, doc, limits) {
       );
     }
     const saved = await insertDocument(client, doc);
-    await logActivity(client, doc.userId, "document_uploaded", doc.filename);
+    await logActivity(client, doc.userId, "document_uploaded", activityDetail);
     return saved;
   });
 }

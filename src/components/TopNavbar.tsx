@@ -17,6 +17,14 @@ import {
   X
 } from 'lucide-react';
 
+/** Homepage sections reachable from the menu. Every id here must exist in PublicSiteView. */
+const NAV_SECTIONS: [string, string][] = [
+  ['universities-section', 'Universities'],
+  ['six-stages-section', 'How it works'],
+  ['pricing-section', 'Pricing (€180)'],
+  ['faqs-section', 'FAQ'],
+];
+
 interface TopNavbarProps {
   currentView: AppView;
   demoMode: boolean;
@@ -147,35 +155,21 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
 
           {/* Primary Navigation Links */}
           <nav aria-label="Main" className="desktop-nav hidden xl:flex items-center space-x-1">
+            {NAV_SECTIONS.map(([id, label]) => (
+              <button
+                key={id}
+                onClick={() => onNavigateToSection(id)}
+                className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#006644] hover:bg-slate-50 rounded-lg transition-colors"
+              >
+                {label}
+              </button>
+            ))}
             <button
-              onClick={() => onNavigateToSection('universities-section')}
+              onClick={() => onNavigate('calendar')}
+              aria-current={currentView === 'calendar' ? 'page' : undefined}
               className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#006644] hover:bg-slate-50 rounded-lg transition-colors"
             >
-              Universities
-            </button>
-            <button
-              onClick={() => onNavigateToSection('six-stages-section')}
-              className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#006644] hover:bg-slate-50 rounded-lg transition-colors"
-            >
-              6-Stage Journey
-            </button>
-            <button
-              onClick={() => onNavigateToSection('eligibility-section')}
-              className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#006644] hover:bg-slate-50 rounded-lg transition-colors"
-            >
-              Prerequisites
-            </button>
-            <button
-              onClick={() => onNavigateToSection('pricing-section')}
-              className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#006644] hover:bg-slate-50 rounded-lg transition-colors"
-            >
-              Pricing (€180)
-            </button>
-            <button
-              onClick={() => onNavigateToSection('faqs-section')}
-              className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#006644] hover:bg-slate-50 rounded-lg transition-colors"
-            >
-              FAQ & Visa
+              Calendar
             </button>
           </nav>
 
@@ -183,18 +177,19 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           <div className="ml-auto flex items-center gap-2 sm:gap-2.5">
             <button
               onClick={onOpenQuickFit}
-              className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#006644] bg-[#006644]/10 hover:bg-[#006644]/20 border border-[#006644]/20 rounded-lg transition-colors"
+              className="inline-flex items-center gap-1.5 min-h-11 px-2.5 min-[380px]:px-3 sm:px-4 text-xs font-semibold text-white bg-[#006644] hover:bg-[#005538] rounded-lg shadow-sm transition-colors"
               id="header-quick-fit-btn"
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Quick Fit Check</span>
+              <Sparkles className="w-3.5 h-3.5 max-[379px]:hidden" aria-hidden="true" />
+              <span className="hidden sm:inline">Free eligibility check</span>
+              <span className="sm:hidden">Free check</span>
             </button>
 
             <button
               onClick={() => onNavigate('account')}
               aria-label="My account"
               title="My account"
-              className={`max-[379px]:hidden inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 text-xs font-semibold rounded-lg border transition-colors ${
+              className={`hidden md:inline-flex items-center gap-1.5 min-h-11 px-3 sm:px-3.5 text-xs font-semibold rounded-lg border transition-colors ${
                 currentView === 'account'
                   ? 'text-[#006644] bg-emerald-50 border-[#006644]/30'
                   : 'text-slate-700 bg-white border-slate-200 hover:border-[#006644]/40 hover:text-[#006644]'
@@ -207,19 +202,18 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
 
             <button
               onClick={() => onNavigate('wizard')}
-              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs font-semibold text-white bg-[#006644] hover:bg-[#005538] rounded-lg shadow-sm hover:shadow transition-all"
+              className="hidden lg:inline-flex items-center gap-1.5 min-h-11 px-3.5 text-xs font-semibold text-[#006644] bg-white border border-[#006644]/40 hover:bg-emerald-50 rounded-lg transition-colors"
               id="header-apply-btn"
             >
-              <span className="hidden sm:inline">{hasPaidApplication ? 'My Application' : 'Apply Now (€180)'}</span>
-              <span className="sm:hidden">{hasPaidApplication ? 'Application' : 'Apply'}</span>
-              <ChevronRight className="w-3.5 h-3.5" />
+              <span>{hasPaidApplication ? 'My application' : 'Apply (€180)'}</span>
+              <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
 
             {/* Mobile Hamburger Button */}
             <button
               ref={menuToggleRef}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="mobile-nav-toggle xl:hidden p-2 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors"
+              className="mobile-nav-toggle xl:hidden w-11 h-11 inline-flex items-center justify-center rounded-lg text-slate-700 hover:bg-slate-100 transition-colors"
               aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-menu"
@@ -235,67 +229,43 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
-                onNavigateToSection('universities-section');
+                onOpenQuickFit();
               }}
-              className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg"
+              className="w-full min-h-11 text-left px-3 py-2 text-sm font-semibold text-[#006644] hover:bg-emerald-50 rounded-lg flex items-center gap-1.5"
             >
-              Universities
+              <Sparkles className="w-4 h-4" aria-hidden="true" />
+              <span>Free eligibility check</span>
+            </button>
+            {NAV_SECTIONS.map(([id, label]) => (
+              <button
+                key={id}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onNavigateToSection(id);
+                }}
+                className="w-full min-h-11 text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg"
+              >
+                {label}
+              </button>
+            ))}
+            <button
+              onClick={() => onNavigate('calendar')}
+              className="w-full min-h-11 text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg"
+            >
+              Admissions calendar
             </button>
             <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onNavigateToSection('six-stages-section');
-              }}
-              className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg"
-            >
-              6-Stage Journey
-            </button>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onNavigateToSection('eligibility-section');
-              }}
-              className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg"
-            >
-              Prerequisites
-            </button>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onNavigateToSection('pricing-section');
-              }}
-              className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg"
-            >
-              Transparent Pricing (€180)
-            </button>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onNavigateToSection('faqs-section');
-              }}
-              className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg"
-            >
-              FAQ & Non-EU Visa
-            </button>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onNavigate('account');
-              }}
-              className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg flex items-center gap-1.5"
+              onClick={() => onNavigate('account')}
+              className="w-full min-h-11 text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg flex items-center gap-1.5"
             >
               <CircleUserRound className="w-4 h-4" aria-hidden="true" />
               <span>My Account</span>
             </button>
             <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onOpenQuickFit();
-              }}
-              className="w-full text-left px-3 py-2 text-sm font-semibold text-[#006644] hover:bg-emerald-50 rounded-lg flex items-center gap-1.5"
+              onClick={() => onNavigate('wizard')}
+              className="w-full min-h-11 text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg"
             >
-              <Sparkles className="w-4 h-4" />
-              <span>Quick Fit Check</span>
+              {hasPaidApplication ? 'My application' : 'Start an application (€180 Admissions Gateway)'}
             </button>
           </div>
         )}

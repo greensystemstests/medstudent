@@ -1,6 +1,8 @@
 // Shared by the browser and API. Source review: 2026-09-24. University decisions
 // require transcript/qualification review; this is not an admission decision engine.
-export const POLICY_VERSION = "2026-09-24";
+export const POLICY_VERSION = "2026-09-28";
+/** Date the official university sources below were last reviewed. Update it whenever you re-check them. */
+export const SOURCE_REVIEW_DATE = "2026-09-24";
 export const UNIVERSITIES = [
   {
     id: "mu-sofia",

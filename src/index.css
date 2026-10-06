@@ -155,7 +155,9 @@ html[data-a11y-text='large'] .mobile-nav-toggle {
 html[data-a11y-text='large'] #mobile-menu {
   display: block !important;
 }
-html[data-a11y-text='large'] #header-quick-fit-btn {
+/* With large text, the header keeps only the primary action (free check) and the menu button. */
+html[data-a11y-text='large'] #header-apply-btn,
+html[data-a11y-text='large'] #header-account-btn {
   display: none !important;
 }
 

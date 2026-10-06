@@ -25,7 +25,7 @@ import {
   WizardPrefill,
 } from "./lib/application";
 import { liveAccountApi } from "./lib/account";
-import { getPaymentStatus } from "./lib/api";
+import { getCheckoutStatus, getPaymentStatus } from "./lib/api";
 import { createDemoAccountApi } from "./lib/demoAccount";
 import { ApplicationState, AppView } from "./types";
 
@@ -103,9 +103,21 @@ function readPaymentReturn(): string | null {
   return params.get("payment_return") ? params.get("payment_intent") : null;
 }
 
+/** Stripe Checkout sends the browser back with ?checkout=success&session_id=… or ?checkout=cancel. */
+function readCheckoutReturn(): { result: "success" | "cancel"; sessionId: string | null } | null {
+  const params = new URLSearchParams(window.location.search);
+  const result = params.get("checkout");
+  if (result !== "success" && result !== "cancel") return null;
+  return { result, sessionId: params.get("session_id") };
+}
+
 export default function App() {
   const [demoMode] = useState(readDemoMode);
   const [returningPaymentIntent] = useState(readPaymentReturn);
+  const [checkoutReturn] = useState(readCheckoutReturn);
+  const [checkoutNotice, setCheckoutNotice] = useState<"cancel" | "pending" | null>(
+    () => (checkoutReturn ? (checkoutReturn.result === "cancel" ? "cancel" : "pending") : null),
+  );
   const [application, setApplication] =
     useState<ApplicationState>(loadApplication);
   const guardView = useCallback(
@@ -118,7 +130,7 @@ export default function App() {
     [demoMode],
   );
   const [currentView, setCurrentView] = useState<AppView>(() =>
-    returningPaymentIntent
+    returningPaymentIntent || checkoutReturn
       ? "wizard"
       : guardView(viewFromHash(window.location.hash) ?? "home"),
   );
@@ -128,6 +140,11 @@ export default function App() {
   );
   const [pendingSection, setPendingSection] = useState<string | null>(null);
   const [isQuickFitOpen, setIsQuickFitOpen] = useState(false);
+  const [quickFitUniversity, setQuickFitUniversity] = useState<string | undefined>();
+  const openQuickFit = (universityId?: string) => {
+    setQuickFitUniversity(universityId);
+    setIsQuickFitOpen(true);
+  };
 
   useEffect(() => saveApplication(application), [application]);
 
@@ -164,6 +181,48 @@ export default function App() {
       .catch(() => {
         // Leave the applicant on the payment step; it re-checks the intent when it loads.
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Back from the Stripe-hosted payment page: confirm with the server (which asks Stripe).
+  useEffect(() => {
+    if (!checkoutReturn) return;
+    const url = new URL(window.location.href);
+    ["checkout", "session_id"].forEach((k) => url.searchParams.delete(k));
+    window.history.replaceState(null, "", url.toString());
+    setApplication((a) => ({ ...a, currentStep: PAYMENT_STEP }));
+    const { sessionId } = checkoutReturn;
+    if (checkoutReturn.result !== "success" || !sessionId) return;
+    let cancelled = false;
+    (async () => {
+      // The webhook may arrive a few seconds after the redirect; check a handful of times.
+      for (let i = 0; i < 6 && !cancelled; i++) {
+        try {
+          const info = await getCheckoutStatus(sessionId, application.id);
+          if ("paymentIntentId" in info && info.paid) {
+            setApplication((a) => ({
+              ...a,
+              payment: {
+                status: "paid",
+                paymentIntentId: info.paymentIntentId,
+                receiptRef: info.receiptRef,
+                amount: info.amount,
+                currency: info.currency,
+                paidAt: new Date().toISOString(),
+              },
+            }));
+            setCheckoutNotice(null);
+            return;
+          }
+        } catch {
+          // Keep the "waiting for confirmation" notice; the next check may succeed.
+        }
+        await new Promise((r) => setTimeout(r, 3000));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -274,20 +333,14 @@ export default function App() {
         hasPaidApplication={isPaid}
         onNavigate={navigate}
         onNavigateToSection={navigateToSection}
-        onOpenQuickFit={() => setIsQuickFitOpen(true)}
+        onOpenQuickFit={() => openQuickFit()}
       />
 
       {/* Only where it affects what the visitor is doing: applying or signing in. */}
       {(currentView === "wizard" || currentView === "account") && <ServiceNotice />}
       <main className="flex-1" id="main-content" tabIndex={-1}>
         {currentView === "home" && (
-          <PublicSiteView
-            onNavigate={navigate}
-            onOpenQuickFit={() => setIsQuickFitOpen(true)}
-            onSelectUniversity={(uniId, degree) =>
-              startWithPrefill({ selectedUniversityId: uniId, degree })
-            }
-          />
+          <PublicSiteView onNavigate={navigate} onOpenQuickFit={openQuickFit} />
         )}
 
         {currentView === "wizard" && (
@@ -297,6 +350,7 @@ export default function App() {
             onNavigate={navigate}
             onStartNewApplication={startNewApplication}
             demoMode={demoMode}
+            checkoutNotice={checkoutNotice}
           />
         )}
 
@@ -340,6 +394,7 @@ export default function App() {
 
       <QuickFitModal
         isOpen={isQuickFitOpen}
+        initialUniversityId={quickFitUniversity}
         onClose={() => setIsQuickFitOpen(false)}
         onStartApplication={startWithPrefill}
       />

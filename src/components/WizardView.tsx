@@ -853,7 +853,7 @@ export const WizardView: React.FC<WizardViewProps> = ({
                 </div>
                 <Notice>
                   See the{" "}
-                  <a href="#/calendar" className="font-semibold text-[#006644] underline">
+                  <a href="/admissions-calendar/" className="font-semibold text-[#006644] underline">
                     admissions calendar
                   </a>{" "}
                   for each university’s official page. We don’t list exam dates
@@ -1001,7 +1001,7 @@ export const WizardView: React.FC<WizardViewProps> = ({
                         "termsAgreed",
                         <>
                           I accept the StudyBg{" "}
-                          <LegalLink href="#/terms">
+                          <LegalLink href="/terms/">
                             Terms &amp; Conditions
                           </LegalLink>{" "}
                           for the €180 onboarding & advisory package.
@@ -1011,7 +1011,7 @@ export const WizardView: React.FC<WizardViewProps> = ({
                         "gdprAgreed",
                         <>
                           I have read how my application data is used in the{" "}
-                          <LegalLink href="#/privacy">Privacy Policy</LegalLink>{" "}
+                          <LegalLink href="/privacy/">Privacy Policy</LegalLink>{" "}
                           and acknowledge this privacy notice.
                         </>,
                       ],

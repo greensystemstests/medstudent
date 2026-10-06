@@ -1,0 +1,31 @@
+# StudyBg
+
+> StudyBg (https://studybg.ac) is an independent admissions support service for international students who want to study Medicine or Dentistry, taught in English, at Bulgaria's four medical universities: Sofia, Plovdiv, Varna and Pleven. It offers a free online eligibility check and a paid €180 "Admissions Gateway" (one-time fee). StudyBg is not a university or an official representative of one, and it does not guarantee admission, visas or professional registration. Applicants can always apply to each university directly.
+
+Key facts:
+
+- Free eligibility check: five questions, runs in the browser, no sign-up or payment. Compares the applicant's Biology and Chemistry grades, citizenship and school country with what the chosen university publishes, and links to the official requirements.
+- €180 Admissions Gateway (one-time, taxes included, no subscription) includes: an application and qualification review; a 45-minute video consultation; a document and deadline plan (legalisation, sworn translation, submission); and a StudyBg account with secure document uploads and review notes.
+- Not included in the €180: university tuition, application and entrance-exam fees; sworn translation, apostille, legalisation and notary fees; courier; visa and residence fees; travel, housing, insurance and living costs.
+- Each university sets its own requirements and deadlines. Example: the Medical University of Plovdiv's published 2026/27 guide asks for an average of at least 62% in school Biology and Chemistry. Facts on the site are checked against each university's official page, with the review date shown.
+
+## Guides
+
+- [How to study medicine in Bulgaria in English](https://studybg.ac/study-medicine-in-bulgaria/): entry requirements, documents, legalisation, translation, intakes, visas, costs and practising after graduation.
+- [Medical universities in Bulgaria teaching in English](https://studybg.ac/universities/): the four universities compared.
+- [Admissions calendar](https://studybg.ac/admissions-calendar/): published deadlines and intake windows.
+
+## Universities
+
+- [Medical University of Sofia](https://studybg.ac/universities/medical-university-of-sofia/)
+- [Medical University of Plovdiv](https://studybg.ac/universities/medical-university-of-plovdiv/)
+- [Medical University of Varna](https://studybg.ac/universities/medical-university-of-varna/)
+- [Medical University of Pleven](https://studybg.ac/universities/medical-university-of-pleven/)
+
+## Service and policies
+
+- [Homepage, free check and pricing](https://studybg.ac/)
+- [Terms & Conditions](https://studybg.ac/terms/): what the €180 covers, 14-day withdrawal right, complaints.
+- [Privacy Policy](https://studybg.ac/privacy/)
+- [GDPR](https://studybg.ac/gdpr/)
+- [Accessibility statement](https://studybg.ac/accessibility/)

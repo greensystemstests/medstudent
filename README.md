@@ -16,7 +16,7 @@ The browser never holds the Stripe secret key and never decides the amount. The 
 - `GET  /api/config`: publishable key + the fixed fee (€180.00 EUR)
 - `POST /api/payment-intent`: requires a verified session and a server-saved application version. Reserves and creates an immutable €180 PaymentIntent with a stable idempotency key. Cancel the unpaid checkout from My Account before editing.
 - `GET  /api/payment-intent/:id?applicationId=…`: asks Stripe whether the payment really succeeded. The wizard only unlocks the confirmation page on this answer.
-- `POST /api/checkout-session`: same checks as above, but returns the `url` of a **Stripe-hosted Checkout page** (`ui_mode: hosted_page`). The payment step redirects there; Stripe sends the applicant back to `SITE_URL/?checkout=success&session_id=…#/apply` (or `?checkout=cancel`). This is the flow the site uses. See [STRIPE_INTEGRATION_TODO.md](STRIPE_INTEGRATION_TODO.md).
+- `POST /api/checkout-session`: same checks as above, but returns the `url` of a **Stripe-hosted Checkout page** (`ui_mode: hosted_page`). The payment step redirects there; Stripe sends the applicant back to `SITE_URL/apply/?checkout=success&session_id=…` (or `?checkout=cancel`). This is the flow the site uses. See [STRIPE_INTEGRATION_TODO.md](STRIPE_INTEGRATION_TODO.md).
 - `GET  /api/checkout-session/:id?applicationId=…`: used by the return page; asks Stripe whether the session was paid and records it (same as the webhook, whichever comes first).
 - `POST /api/stripe/webhook`: verified Stripe events (`checkout.session.completed`, `checkout.session.async_payment_succeeded`, `payment_intent.succeeded`), logged to the service logs. On a successful payment this is also where the invoice and emails below are triggered — the API never trusts the browser to say "I paid," only this signed, server-to-server event.
 
@@ -60,17 +60,36 @@ API: `POST /api/auth/request-code`, `POST /api/auth/verify`, `POST /api/auth/log
 
 ## Pages (URLs)
 
-| Page | URL |
-|---|---|
-| Public site (free eligibility check, university comparison, €180 Admissions Gateway) | `/` |
-| Application (8 steps + payment) | `/#/apply` |
-| Student account / sign in | `/#/account` |
-| Official admissions calendar links | `/#/calendar` |
-| Real staff review (allowlisted accounts only) | `/#/review` |
-| Privacy Policy · Terms & Conditions · GDPR Compliance (linked in the footer of every page) | `/#/privacy`, `/#/terms`, `/#/gdpr` |
-| Accessibility Statement (footer, and the accessibility button on every page) | `/#/accessibility` |
-| Account preview with sample data (no sign-in) | `/?demo=1#/account` |
-| Sample student portal / staff ops (demo) | `/?demo=1#/portal-demo`, `/?demo=1#/staff-demo` |
+Every page has its own address and is pre-rendered to `dist/<path>/index.html` at build time
+(`scripts/prerender.mjs`), so search engines and AI crawlers that don't run JavaScript still get the full
+page. Old `#/…` links (e.g. `/#/apply`) keep working and are rewritten to the new address.
+
+| Page | URL | Indexed |
+|---|---|---|
+| Public site (free eligibility check, university comparison, €180 Admissions Gateway) | `/` | yes |
+| Guide: how to study medicine in Bulgaria in English | `/study-medicine-in-bulgaria/` | yes |
+| The four universities compared | `/universities/` | yes |
+| One page per university | `/universities/medical-university-of-sofia/` (also `-plovdiv`, `-varna`, `-pleven`) | yes |
+| Admissions calendar | `/admissions-calendar/` | yes |
+| Privacy Policy · Terms & Conditions · GDPR · Accessibility Statement | `/privacy/`, `/terms/`, `/gdpr/`, `/accessibility/` | yes |
+| Application (8 steps + payment) | `/apply/` | no |
+| Student account / sign in | `/account/` | no |
+| Real staff review (allowlisted accounts only) | `/review/` | no |
+| Account preview with sample data (no sign-in) | `/account/?demo=1` | no |
+| Sample student portal / staff ops (demo) | `/portal-demo/?demo=1`, `/staff-demo/?demo=1` | no |
+| Anything else | `404.html` (real 404 status) | no |
+
+## SEO
+
+- Per-page `<title>`, description, canonical (always `https://studybg.ac/…`), Open Graph/Twitter tags and
+  schema.org JSON-LD (Organization, WebSite, Service with the €180 Offer, FAQPage, Article, BreadcrumbList,
+  CollegeOrUniversity) come from `src/data/seo.ts`. Page text for the guides lives in `src/data/guides.ts`;
+  university facts come only from `shared/admissions.js`, the reviewed official sources.
+- `public/robots.txt` allows all crawlers, including AI assistants; `dist/sitemap.xml` is generated from the
+  indexable pages; `public/llms.txt` is a plain-text summary for AI tools.
+- The Render copy of the site (`*.onrender.com`) sends `X-Robots-Tag: noindex`, so only `studybg.ac` is listed.
+- After the first deploy: add `studybg.ac` in Google Search Console and Bing Webmaster Tools (DNS
+  verification) and submit `https://studybg.ac/sitemap.xml`.
 
 ## Application flow
 

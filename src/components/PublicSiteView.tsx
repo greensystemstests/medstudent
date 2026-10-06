@@ -29,6 +29,7 @@ import {
 } from "../data/constants";
 import { AppView } from "../types";
 import { formatLongDate } from "../lib/admissions";
+import { pathFor, universityView } from "../lib/routes";
 
 type Programme = "Medicine" | "Dentistry" | "Pharmacy";
 
@@ -143,9 +144,10 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
             </h1>
 
             <p className="text-base sm:text-lg text-slate-300 max-w-2xl leading-relaxed">
-              Not sure which Bulgarian medical university may fit your situation?
-              Start with a free preliminary check before deciding whether to use
-              StudyBg.
+              Thinking of studying Medicine or Dentistry in English at a
+              Bulgarian medical university, but not sure which one may fit your
+              situation? Start with a free preliminary check before deciding
+              whether to use StudyBg.
             </p>
 
             <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 pt-1">
@@ -293,7 +295,11 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
             {routes.map(({ source, profile }) => (
               <li key={source.id} className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 flex flex-col gap-4">
                 <div>
-                  <h3 className="font-heading font-bold text-lg text-slate-900">{source.name}</h3>
+                  <h3 className="font-heading font-bold text-lg text-slate-900">
+                    <a href={pathFor(universityView(source.id))} className="hover:text-[#006644] hover:underline underline-offset-2">
+                      {source.name}
+                    </a>
+                  </h3>
                   {profile && (
                     <p className="text-sm text-slate-600 flex items-center gap-1.5 mt-0.5">
                       <MapPin className="w-4 h-4 text-slate-500" aria-hidden="true" />
@@ -323,12 +329,19 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
                     Check my fit for {profile?.shortName ?? source.name}
                   </button>
                   <a
+                    href={pathFor(universityView(source.id))}
+                    className="min-h-11 inline-flex items-center text-sm font-semibold text-[#006644] underline underline-offset-2"
+                  >
+                    Requirements &amp; deadlines
+                    <span className="sr-only"> for {source.name}</span>
+                  </a>
+                  <a
                     href={source.source}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="min-h-11 inline-flex items-center gap-1.5 text-sm font-semibold text-[#006644] underline underline-offset-2"
                   >
-                    Official admissions page
+                    Official page
                     <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
                     <span className="sr-only"> (opens in a new tab)</span>
                   </a>
@@ -352,7 +365,12 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
           How it works, in six steps
         </h2>
         <p className="text-slate-600 mt-2 max-w-3xl">
-          Who does what, so there are no surprises.
+          Who does what, so there are no surprises. Want the detail first? Read
+          our step-by-step{" "}
+          <a href={pathFor("guide")} className="font-semibold text-[#006644] underline underline-offset-2">
+            guide to studying medicine in Bulgaria in English
+          </a>
+          .
         </p>
         <ol className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
           {JOURNEY.map((step, i) => (
@@ -465,7 +483,7 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
                 <p>
                   Full details are in our{" "}
                   <a
-                    href="#/terms"
+                    href="/terms/"
                     onClick={(e) => {
                       e.preventDefault();
                       onNavigate("terms");
@@ -513,11 +531,10 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
                       />
                     </button>
                   </h3>
-                  {isOpen && (
-                    <div id={`faq-${index}`} className="px-4 sm:px-5 pb-5 text-sm text-slate-600 leading-relaxed">
-                      {faq.a}
-                    </div>
-                  )}
+                  {/* Always in the page (hidden when closed), so search engines and AI tools can read every answer. */}
+                  <div id={`faq-${index}`} hidden={!isOpen} className="px-4 sm:px-5 pb-5 text-sm text-slate-600 leading-relaxed">
+                    {faq.a}
+                  </div>
                 </div>
               );
             })}

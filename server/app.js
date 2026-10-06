@@ -314,10 +314,31 @@ export function createApp({
     config.staticDir &&
     fs.existsSync(path.join(config.staticDir, "index.html"))
   ) {
-    app.use(express.static(config.staticDir, { index: false, maxAge: "1h" }));
-    app.get(/.*/, (_req, res) =>
-      res.sendFile(path.join(config.staticDir, "index.html")),
-    );
+    const root = path.resolve(config.staticDir);
+    // The public site is https://studybg.ac. Copies on other hosts (e.g. *.onrender.com) stay out of search.
+    app.use((req, res, next) => {
+      if (/\.onrender\.com$/i.test(req.hostname || ""))
+        res.setHeader("X-Robots-Tag", "noindex");
+      next();
+    });
+    app.use(express.static(root, { index: false, redirect: false, maxAge: "1h" }));
+    // Each page is pre-rendered to <path>/index.html at build time (scripts/prerender.mjs).
+    // HTML is never cached, so a deploy is picked up straight away.
+    app.get(/.*/, (req, res) => {
+      const page = path.resolve(root, `.${path.posix.normalize(req.path)}`, "index.html");
+      const inside = page.startsWith(root + path.sep);
+      res.setHeader("Cache-Control", "no-cache");
+      if (inside && fs.existsSync(page)) {
+        if (!req.path.endsWith("/")) {
+          const query = req.originalUrl.slice(req.path.length);
+          return res.redirect(301, `${req.path}/${query}`);
+        }
+        return res.sendFile(page);
+      }
+      const notFound = path.join(root, "404.html");
+      if (fs.existsSync(notFound)) return res.status(404).sendFile(notFound);
+      return res.sendFile(path.join(root, "index.html"));
+    });
   }
   return app;
 }

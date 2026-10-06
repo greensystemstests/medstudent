@@ -28,6 +28,19 @@ import { liveAccountApi } from "./lib/account";
 import { getCheckoutStatus, getPaymentStatus } from "./lib/api";
 import { createDemoAccountApi } from "./lib/demoAccount";
 import { ApplicationState, AppView } from "./types";
+import {
+  GuideView,
+  NotFoundView,
+  UniversitiesView,
+  UniversityPage,
+} from "./components/content/ContentPages";
+import { applyPageMeta } from "./data/seo";
+import {
+  isLegacyHash,
+  isUniversityView,
+  pathFor,
+  viewFromLocation,
+} from "./lib/routes";
 
 const DEMO_KEY = "studybg.demo";
 
@@ -45,44 +58,6 @@ function readDemoMode(): boolean {
     return false;
   }
 }
-
-/** Each view has its own address, so pages can be bookmarked, shared, and the back button works. */
-const VIEW_HASH: Record<AppView, string> = {
-  "staff-live": "#/review",
-  calendar: "#/calendar",
-  home: "",
-  wizard: "#/apply",
-  account: "#/account",
-  privacy: "#/privacy",
-  terms: "#/terms",
-  gdpr: "#/gdpr",
-  accessibility: "#/accessibility",
-  student: "#/portal-demo",
-  staff: "#/staff-demo",
-};
-
-function viewFromHash(hash: string): AppView | null {
-  if (hash === "" || hash === "#" || hash === "#/") return "home";
-  const match = (Object.entries(VIEW_HASH) as [AppView, string][]).find(
-    ([, h]) => h && hash.startsWith(h),
-  );
-  return match ? match[0] : null;
-}
-
-/** 2.4.2 Page Titled: every view has its own title (the wizard adds the current step itself). */
-const VIEW_TITLE: Record<AppView, string> = {
-  "staff-live": "Staff review – StudyBg",
-  calendar: "Admissions calendar – StudyBg",
-  home: "StudyBg – Study Medicine & Dentistry in Bulgaria, in English",
-  wizard: "Apply – StudyBg",
-  account: "My account – StudyBg",
-  privacy: "Privacy Policy – StudyBg",
-  terms: "Terms & Conditions – StudyBg",
-  gdpr: "GDPR Compliance – StudyBg",
-  accessibility: "Accessibility Statement – StudyBg",
-  student: "Student portal (demo) – StudyBg",
-  staff: "Staff operations (demo) – StudyBg",
-};
 
 const openAccessibilitySettings = () =>
   window.dispatchEvent(new Event("studybg:open-a11y"));
@@ -132,7 +107,7 @@ export default function App() {
   const [currentView, setCurrentView] = useState<AppView>(() =>
     returningPaymentIntent || checkoutReturn
       ? "wizard"
-      : guardView(viewFromHash(window.location.hash) ?? "home"),
+      : guardView(viewFromLocation(window.location)),
   );
   const accountApi = useMemo(
     () => (demoMode ? createDemoAccountApi() : liveAccountApi),
@@ -235,8 +210,9 @@ export default function App() {
     [guardView],
   );
 
+  // Title, description, robots and canonical follow the page (the wizard sets its own title per step).
   useEffect(() => {
-    if (currentView !== "wizard") document.title = VIEW_TITLE[currentView];
+    applyPageMeta(currentView, { skipTitle: currentView === "wizard" });
   }, [currentView]);
 
   // After an in-app page change (not the first load), focus the new page's heading.
@@ -252,29 +228,32 @@ export default function App() {
 
   // Keep the address bar in step with the view...
   const addressSynced = React.useRef(false);
+  const currentViewRef = React.useRef(currentView);
+  currentViewRef.current = currentView;
   useEffect(() => {
-    const target = VIEW_HASH[currentView];
-    const url = `${window.location.pathname}${window.location.search}${target}`;
+    if (currentView === "not-found") return; // keep the address that was asked for
+    const target = pathFor(currentView);
+    const legacy = isLegacyHash(window.location.hash);
+    const hash = legacy ? "" : window.location.hash;
+    const url = `${target}${window.location.search}${hash}`;
     if (!addressSynced.current) {
-      // The first view was read from the address, so only fill in a missing hash (e.g. returning
-      // from a bank redirect). Never overwrite an address that changed before this effect ran.
+      // The first view was read from the address: only tidy it (old #/… links, missing trailing slash).
       addressSynced.current = true;
-      if (window.location.hash === "" && target)
+      if (window.location.pathname !== target || legacy)
         window.history.replaceState(null, "", url);
       return;
     }
-    if (viewFromHash(window.location.hash) === currentView) return;
-    window.history.pushState(null, "", url);
+    if (window.location.pathname === target && !legacy) return;
+    window.history.pushState(null, "", `${target}${window.location.search}`);
   }, [currentView]);
 
-  // ...and the view in step with the address bar (back/forward buttons, links, typed URLs).
+  // ...and the view in step with the address bar (back/forward buttons, typed URLs, old #/… links).
   useEffect(() => {
     const onAddressChange = () => {
-      const view = viewFromHash(window.location.hash);
-      if (view) {
-        setCurrentView(guardView(view));
-        window.scrollTo({ top: 0 });
-      }
+      const view = guardView(viewFromLocation(window.location));
+      if (view === currentViewRef.current) return; // e.g. a #section link on the same page
+      setCurrentView(view);
+      window.scrollTo({ top: 0 });
     };
     window.addEventListener("popstate", onAddressChange);
     window.addEventListener("hashchange", onAddressChange);
@@ -288,6 +267,28 @@ export default function App() {
     setCurrentView("home");
     setPendingSection(sectionId);
   }, []);
+
+  // Links are ordinary <a href="/page/"> so crawlers can follow them; clicks stay inside the app.
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const link = (e.target as Element | null)?.closest?.("a");
+      if (!link || !link.href || link.hasAttribute("download")) return;
+      if (link.target && link.target !== "_self") return;
+      const url = new URL(link.href, window.location.href);
+      if (url.origin !== window.location.origin) return;
+      const view = viewFromLocation(url);
+      if (view === "not-found") return;
+      const section = isLegacyHash(url.hash) ? "" : url.hash.slice(1);
+      // A #section on the page already showing: let the browser scroll to it.
+      if (view === currentViewRef.current && section && url.pathname === window.location.pathname) return;
+      e.preventDefault();
+      if (view === "home" && section) navigateToSection(section);
+      else navigate(view);
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, [navigate, navigateToSection]);
 
   // Scroll once the home view (and its sections) has actually rendered.
   useEffect(() => {
@@ -366,6 +367,14 @@ export default function App() {
           />
         )}
 
+        {currentView === "guide" && <GuideView onOpenQuickFit={openQuickFit} />}
+        {currentView === "universities" && (
+          <UniversitiesView onOpenQuickFit={openQuickFit} />
+        )}
+        {isUniversityView(currentView) && (
+          <UniversityPage view={currentView} onOpenQuickFit={openQuickFit} />
+        )}
+        {currentView === "not-found" && <NotFoundView />}
         {currentView === "calendar" && <AdmissionsCalendar />}
         {currentView === "staff-live" && <StaffReviewView />}
         {currentView === "privacy" && (

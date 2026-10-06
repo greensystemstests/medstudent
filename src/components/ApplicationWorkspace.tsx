@@ -136,7 +136,7 @@ export function SavedApplications({
           Your applications
         </h2>
         {staff && (
-          <a href="#/review" className="min-h-11 inline-flex items-center text-sm font-semibold underline text-[#006644]">
+          <a href="/review/" className="min-h-11 inline-flex items-center text-sm font-semibold underline text-[#006644]">
             Open staff review
           </a>
         )}

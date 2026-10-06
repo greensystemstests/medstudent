@@ -18,11 +18,16 @@ try {
       import {QuickFitModal} from './src/components/QuickFitModal';
       const storage={getItem:()=>null,setItem:()=>{},removeItem:()=>{}};
       globalThis.localStorage=storage;globalThis.sessionStorage=storage;
-      for(const hash of ['', '#/apply','#/account','#/calendar','#/review','#/privacy','#/terms','#/gdpr','#/accessibility']){
-        globalThis.window={location:{hash,search:'',href:'https://example.test/'+hash},matchMedia:()=>({matches:false})};
+      const pages=[['/',''],['/apply/',''],['/account/',''],['/admissions-calendar/',''],['/review/',''],['/privacy/',''],['/terms/',''],['/gdpr/',''],['/accessibility/',''],
+        ['/study-medicine-in-bulgaria/',''],['/universities/',''],['/universities/medical-university-of-plovdiv/',''],['/no-such-page/',''],['/','#/terms']];
+      const expect={'/no-such-page/':'Page not found','/study-medicine-in-bulgaria/':'How to study medicine in Bulgaria in English','/universities/medical-university-of-plovdiv/':'62%','#/terms':'Terms'};
+      for(const [pathname,hash] of pages){
+        globalThis.window={location:{pathname,hash,search:'',href:'https://example.test'+pathname+hash},matchMedia:()=>({matches:false})};
         const html=renderToString(React.createElement(App));
-        if(!html.includes('main-content'))throw new Error('Missing page '+hash);
-        console.log('Rendered route: '+(hash||'home'));
+        if(!html.includes('main-content'))throw new Error('Missing page '+pathname+hash);
+        const want=expect[hash||pathname];
+        if(want&&!html.includes(want))throw new Error(pathname+hash+' does not show '+want);
+        console.log('Rendered route: '+pathname+hash);
       }
       const quick=renderToString(React.createElement(QuickFitModal,{isOpen:true,onClose:()=>{},onStartApplication:()=>{}}));
       if(!quick.includes('Country issuing your school qualification')||!quick.includes('disabled'))throw new Error('Quick Fit initial state invalid');

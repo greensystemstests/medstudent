@@ -49,7 +49,7 @@ export async function sendLoginCodeEmail(resend, { from, to, code, siteUrl }) {
         <p>Use this code to sign in to your StudyBg account:</p>
         <p style="font-size:32px;font-weight:800;letter-spacing:8px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:16px;text-align:center;margin:16px 0">${escapeHtml(code)}</p>
         <p style="color:#64748b;font-size:13px">It expires in 10 minutes. If you didn't ask for it, you can ignore this email; nobody can sign in without the code.</p>
-        <p style="font-size:13px"><a href="${escapeHtml(siteUrl)}/#/account" style="color:#006644">Open my account</a></p>
+        <p style="font-size:13px"><a href="${escapeHtml(siteUrl)}/account/" style="color:#006644">Open my account</a></p>
       </div>
     `,
   });

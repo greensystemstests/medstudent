@@ -181,6 +181,51 @@ test("provider errors and malformed responses never count as sent", async () => 
   );
 });
 
+test("serves each pre-rendered page, a real 404, and keeps the Render host out of search", async () => {
+  const fs = await import("node:fs");
+  const os = await import("node:os");
+  const path = await import("node:path");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "studybg-static-"));
+  fs.writeFileSync(path.join(dir, "index.html"), "home page");
+  fs.writeFileSync(path.join(dir, "404.html"), "not found page");
+  fs.mkdirSync(path.join(dir, "privacy"));
+  fs.writeFileSync(path.join(dir, "privacy", "index.html"), "privacy page");
+  const app = createApp({ config: { staticDir: dir, allowedOrigins: [] }, log: () => {} });
+  let server;
+  await new Promise((r) => (server = app.listen(0, r)));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  try {
+    const home = await fetch(`${base}/`);
+    assert.equal(home.status, 200);
+    assert.equal(await home.text(), "home page");
+    assert.equal(home.headers.get("x-robots-tag"), null);
+    const privacy = await fetch(`${base}/privacy/`);
+    assert.equal(await privacy.text(), "privacy page");
+    const noSlash = await fetch(`${base}/privacy?x=1`, { redirect: "manual" });
+    assert.equal(noSlash.status, 301);
+    assert.equal(noSlash.headers.get("location"), "/privacy/?x=1");
+    const missing = await fetch(`${base}/no-such-page/`);
+    assert.equal(missing.status, 404);
+    assert.equal(await missing.text(), "not found page");
+    const escape = await fetch(`${base}/..%2f..%2fetc/`);
+    assert.equal(escape.status, 404);
+    // fetch() can't set Host, so ask with http.request.
+    const http = await import("node:http");
+    const robots = await new Promise((resolve, reject) =>
+      http
+        .get(`${base}/privacy/`, { headers: { host: "studybg-api.onrender.com" } }, (res) => {
+          res.resume();
+          resolve(res.headers["x-robots-tag"]);
+        })
+        .on("error", reject),
+    );
+    assert.equal(robots, "noindex");
+  } finally {
+    server.close();
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 describe(
   "durable application, checkout and review API",
   { skip: !DB_URL && "TEST_DATABASE_URL not set" },

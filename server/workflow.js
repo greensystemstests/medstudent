@@ -249,7 +249,7 @@ export async function createHostedCheckout(db, stripe, user, id, version, siteUr
       await reserveCheckout(c, user, id, row);
     }
     const { description, receipt_email, metadata } = checkoutMetadata(row);
-    const back = `${siteUrl}/?checkout=`;
+    const back = `${siteUrl}/apply/?checkout=`;
     const session = await stripe.checkout.sessions.create(
       {
         // Configured in Stripe Checkout Studio.
@@ -279,8 +279,8 @@ export async function createHostedCheckout(db, stripe, user, id, version, siteUr
         client_reference_id: id,
         metadata,
         payment_intent_data: { description, receipt_email, metadata },
-        success_url: `${back}success&session_id={CHECKOUT_SESSION_ID}#/apply`,
-        cancel_url: `${back}cancel#/apply`,
+        success_url: `${back}success&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${back}cancel`,
       },
       { idempotencyKey: `studybg-checkout:${id}:${row.checkout_attempt}` },
     );

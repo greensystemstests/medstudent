@@ -386,7 +386,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
                 <p>
                   You can also apply directly to the university without StudyBg.
                   You have a 14-day right to withdraw; see the{" "}
-                  <a href="#/terms" target="_blank" rel="noopener" className="font-semibold text-[#006644] underline">
+                  <a href="/terms/" target="_blank" rel="noopener" className="font-semibold text-[#006644] underline">
                     Terms
                   </a>
                   .

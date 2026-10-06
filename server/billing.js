@@ -142,7 +142,7 @@ export async function processOutbox(
             from: billing.fromEmail,
             to: job.payload.email,
             subject: "Your StudyBg application has an update",
-            html: '<p>Your application or document review has been updated.</p><p><a href="https://studybg.ac/#/account">Sign in to view the update</a>.</p>',
+            html: '<p>Your application or document review has been updated.</p><p><a href="https://studybg.ac/account/">Sign in to view the update</a>.</p>',
           },
           id,
         );

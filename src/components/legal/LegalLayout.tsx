@@ -3,6 +3,7 @@ import { scrollBehavior } from '../../lib/a11y';
 import { Accessibility, FileText, Scale, ShieldCheck } from 'lucide-react';
 import { LEGAL_ENTITY, LEGAL_LAST_UPDATED, PENDING_DETAIL, hasRealEmail, isPlaceholder, shown } from '../../data/legal';
 import { AppView } from '../../types';
+import { pathFor } from '../../lib/routes';
 
 export type LegalView = 'privacy' | 'terms' | 'gdpr' | 'accessibility';
 
@@ -39,17 +40,17 @@ export const LegalLayout: React.FC<LegalLayoutProps> = ({ view, title, intro, se
       {/* Switch between the three documents */}
       <nav aria-label="Legal documents" className="bg-white rounded-xl border border-slate-200 p-1 grid grid-cols-2 sm:grid-cols-4 gap-1 shadow-2xs">
         {PAGES.map(({ view: v, label, icon: Icon }) => (
-          <button
+          <a
             key={v}
-            onClick={() => onNavigate(v)}
+            href={pathFor(v)}
             aria-current={v === view ? 'page' : undefined}
             className={`inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
               v === view ? 'bg-[#006644] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-50'
             }`}
           >
-            <Icon className="w-4 h-4 hidden sm:block" />
+            <Icon className="w-4 h-4 hidden sm:block" aria-hidden="true" />
             {label}
-          </button>
+          </a>
         ))}
       </nav>
 
@@ -110,7 +111,13 @@ export const List: React.FC<{ items: React.ReactNode[] }> = ({ items }) => (
 );
 
 export const Table: React.FC<{ head: string[]; rows: React.ReactNode[][] }> = ({ head, rows }) => (
-  <div className="overflow-x-auto rounded-xl border border-slate-200">
+  // Focusable, so keyboard users can scroll it sideways on narrow screens (WCAG 2.1.1).
+  <div
+    className="overflow-x-auto rounded-xl border border-slate-200 focus-visible:outline-2 focus-visible:outline-[#006644]"
+    tabIndex={0}
+    role="region"
+    aria-label={`Table: ${head.join(', ')}`}
+  >
     <table className="w-full text-xs text-left">
       <thead className="bg-slate-50 text-slate-600">
         <tr>
@@ -151,10 +158,10 @@ export const Email: React.FC<{ address: string }> = ({ address }) =>
   );
 
 /** Link to another page of the site that opens in place. */
-export const PageLink: React.FC<{ to: AppView; onNavigate: (view: AppView) => void; children: React.ReactNode }> = ({ to, onNavigate, children }) => (
-  <button type="button" onClick={() => onNavigate(to)} className="text-[#006644] font-semibold underline">
+export const PageLink: React.FC<{ to: AppView; onNavigate: (view: AppView) => void; children: React.ReactNode }> = ({ to, children }) => (
+  <a href={pathFor(to)} className="text-[#006644] font-semibold underline">
     {children}
-  </button>
+  </a>
 );
 
 export const ControllerBlock: React.FC = () => (

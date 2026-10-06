@@ -1,28 +1,39 @@
 import React from "react";
-import { UNIVERSITIES } from "../../shared/admissions.js";
+import { SOURCE_REVIEW_DATE, UNIVERSITIES } from "../../shared/admissions.js";
+import { DEADLINE_NOTES } from "../data/guides";
+import { formatLongDate } from "../lib/admissions";
+import { pathFor, universityView } from "../lib/routes";
+
+const reviewDate = formatLongDate(new Date(`${SOURCE_REVIEW_DATE}T12:00:00`));
+
 export function AdmissionsCalendar() {
   return (
     <div className="max-w-4xl mx-auto px-5 py-10 space-y-6">
-      <h1 className="text-3xl font-bold">Admissions calendar</h1>
+      <h1 className="text-3xl font-bold">
+        Admissions calendar: Bulgarian medical universities, 2026/27
+      </h1>
       <p>
-        Dates vary by university, citizenship and qualification. Last source
-        review: 24 September 2026. Future exam sessions are shown only after
-        publication by the university.
+        Published deadlines and intake windows for English-taught Medicine and
+        Dentistry. Dates vary by university, citizenship and qualification.
+        Last source review: <time dateTime={SOURCE_REVIEW_DATE}>{reviewDate}</time>.
+        Future exam sessions are shown only after publication by the
+        university.
       </p>
       {UNIVERSITIES.map((u) => (
         <section
           key={u.id}
           className="p-5 bg-white border rounded-xl space-y-3"
         >
-          <h2 className="text-xl font-bold">{u.name}</h2>
+          <h2 className="text-xl font-bold">
+            <a
+              href={pathFor(universityView(u.id))}
+              className="hover:text-[#006644] hover:underline underline-offset-2"
+            >
+              {u.name}
+            </a>
+          </h2>
           <p>{u.rule}</p>
-          <p>
-            {u.id === "mu-plovdiv"
-              ? "Published 2026/27 document deadline: 11 September 2026 (closed)."
-              : u.id === "mu-pleven"
-                ? "Published non-EU February 2027 application window ends 1 October 2026. Check hard-copy deadlines and your applicant route."
-                : "Check the official calendar for your applicant route. New dates are not yet verified here."}
-          </p>
+          <p>{DEADLINE_NOTES[u.id]}</p>
           <a
             className="text-[#006644] underline"
             href={u.source}
@@ -30,9 +41,17 @@ export function AdmissionsCalendar() {
             rel="noopener noreferrer"
           >
             Official admission requirements and dates ↗
+            <span className="sr-only"> (opens in a new tab)</span>
           </a>
         </section>
       ))}
+      <p>
+        New to the process? Read{" "}
+        <a href={pathFor("guide")} className="text-[#006644] font-semibold underline">
+          how to study medicine in Bulgaria in English
+        </a>
+        .
+      </p>
     </div>
   );
 }

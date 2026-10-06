@@ -3,18 +3,27 @@ import React from "react";
 import { AppView } from "../types";
 import { hasRealEmail, LEGAL_ENTITY } from "../data/legal";
 import { StudyBgLogo } from "./StudyBgLogo";
+import { pathFor, universityView } from "../lib/routes";
+import { UNIVERSITY_GUIDES } from "../data/guides";
 
-const LEGAL_LINKS: { view: AppView; hash: string; label: string }[] = [
-  { view: "privacy", hash: "#/privacy", label: "Privacy Policy" },
-  { view: "terms", hash: "#/terms", label: "Terms & Conditions" },
-  { view: "gdpr", hash: "#/gdpr", label: "GDPR Compliance" },
-  { view: "accessibility", hash: "#/accessibility", label: "Accessibility" },
+const LEGAL_LINKS: { view: AppView; label: string }[] = [
+  { view: "privacy", label: "Privacy Policy" },
+  { view: "terms", label: "Terms & Conditions" },
+  { view: "gdpr", label: "GDPR Compliance" },
+  { view: "accessibility", label: "Accessibility" },
 ];
 
+const GUIDE_LINKS: { view: AppView; label: string }[] = [
+  { view: "guide", label: "How to study medicine in Bulgaria" },
+  { view: "universities", label: "Compare the four universities" },
+  { view: "calendar", label: "Admissions calendar" },
+  { view: "wizard", label: "Apply: €180 Admissions Gateway" },
+];
+
+const linkClass = "inline-block py-1 text-slate-300 hover:text-white underline-offset-2 hover:underline";
+
 /** Shown at the bottom of every page, so the legal documents are always one click away. */
-export const SiteFooter: React.FC<{ onNavigate: (view: AppView) => void }> = ({
-  onNavigate,
-}) => (
+export const SiteFooter: React.FC<{ onNavigate: (view: AppView) => void }> = () => (
   <footer
     className="bg-[#0f1e36] text-slate-400 py-12 px-4 sm:px-6 lg:px-8 border-t border-slate-800 text-xs"
     id="site-footer"
@@ -37,14 +46,8 @@ export const SiteFooter: React.FC<{ onNavigate: (view: AppView) => void }> = ({
         <ul>
           {UNIVERSITIES.map((u) => (
             <li key={u.id}>
-              <a
-                className="inline-block py-1 underline underline-offset-2 hover:text-white"
-                href={u.source}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {u.name} <span aria-hidden="true">↗</span>
-                <span className="sr-only"> (official site, opens in a new tab)</span>
+              <a className={linkClass} href={pathFor(universityView(u.id))}>
+                {UNIVERSITY_GUIDES[universityView(u.id)].name}
               </a>
             </li>
           ))}
@@ -55,11 +58,14 @@ export const SiteFooter: React.FC<{ onNavigate: (view: AppView) => void }> = ({
         <h2 className="font-bold text-white mb-2 uppercase tracking-wider text-[0.6875rem]">
           Before you apply
         </h2>
-        <ul className="space-y-1.5">
-          <li>Check university admission requirements</li>
-          <li>Confirm document legalization</li>
-          <li>Review visa and residence requirements</li>
-          <li>Check professional registration</li>
+        <ul>
+          {GUIDE_LINKS.map((link) => (
+            <li key={link.view}>
+              <a className={linkClass} href={pathFor(link.view)}>
+                {link.label}
+              </a>
+            </li>
+          ))}
         </ul>
       </div>
 
@@ -93,14 +99,7 @@ export const SiteFooter: React.FC<{ onNavigate: (view: AppView) => void }> = ({
         <ul>
           {LEGAL_LINKS.map((link) => (
             <li key={link.view}>
-              <a
-                href={link.hash}
-                onClick={(e) => {
-                  e.preventDefault();
-                  onNavigate(link.view);
-                }}
-                className="inline-block py-1 text-slate-300 hover:text-white underline-offset-2 hover:underline"
-              >
+              <a href={pathFor(link.view)} className={linkClass}>
                 {link.label}
               </a>
             </li>

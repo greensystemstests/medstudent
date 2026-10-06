@@ -230,8 +230,8 @@ export const SignIn: React.FC<{
 
           <p className="text-[0.6875rem] text-slate-500">
             By signing in you agree to our{' '}
-            <a href="#/terms" className="text-[#006644] font-semibold underline">Terms &amp; Conditions</a>. See how we protect your data in our{' '}
-            <a href="#/privacy" className="text-[#006644] font-semibold underline">Privacy Policy</a>.
+            <a href="/terms/" className="text-[#006644] font-semibold underline">Terms &amp; Conditions</a>. See how we protect your data in our{' '}
+            <a href="/privacy/" className="text-[#006644] font-semibold underline">Privacy Policy</a>.
           </p>
 
           <ul className="pt-4 border-t border-slate-100 space-y-2 text-xs text-slate-600">

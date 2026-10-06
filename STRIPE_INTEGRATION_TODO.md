@@ -18,8 +18,8 @@ value that fits this app:
 | Field | Current Value | What to Set |
 |-------|--------------|-------------|
 | mode | `payment` | Correct as is: the €180 Admissions Gateway is a one-time charge, not a subscription. |
-| success_url | `${SITE_URL}/?checkout=success&session_id={CHECKOUT_SESSION_ID}#/apply` | Nothing to change if `SITE_URL` on Render is the address of the public site (default `https://studybg.ac`). Keep `{CHECKOUT_SESSION_ID}`; the return page uses it. |
-| cancel_url | `${SITE_URL}/?checkout=cancel#/apply` | Nothing to change if `SITE_URL` is correct. |
+| success_url | `${SITE_URL}/apply/?checkout=success&session_id={CHECKOUT_SESSION_ID}` | Nothing to change if `SITE_URL` on Render is the address of the public site (default `https://studybg.ac`). Keep `{CHECKOUT_SESSION_ID}`; the return page uses it. |
+| cancel_url | `${SITE_URL}/apply/?checkout=cancel` | Nothing to change if `SITE_URL` is correct. |
 | line_items | One item built from `price_data`: "StudyBg Admissions Gateway", €180.00 EUR (from [server/pricing.js](server/pricing.js)) | Optional. The server stays the source of truth for the price. To use a Price from the Stripe Dashboard instead (for reporting), create a one-time €180 EUR Price and replace `price_data` with `price: "price_..."`. |
 
 ## Configured Parameters

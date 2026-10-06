@@ -1,4 +1,10 @@
-export type AppView = 'home' | 'wizard' | 'account' | 'privacy' | 'terms' | 'gdpr' | 'accessibility' | 'student' | 'staff' | 'staff-live' | 'calendar';
+/** A university guide page: 'university:' + the id used in shared/admissions.js. */
+export type UniversityView = 'university:mu-sofia' | 'university:mu-plovdiv' | 'university:mu-varna' | 'university:mu-pleven';
+
+export type AppView =
+  | 'home' | 'wizard' | 'account' | 'privacy' | 'terms' | 'gdpr' | 'accessibility'
+  | 'student' | 'staff' | 'staff-live' | 'calendar'
+  | 'guide' | 'universities' | UniversityView | 'not-found';
 
 /** A date that repeats every year. Month is 1–12. */
 export interface AnnualDate {

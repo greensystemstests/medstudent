@@ -19,6 +19,7 @@ import {
 } from "../../shared/admissions.js";
 import {
   AFTER_PAYMENT_STEPS,
+  APP_IMAGES,
   FAQS,
   GATEWAY_EXCLUSIONS,
   GATEWAY_NAME,
@@ -175,7 +176,21 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
 
           {/* What the free check actually does (mirrors QuickFitModal). */}
           <div className="lg:col-span-5">
-            <div className="bg-slate-900/80 rounded-2xl border border-slate-700 p-6 shadow-2xl">
+            <div className="bg-slate-900/80 rounded-2xl border border-slate-700 p-6 shadow-2xl overflow-hidden">
+              <div className="relative aspect-video bg-slate-900 -mx-6 -mt-6 mb-5">
+                <img
+                  src={APP_IMAGES.muSofia}
+                  alt="Medical University of Sofia"
+                  width={800}
+                  height={450}
+                  fetchPriority="high"
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-3">
+                  <span className="text-xs font-medium text-slate-100">Medical University of Sofia</span>
+                </div>
+              </div>
               <h2 className="font-heading font-bold text-base text-white">
                 What the free check shows you
               </h2>
@@ -293,7 +308,23 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
 
           <ul className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {routes.map(({ source, profile }) => (
-              <li key={source.id} className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 flex flex-col gap-4">
+              <li key={source.id} className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 flex flex-col gap-4 overflow-hidden">
+                {profile && (
+                  <div className="relative aspect-video overflow-hidden bg-slate-900 -mx-5 -mt-5 sm:-mx-6 sm:-mt-6">
+                    <img
+                      src={profile.image}
+                      alt={source.name}
+                      width={800}
+                      height={450}
+                      loading="lazy"
+                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute top-3 left-3 bg-[#0f1e36]/90 text-white text-xs font-semibold px-3 py-1 rounded-lg border border-slate-700">
+                      {profile.city.replace(/\s*\(.*\)$/, "")}
+                    </div>
+                  </div>
+                )}
                 <div>
                   <h3 className="font-heading font-bold text-lg text-slate-900">
                     <a href={pathFor(universityView(source.id))} className="hover:text-[#006644] hover:underline underline-offset-2">

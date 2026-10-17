@@ -78,7 +78,7 @@ function readPaymentReturn(): string | null {
   return params.get("payment_return") ? params.get("payment_intent") : null;
 }
 
-/** Stripe Checkout sends the browser back with ?checkout=success&session_id=… or ?checkout=cancel. */
+/** The payment form returns to /apply/?checkout=success&session_id=… (also after a bank redirect). */
 function readCheckoutReturn(): { result: "success" | "cancel"; sessionId: string | null } | null {
   const params = new URLSearchParams(window.location.search);
   const result = params.get("checkout");
@@ -159,7 +159,7 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Back from the Stripe-hosted payment page: confirm with the server (which asks Stripe).
+  // Back from Stripe (after paying, or a bank redirect): confirm with the server (which asks Stripe).
   useEffect(() => {
     if (!checkoutReturn) return;
     const url = new URL(window.location.href);

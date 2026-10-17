@@ -218,11 +218,12 @@ export async function createCheckout(db, stripe, user, id, version) {
 }
 
 /**
- * Stripe-hosted Checkout (ui_mode hosted_page): returns a Checkout Session whose `url` the browser
- * redirects to. The session's PaymentIntent carries the same metadata as the embedded flow, so
- * fulfillment (invoice, emails, application status) runs through the existing recordPayment.
+ * Stripe Checkout with the embedded form (ui_mode form): returns a Checkout Session whose
+ * `client_secret` the browser uses to render Stripe's payment form on our page. The session's
+ * PaymentIntent carries the same metadata as the earlier flows, so fulfillment (invoice, emails,
+ * application status) runs through the existing recordPayment.
  */
-export async function createHostedCheckout(db, stripe, user, id, version, siteUrl) {
+export async function createHostedCheckout(db, stripe, user, id, version) {
   return withApplicationLock(db, id, async (c) => {
     let row = await checkoutRow(c, user, id, version);
     if (row.paid_at) throw httpError(409, "This application is already paid.");
@@ -235,10 +236,14 @@ export async function createHostedCheckout(db, stripe, user, id, version, siteUr
       const existing = await stripe.checkout.sessions.retrieve(
         row.checkout_session_id,
       );
-      if (existing.status === "open") return existing;
+      // Only a session made for the embedded form has a client_secret to render.
+      if (existing.status === "open" && existing.client_secret) return existing;
       if (existing.status === "complete")
         throw httpError(409, "Payment for this application is already being processed.");
-      // Expired: it can no longer be paid, so a fresh session (new idempotency key) is safe.
+      // An open session without a client_secret (a hosted page from the earlier flow) is closed first,
+      // so it can't be paid twice. Expired sessions can no longer be paid, so a fresh one is safe.
+      if (existing.status === "open")
+        await stripe.checkout.sessions.expire(existing.id);
       row = (
         await c.query(
           "UPDATE applications SET checkout_session_id=NULL,checkout_attempt=checkout_attempt+1,updated_at=now() WHERE id=$1 RETURNING *",
@@ -249,19 +254,17 @@ export async function createHostedCheckout(db, stripe, user, id, version, siteUr
       await reserveCheckout(c, user, id, row);
     }
     const { description, receipt_email, metadata } = checkoutMetadata(row);
-    const back = `${siteUrl}/apply/?checkout=`;
     const session = await stripe.checkout.sessions.create(
       {
         // Configured in Stripe Checkout Studio.
-        ui_mode: "hosted_page",
+        ui_mode: "form",
         billing_address_collection: "auto",
-        phone_number_collection: { enabled: true },
+        phone_number_collection: { enabled: false },
         automatic_tax: { enabled: false },
-        allow_promotion_codes: false,
         submit_type: "auto",
+        name_collection: { individual: { enabled: true, optional: true } },
         saved_payment_method_options: { payment_method_save: "enabled" },
-        integration_identifier: "hosted_web_0001",
-        origin_context: "web",
+        integration_identifier: "custom_embedded_web_0001",
         // One-time €180 Admissions Gateway; the price is fixed on the server (pricing.js).
         mode: "payment",
         line_items: [
@@ -279,8 +282,6 @@ export async function createHostedCheckout(db, stripe, user, id, version, siteUr
         client_reference_id: id,
         metadata,
         payment_intent_data: { description, receipt_email, metadata },
-        success_url: `${back}success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${back}cancel`,
       },
       { idempotencyKey: `studybg-checkout:${id}:${row.checkout_attempt}` },
     );
@@ -378,7 +379,7 @@ export function mountWorkflow(
             "A paid application cannot be changed. Contact your advisor.",
           );
         if (row.checkout_session_id && !row.payment_intent_id) {
-          // Stripe-hosted Checkout: close the payment page so it can't be paid after editing.
+          // Embedded Checkout: close the open session so it can't be paid after editing.
           if (!stripe) throw httpError(503, "Payment status is unavailable.");
           const session = await stripe.checkout.sessions.retrieve(
             row.checkout_session_id,

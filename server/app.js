@@ -223,7 +223,7 @@ export function createApp({
       res.json({ ...describeIntent(pi), clientSecret: pi.client_secret });
     }),
   );
-  // Stripe-hosted Checkout: the browser redirects to the returned url.
+  // Stripe Checkout (embedded form): returns the client_secret the browser renders the form with.
   app.post(
     "/api/checkout-session",
     rateLimit({ windowMs: 60_000, max: 20 }),
@@ -242,9 +242,8 @@ export function createApp({
         req.user,
         req.body.applicationId,
         req.body.version,
-        config.siteUrl || "https://studybg.ac",
       );
-      res.json({ sessionId: session.id, url: session.url });
+      res.json({ sessionId: session.id, client_secret: session.client_secret });
     }),
   );
   // Called by the return page; the webhook does the same, whichever arrives first.

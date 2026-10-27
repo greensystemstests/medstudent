@@ -1,4 +1,5 @@
 import { SignIn } from "./AccountView";
+import { CheckoutForm } from "./CheckoutForm";
 import { liveAccountApi } from "../lib/account";
 import { getApplication, saveOnline } from "../lib/api";
 import React, { useEffect, useState } from "react";
@@ -44,7 +45,7 @@ interface PaymentStepProps {
   onIntentCreated: (paymentIntentId: string) => void;
   /** Called only after the server has confirmed with Stripe that the payment succeeded. */
   onPaid: (info: PaymentIntentInfo) => void;
-  /** Set when the browser has just come back from the Stripe-hosted payment page. */
+  /** Set when the browser has just come back from a payment: waiting for Stripe's confirmation. */
   checkoutNotice?: "cancel" | "pending" | null;
 }
 
@@ -68,6 +69,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
 
   const [signed, setSigned] = useState(liveAccountApi.isSignedIn());
   const [preparing, setPreparing] = useState(false);
+  const [session, setSession] = useState<{ id: string; clientSecret: string } | null>(null);
   useEffect(() => {
     getPaymentConfig()
       .then(setConfig)
@@ -89,10 +91,11 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
       onSaved(saved);
       const checkout = await createCheckoutSession(saved);
       onSaved({ ...saved, status: "checkout", currentStep: 8 });
-      // Leave for the Stripe-hosted payment page; Stripe sends the browser back here afterwards.
-      window.location.assign(checkout.url);
+      // Stripe's payment form now appears on this page.
+      setSession({ id: checkout.sessionId, clientSecret: checkout.client_secret });
     } catch (e) {
       setLoadError((e as Error).message);
+    } finally {
       setPreparing(false);
     }
   }
@@ -294,8 +297,8 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
 
               {config?.testMode && (
                 <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-[0.6875rem] text-amber-900">
-                  <strong>Test mode:</strong> no real money moves. On the Stripe
-                  page, use card{" "}
+                  <strong>Test mode:</strong> no real money moves. In the payment
+                  form, use card{" "}
                   <code className="font-mono">4242 4242 4242 4242</code>, any
                   future expiry and any CVC.
                 </div>
@@ -335,33 +338,44 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
                       className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
                     >
                       {checkoutNotice === "cancel"
-                        ? "Payment cancelled on the Stripe page. Nothing was charged. You can try again when you're ready."
+                        ? "The payment wasn't completed. Nothing was charged. You can try again when you're ready."
                         : "We're waiting for Stripe to confirm your payment. This page updates automatically; if you were charged, don't pay again."}
                     </p>
                   )}
-                  <button
-                    type="button"
-                    disabled={preparing || !config}
-                    onClick={prepare}
-                    id="pay-button"
-                    className="w-full min-h-11 px-4 py-3 bg-[#006644] hover:bg-[#005538] text-white font-bold rounded-xl disabled:opacity-50 inline-flex items-center justify-center gap-2"
-                  >
-                    {preparing ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
-                        Opening secure payment page…
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="w-4 h-4" aria-hidden="true" />
-                        Pay {total} on Stripe
-                      </>
-                    )}
-                  </button>
-                  <p className="text-[0.6875rem] text-slate-600">
-                    We save your application, then take you to Stripe’s secure
-                    payment page. You’ll come back here when you’re done.
-                  </p>
+                  {session && config ? (
+                    <CheckoutForm
+                      publishableKey={config.publishableKey}
+                      clientSecret={session.clientSecret}
+                      sessionId={session.id}
+                    />
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        disabled={preparing || !config}
+                        onClick={prepare}
+                        id="pay-button"
+                        className="w-full min-h-11 px-4 py-3 bg-[#006644] hover:bg-[#005538] text-white font-bold rounded-xl disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                      >
+                        {preparing ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                            Preparing secure payment…
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="w-4 h-4" aria-hidden="true" />
+                            Continue to payment · {total}
+                          </>
+                        )}
+                      </button>
+                      <p className="text-[0.6875rem] text-slate-600">
+                        We save your application, then show Stripe’s secure
+                        payment form right here. Your answers are locked while
+                        you pay; you can reopen them from My Account.
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
 

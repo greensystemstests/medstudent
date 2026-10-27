@@ -109,16 +109,16 @@ export function QuickFitModal({ isOpen, initialUniversityId, onClose, onStartApp
   const field = "w-full border border-slate-300 rounded-lg px-3 py-2.5 mt-1 bg-white text-base";
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 p-3 sm:p-4 overflow-auto flex items-start sm:items-center justify-center">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 p-3 sm:p-4 overflow-y-auto overscroll-contain flex">
       <div
         ref={dialog}
         role="dialog"
         aria-modal="true"
         aria-labelledby="quickfit-title"
         aria-describedby="quickfit-desc"
-        className="bg-white rounded-2xl w-full max-w-xl shadow-xl"
+        className="dialog-fit bg-white rounded-2xl w-full max-w-xl shadow-xl m-auto flex flex-col overflow-hidden"
       >
-        <div className="bg-[#0f1e36] text-white p-5 sm:p-6 rounded-t-2xl relative">
+        <div className="bg-[#0f1e36] text-white p-4 sm:p-6 shrink-0 relative">
           <button
             onClick={onClose}
             className="absolute top-3 right-3 w-11 h-11 inline-flex items-center justify-center rounded-lg hover:bg-white/10"
@@ -126,20 +126,21 @@ export function QuickFitModal({ isOpen, initialUniversityId, onClose, onStartApp
           >
             <X aria-hidden="true" />
           </button>
-          <h2 id="quickfit-title" className="text-xl sm:text-2xl font-bold pr-12">
+          <h2 id="quickfit-title" className="text-lg sm:text-2xl font-bold pr-12">
             Free eligibility check
           </h2>
-          <p id="quickfit-desc" className="text-sm mt-2 text-slate-200">
+          <p id="quickfit-desc" className="text-xs sm:text-sm mt-1.5 sm:mt-2 text-slate-200">
             Five questions, answered in your browser. Nothing is sent to StudyBg.
             This is preliminary guidance, not an admission decision.
           </p>
         </div>
-        <div className="p-5 sm:p-6 space-y-4">
+        <div className="dialog-body flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4">
           <label className="block text-sm font-medium text-slate-800" htmlFor="quickfit-university">
             University you’re interested in
           </label>
           <select
             id="quickfit-university"
+            data-autofocus
             className={field + " !mt-1"}
             value={university}
             onChange={(e) => setUniversity(e.target.value)}
@@ -150,7 +151,7 @@ export function QuickFitModal({ isOpen, initialUniversityId, onClose, onStartApp
               </option>
             ))}
           </select>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 sm:items-end gap-4">
             <label className="block text-sm font-medium text-slate-800">
               Passport country
               <input className={field} autoComplete="country-name" value={citizenship} onChange={(e) => setCitizenship(e.target.value)} />
@@ -213,30 +214,29 @@ export function QuickFitModal({ isOpen, initialUniversityId, onClose, onStartApp
               <span className="sr-only"> (opens in a new tab)</span>
             </a>
           </section>
-
-          <div className="border-t border-slate-100 pt-4 space-y-2">
-            <button
-              disabled={!gradesEntered}
-              onClick={() => {
-                onStartApplication({
-                  schoolCountry,
-                  citizenship,
-                  biology: Number(biology),
-                  chemistry: Number(chemistry),
-                  selectedUniversityId: university,
-                });
-                onClose();
-              }}
-              className="block w-full min-h-11 bg-[#006644] hover:bg-[#005538] text-white font-semibold p-3 rounded-xl disabled:opacity-50"
-            >
-              Continue to the application
-            </button>
-            <p className="text-xs text-slate-600">
-              {gradesEntered
-                ? "Your answers carry over to the application, saved on this device. Filling it in is free; the €180 Admissions Gateway is only charged at the final step, after you’ve reviewed it."
-                : "Enter both grades to continue to the application. You can also just close this and read the official page."}
-            </p>
-          </div>
+        </div>
+        <div className="shrink-0 border-t border-slate-200 bg-white px-4 py-3 sm:px-6 sm:py-4 space-y-2">
+          <button
+            disabled={!gradesEntered}
+            onClick={() => {
+              onStartApplication({
+                schoolCountry,
+                citizenship,
+                biology: Number(biology),
+                chemistry: Number(chemistry),
+                selectedUniversityId: university,
+              });
+              onClose();
+            }}
+            className="block w-full min-h-11 bg-[#006644] hover:bg-[#005538] text-white font-semibold p-3 rounded-xl disabled:opacity-50"
+          >
+            Continue to the application
+          </button>
+          <p className="text-xs text-slate-600">
+            {gradesEntered
+              ? "Your answers carry over to the application, saved on this device. Filling it in is free; the €180 Admissions Gateway is only charged at the final step, after you’ve reviewed it."
+              : "Enter both grades to continue to the application. You can also just close this and read the official page."}
+          </p>
         </div>
       </div>
     </div>

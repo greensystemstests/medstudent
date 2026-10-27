@@ -14,8 +14,14 @@ export function useDialogFocus(ref: RefObject<HTMLElement | null>, open: boolean
     const dialog = ref.current;
     const opener = document.activeElement as HTMLElement | null;
 
+    // Modal dialogs lock the page behind them, so only the dialog scrolls.
+    const root = document.documentElement;
+    const previousOverflow = root.style.overflow;
+    if (modal) root.style.overflow = 'hidden';
+
     const initial = dialog.querySelector<HTMLElement>('[data-autofocus]') ?? dialog.querySelector<HTMLElement>(FOCUSABLE) ?? dialog;
-    initial.focus();
+    // Don't scroll: a dialog should open showing its title, even when the first field is further down.
+    initial.focus({ preventScroll: true });
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -39,6 +45,7 @@ export function useDialogFocus(ref: RefObject<HTMLElement | null>, open: boolean
     dialog.addEventListener('keydown', onKeyDown);
     return () => {
       dialog.removeEventListener('keydown', onKeyDown);
+      if (modal) root.style.overflow = previousOverflow;
       if (opener && document.contains(opener)) opener.focus();
     };
     // onClose is intentionally not a dependency: re-running would steal focus back mid-dialog.

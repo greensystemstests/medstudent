@@ -78,7 +78,10 @@ function stripeFake() {
           const id = `cs_test${keys.size + 1}`;
           const session = {
             id,
-            url: `https://checkout.stripe.test/${id}`,
+            // The embedded form (ui_mode "form") has a client_secret; a hosted page has a url.
+            ...(params.ui_mode === "form"
+              ? { client_secret: `${id}_secret_test` }
+              : { url: `https://checkout.stripe.test/${id}` }),
             status: "open",
             payment_status: "unpaid",
             payment_intent: null,
@@ -100,7 +103,7 @@ function stripeFake() {
         _all: new Map(),
       },
     },
-    /** Simulates the customer paying on the Stripe-hosted page. */
+    /** Simulates the customer paying in the Checkout form. */
     payHosted(sessionId) {
       const session = this.checkout.sessions._all.get(sessionId);
       const item = session.line_items[0].price_data;
@@ -440,31 +443,40 @@ describe(
         404,
       );
     });
-    test("hosted Checkout: Checkout Studio settings, fixed server price, form lock and session reuse", async () => {
+    test("embedded Checkout: Checkout Studio settings, fixed server price, form lock and session reuse", async () => {
       const a = await draft();
       const first = await hostedCheckout(a);
       const again = await hostedCheckout(a);
       assert.equal(first.sessionId, again.sessionId);
-      assert.match(first.url, /^https:\/\/checkout\.stripe\.test\//);
+      assert.equal(first.client_secret, `${first.sessionId}_secret_test`);
+      assert.equal(first.url, undefined);
       const s = await stripe.checkout.sessions.retrieve(first.sessionId);
-      assert.equal(s.ui_mode, "hosted_page");
+      assert.equal(s.ui_mode, "form");
       assert.equal(s.mode, "payment");
       assert.equal(s.billing_address_collection, "auto");
-      assert.deepEqual(s.phone_number_collection, { enabled: true });
+      assert.deepEqual(s.phone_number_collection, { enabled: false });
       assert.deepEqual(s.automatic_tax, { enabled: false });
-      assert.equal(s.allow_promotion_codes, false);
+      assert.deepEqual(s.name_collection, {
+        individual: { enabled: true, optional: true },
+      });
       assert.equal(s.submit_type, "auto");
       assert.deepEqual(s.saved_payment_method_options, {
         payment_method_save: "enabled",
       });
-      assert.equal(s.integration_identifier, "hosted_web_0001");
-      assert.equal(s.origin_context, "web");
-      assert.equal(s.payment_method_collection, undefined);
+      assert.equal(s.integration_identifier, "custom_embedded_web_0001");
+      // Not part of the form setup: hosted-page-only and subscription-only settings.
+      for (const gone of [
+        "origin_context",
+        "allow_promotion_codes",
+        "success_url",
+        "cancel_url",
+        "payment_method_collection",
+      ])
+        assert.equal(s[gone], undefined, gone);
       assert.equal(s.line_items[0].price_data.unit_amount, 18000);
       assert.equal(s.line_items[0].price_data.currency, "eur");
       assert.equal(s.client_reference_id, a.id);
       assert.equal(s.payment_intent_data.metadata.application_id, a.id);
-      assert.match(s.success_url, /checkout=success&session_id=\{CHECKOUT_SESSION_ID\}/);
       // The form is locked and the consent snapshot recorded, as with the embedded flow.
       assert.equal(
         (await call(`/api/applications/${a.id}`, { method: "POST", json: a }))
@@ -482,7 +494,7 @@ describe(
       });
       assert.equal(r.status, 409);
     });
-    test("hosted Checkout: paid session settles once via webhook and return page", async () => {
+    test("embedded Checkout: paid session settles once via webhook and return page", async () => {
       const a = await draft();
       const { sessionId } = await hostedCheckout(a);
       // Before payment the return page reports not paid.
@@ -533,7 +545,7 @@ describe(
       });
       assert.equal(r.status, 409);
     });
-    test("hosted Checkout: reopening to edit closes the open Stripe page", async () => {
+    test("embedded Checkout: reopening to edit closes the open session", async () => {
       const a = await draft();
       const { sessionId } = await hostedCheckout(a);
       const r = await call(`/api/applications/${a.id}/reopen`, {
@@ -549,6 +561,21 @@ describe(
       assert.equal(reopened.status, "draft");
       const next = await hostedCheckout(reopened);
       assert.notEqual(next.sessionId, sessionId);
+    });
+    test("embedded Checkout: an open hosted-page session from the earlier flow is closed and replaced", async () => {
+      const a = await draft();
+      const first = await hostedCheckout(a);
+      // Make the stored session look like a hosted page: open, with a url and no client_secret.
+      const old = await stripe.checkout.sessions.retrieve(first.sessionId);
+      delete old.client_secret;
+      old.url = "https://checkout.stripe.test/old";
+      const next = await hostedCheckout(a);
+      assert.notEqual(next.sessionId, first.sessionId);
+      assert.ok(next.client_secret);
+      assert.equal(
+        (await stripe.checkout.sessions.retrieve(first.sessionId)).status,
+        "expired",
+      );
     });
     test("cancels unpaid checkout before editing; retains each accepted version", async () => {
       const a = await draft(),

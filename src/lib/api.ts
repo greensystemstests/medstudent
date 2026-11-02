@@ -102,9 +102,9 @@ export const getPaymentStatus = (
     `/api/payment-intent/${encodeURIComponent(paymentIntentId)}?applicationId=${encodeURIComponent(applicationId)}`,
   );
 
-/** Opens a Stripe-hosted Checkout page for a saved application; the browser then redirects to `url`. */
+/** Saves nothing itself: creates (or reuses) the Stripe Checkout session whose client_secret renders the payment form. */
 export const createCheckoutSession = (app: ApplicationState) =>
-  request<{ sessionId: string; url: string }>("/api/checkout-session", {
+  request<{ sessionId: string; client_secret: string }>("/api/checkout-session", {
     method: "POST",
     body: JSON.stringify({
       applicationId: app.id,

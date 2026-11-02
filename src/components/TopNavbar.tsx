@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AppView } from '../types';
 import { intakeYearLabel } from '../lib/admissions';
 import { StudyBgLogo } from './StudyBgLogo';
@@ -51,6 +51,17 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const menuToggleRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  // Space the open menu may use: from where it starts down to the bottom of the window. The header above
+  // it varies (it wraps on narrow phones and with large text), so measure instead of guessing.
+  const [menuTop, setMenuTop] = useState(0);
+  useLayoutEffect(() => {
+    if (!mobileMenuOpen) return;
+    const measure = () => setMenuTop(Math.ceil(menuRef.current?.getBoundingClientRect().top ?? 0));
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [mobileMenuOpen]);
 
   // Close the mobile menu when the page changes, and on Escape (focus goes back to the menu button).
   useEffect(() => setMobileMenuOpen(false), [currentView]);
@@ -247,7 +258,12 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
 
         {/* Mobile Navigation Dropdown */}
         {mobileMenuOpen && (
-          <div id="mobile-menu" className="xl:hidden border-t border-slate-200 py-3 space-y-1">
+          <div
+            id="mobile-menu"
+            ref={menuRef}
+            className="menu-fit xl:hidden border-t border-slate-200 py-3 space-y-1"
+            style={menuTop ? { maxHeight: `calc(100dvh - ${menuTop + 1}px)` } : undefined}
+          >
             <button
               onClick={() => {
                 setMobileMenuOpen(false);

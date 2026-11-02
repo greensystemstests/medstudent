@@ -210,23 +210,38 @@ export function ServiceNotice() {
   );
   useEffect(() => {
     let active = true;
-    request<{ accountsReady: boolean; paymentsReady: boolean }>("/api/health")
-      .then((s) => {
-        if (active)
-          setState(
-            s.paymentsReady
-              ? ""
-              : s.accountsReady
-                ? "Online payment opens soon. You can already fill in your application and save it to your account."
-                : "Online payment and accounts open soon. You can already fill in your application; it is saved on this device.",
-          );
-      })
-      .catch(() => {
-        if (active)
-          setState(
-            "We can't reach our online service right now. Your application is still saved on this device.",
-          );
-      });
+    (async () => {
+      // A hosting plan that sleeps when idle needs up to a minute to wake: try again before giving up.
+      for (let attempt = 0; attempt < 4 && active; attempt++) {
+        try {
+          const s = await request<{
+            accountsReady: boolean;
+            paymentsReady: boolean;
+          }>("/api/health");
+          if (active)
+            setState(
+              s.paymentsReady
+                ? ""
+                : s.accountsReady
+                  ? "Online payment opens soon. You can already fill in your application and save it to your account."
+                  : "Online payment and accounts open soon. You can already fill in your application; it is saved on this device.",
+            );
+          return;
+        } catch {
+          if (!active) return;
+          if (attempt < 3) {
+            setState(
+              "Our online service is waking up. This can take up to a minute. Your application is saved on this device.",
+            );
+            await new Promise((r) => setTimeout(r, 5000));
+          }
+        }
+      }
+      if (active)
+        setState(
+          "We can't reach our online service right now. Your application is still saved on this device.",
+        );
+    })();
     return () => {
       active = false;
     };

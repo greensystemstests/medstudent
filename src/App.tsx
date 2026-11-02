@@ -25,7 +25,7 @@ import {
   WizardPrefill,
 } from "./lib/application";
 import { liveAccountApi } from "./lib/account";
-import { getCheckoutStatus, getPaymentStatus } from "./lib/api";
+import { getCheckoutStatus, getPaymentStatus, warmUpApi } from "./lib/api";
 import { createDemoAccountApi } from "./lib/demoAccount";
 import { ApplicationState, AppView } from "./types";
 import {
@@ -122,6 +122,9 @@ export default function App() {
   };
 
   useEffect(() => saveApplication(application), [application]);
+
+  // Wake the API as soon as anyone arrives: by the time they open the account or payment page it is ready.
+  useEffect(warmUpApi, []);
 
   // Finish a redirect-based payment: ask the server (which asks Stripe) whether it really succeeded.
   useEffect(() => {

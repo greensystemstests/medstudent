@@ -17,6 +17,7 @@ export async function start(buildFromEnv: Build) {
   console.log(`StudyBg API ready (${summary})`);
 
   const outer = express();
+  outer.disable("x-powered-by");
   outer.use("/studybg", app);
   outer.use(app);
   outer.listen(Number(Deno.env.get("PORT")) || 3000);

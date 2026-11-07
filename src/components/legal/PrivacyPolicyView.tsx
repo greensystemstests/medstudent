@@ -34,8 +34,8 @@ export const PrivacyPolicyView: React.FC<{ onNavigate: (view: AppView) => void }
     <Section id="who-we-are" n={1} title="Who we are">
       <p>
         StudyBg (“<strong>we</strong>”, “<strong>us</strong>”) is the data controller responsible for your personal information. We are
-        established in Bulgaria, so we follow the EU General Data Protection Regulation (“<strong>GDPR</strong>”) and the Bulgarian
-        Personal Data Protection Act, and we apply the same protections to every user, wherever they live.
+        established in the Czech Republic, so we follow the EU General Data Protection Regulation (“<strong>GDPR</strong>”) and the Czech
+        Act on Personal Data Processing, and we apply the same protections to every user, wherever they live.
       </p>
       <ControllerBlock />
       <p>
@@ -70,7 +70,7 @@ export const PrivacyPolicyView: React.FC<{ onNavigate: (view: AppView) => void }
             <>
               <strong>Application details:</strong> immigration category, country of passport, high school curriculum and graduation year,
               chosen degree, university and intake, Biology and Chemistry grades, English level, which required documents you have,
-              preferred entrance exam session, document pickup address, and your preferred day and time for the consultation call.
+              preferred entrance exam session and document pickup address.
             </>,
             <>
               <strong>Payment details:</strong> you pay through our payment provider, Stripe. Your card number and security code go
@@ -116,7 +116,7 @@ export const PrivacyPolicyView: React.FC<{ onNavigate: (view: AppView) => void }
       </Sub>
       <Callout>
         Your draft is kept in your browser while you fill it in. When you sign in and choose Save online, or prepare checkout,
-        we store your full application in your account, including grades, document-readiness answers, requested call window and
+        we store your full application in your account, including grades, document-readiness answers and
         any proposed collection address. At checkout we retain a snapshot of the application and the policy version you accepted.
         Stripe receives the payment amount and limited contact and application information; it does not receive uploaded documents.
       </Callout>
@@ -130,7 +130,7 @@ export const PrivacyPolicyView: React.FC<{ onNavigate: (view: AppView) => void }
           ['Your student account: sign-in, storing your documents, showing your application', 'Account details, documents, account activity', 'Contract (Art. 6(1)(b))'],
           ['Sensitive documents (medical certificate, police clearance)', 'The documents themselves', 'Your explicit consent (Art. 9(2)(a) and Art. 10), see section 5'],
           ['Service emails: sign-in codes, receipts, invoices, call confirmations', 'Contact details, payment details', 'Contract (Art. 6(1)(b))'],
-          ['Issuing invoices and keeping accounting records', 'Name, contact and payment details', 'Legal obligation under Bulgarian accounting and tax law (Art. 6(1)(c))'],
+          ['Issuing invoices and keeping accounting records', 'Name, contact and payment details', 'Legal obligation under Czech accounting and tax law (Art. 6(1)(c))'],
           ['Keeping the site and your account secure, preventing misuse', 'Technical data, account activity', 'Our legitimate interest in security (Art. 6(1)(f))'],
           ['Usage statistics to improve the site', 'Basic usage data', 'Your consent where cookies or similar technologies are needed (Art. 6(1)(a)); otherwise our legitimate interest in improving the site (Art. 6(1)(f))'],
           ['Handling complaints and legal claims', 'Any relevant information', 'Our legitimate interest in defending our rights (Art. 6(1)(f)); legal obligation where applicable'],
@@ -210,11 +210,11 @@ export const PrivacyPolicyView: React.FC<{ onNavigate: (view: AppView) => void }
         <Table
           head={['Provider', 'What they do for us', 'Where']}
           rows={[
-            ['Render Services, Inc.', 'Runs our servers and database (including your account and encrypted documents)', 'Servers in Frankfurt, Germany (EU); company in the USA'],
+            ['Supabase, Inc.', 'Runs our servers and database (including your account and encrypted documents)', 'Database in Frankfurt, Germany (EU); company in the USA'],
             ['GitHub, Inc.', 'Hosts the public website', 'USA'],
             ['Stripe (Stripe Payments Europe Ltd. and Stripe, Inc.)', 'Processes payments and prevents fraud. Stripe also acts as an independent controller for its own legal and fraud-prevention obligations, under its own privacy policy', 'Ireland (EU) and USA'],
             ['Resend', 'Sends our emails (sign-in codes, receipts, invoices)', 'USA'],
-            ['Zoom Video Communications, Inc.', 'Video platform for consultation calls', 'USA'],
+            ['Calendly, LLC', 'Lets you book your consultation call. The name and email address you enter when booking are shared with it, and it sends the call details', 'USA'],
             ['Google (Google Fonts and image hosting)', 'Delivers fonts and images to your browser', 'EU and USA'],
           ]}
         />
@@ -259,7 +259,7 @@ export const PrivacyPolicyView: React.FC<{ onNavigate: (view: AppView) => void }
           ['Documents you delete', 'Removed from our database immediately'],
           ['Sign-in codes', '10 minutes (single use)'],
           ['Sign-in sessions', 'Until you sign out, or 30 days at most'],
-          ['Payment records and invoices', 'For the period required by Bulgarian accounting and tax law, currently up to 10 years'],
+          ['Payment records and invoices', 'For the period required by Czech accounting and tax law, currently up to 10 years'],
           ['Server logs (technical data)', 'For a short period set by our hosting providers, normally no more than a few weeks'],
           ['Emails and call notes', 'As long as needed for your application, then as for account details'],
         ]}
@@ -335,8 +335,8 @@ export const PrivacyPolicyView: React.FC<{ onNavigate: (view: AppView) => void }
       </p>
       <p>
         If you're unhappy with how we handle your information, please tell us first so we can put it right. You can also complain to the
-        Bulgarian Commission for Personal Data Protection (<span lang="bg">Комисия за защита на личните данни</span>), 2 Prof. Tsvetan Lazarov Blvd., Sofia
-        1592, Bulgaria, www.cpdp.bg, or to the data protection authority in the EU country where you live or work.
+        Czech Office for Personal Data Protection (<span lang="cs">Úřad pro ochranu osobních údajů</span>), Pplk. Sochora 27, 170 00
+        Praha 7, Czech Republic, www.uoou.gov.cz, or to the data protection authority in the EU country where you live or work.
       </p>
     </Section>
   </LegalLayout>

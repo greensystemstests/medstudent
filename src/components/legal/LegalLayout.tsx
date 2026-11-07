@@ -167,9 +167,10 @@ export const PageLink: React.FC<{ to: AppView; onNavigate: (view: AppView) => vo
 export const ControllerBlock: React.FC = () => (
   <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm space-y-0.5">
     <div className="font-bold text-slate-900">Company name: {shown(LEGAL_ENTITY.name)}</div>
-    <div><span lang="bg">ЕИК</span> / UIC: {shown(LEGAL_ENTITY.eik)}</div>
-    {LEGAL_ENTITY.vatNumber && <div>VAT number: {LEGAL_ENTITY.vatNumber}</div>}
+    <div>Company number (<span lang="cs">IČO</span>): {shown(LEGAL_ENTITY.companyNumber)}</div>
+    {LEGAL_ENTITY.vatNumber && <div>VAT number (<span lang="cs">DIČ</span>): {LEGAL_ENTITY.vatNumber}</div>}
     <div>Registered address: {shown(LEGAL_ENTITY.address)}</div>
+    {LEGAL_ENTITY.registerNote && <div>{LEGAL_ENTITY.registerNote}</div>}
     <div>
       Privacy contact: <Email address={LEGAL_ENTITY.privacyEmail} />
     </div>

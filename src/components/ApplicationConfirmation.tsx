@@ -1,12 +1,12 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
+  CalendarCheck,
   CalendarClock,
   CheckCircle2,
   FileCheck2,
   FolderUp,
   Home,
-  Mail,
   Receipt,
   Truck,
   UserCheck,
@@ -18,8 +18,11 @@ import {
   UNIVERSITIES,
 } from "../data/constants";
 import { examSessionLabel } from "../lib/admissions";
-import { formatDay } from "../lib/application";
+import { getPaymentStatus } from "../lib/api";
+import { InvoiceSummary, liveAccountApi } from "../lib/account";
+import { createDemoAccountApi } from "../lib/demoAccount";
 import { ApplicationState, AppView } from "../types";
+import { BookCallCard, InvoiceCard } from "./PaidActions";
 import { formatMoney } from "./PaymentStep";
 
 interface Props {
@@ -39,16 +42,48 @@ export const ApplicationConfirmation: React.FC<Props> = ({
   const uni = UNIVERSITIES.find((u) => u.id === form.universityId);
   const paidAt = payment.paidAt ? new Date(payment.paidAt) : null;
 
+  // The invoice and the booking link come from the server, only for the signed-in owner of a paid
+  // application, so they are fetched here rather than kept in the browser's saved draft.
+  const api = useMemo(() => (demoMode ? createDemoAccountApi() : liveAccountApi), [demoMode]);
+  const [extras, setExtras] = useState<{ invoice: InvoiceSummary | null; bookingUrl: string | null } | null>(null);
+  const [signInNeeded, setSignInNeeded] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    let attempts = 0;
+    const load = async () => {
+      try {
+        if (demoMode) {
+          const { applications } = await api.getProfile();
+          if (!cancelled) setExtras({ invoice: applications[0]?.invoice ?? null, bookingUrl: applications[0]?.bookingUrl ?? null });
+          return;
+        }
+        if (!payment.paymentIntentId) return;
+        const status = await getPaymentStatus(payment.paymentIntentId, app.id);
+        if (cancelled) return;
+        if (status.paid && status.bookingUrl) setExtras({ invoice: status.invoice ?? null, bookingUrl: status.bookingUrl });
+        else if (++attempts < 4) setTimeout(load, 4000);
+      } catch {
+        if (!cancelled) setSignInNeeded(true);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [api, app.id, demoMode, payment.paymentIntentId]);
+
   const nextSteps = [
     {
-      icon: Mail,
-      title: "Call confirmation by email",
-      detail: `We confirm your exact call time and send the meeting link to ${form.email}.`,
+      icon: CalendarCheck,
+      title: "Book your 30-minute call",
+      detail:
+        "Use the Book your call button above and pick the day and time that suit you. The booking system emails you the call details.",
     },
     {
       icon: Video,
-      title: "45-minute consultation with StudyBg admissions team",
-      detail: `Requested for ${form.consultationDate ? formatDay(form.consultationDate, { weekday: "long", day: "numeric", month: "long" }) : "your chosen day"}, ${form.consultationWindow}.`,
+      title: "Consultation with the StudyBg admissions team",
+      detail:
+        "On the video call we go through your qualification, your chosen route and your questions.",
     },
     {
       icon: Truck,
@@ -78,9 +113,21 @@ export const ApplicationConfirmation: React.FC<Props> = ({
           </p>
         </div>
 
+        {signInNeeded && !extras ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-xs text-amber-900" role="status">
+            Sign in to your account with <strong>{form.email}</strong> to see your invoice and the button to book your call.{" "}
+            <button type="button" onClick={() => onNavigate("account")} className="font-bold underline">
+              Go to my account
+            </button>
+          </div>
+        ) : (
+          <BookCallCard bookingUrl={extras?.bookingUrl ?? null} />
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+          <div className="md:col-span-2 space-y-6">
           {/* Receipt */}
-          <div className="md:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-3 text-xs">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-3 text-xs">
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
               <Receipt className="w-4 h-4" /> Receipt
             </div>
@@ -110,6 +157,10 @@ export const ApplicationConfirmation: React.FC<Props> = ({
             <p className="text-[0.6875rem] text-slate-500 pt-2 border-t border-slate-100">
               Keep your reference for any questions about this payment.
             </p>
+          </div>
+          {!signInNeeded && (
+            <InvoiceCard invoice={extras?.invoice ?? null} paymentIntentId={payment.paymentIntentId} api={api} />
+          )}
           </div>
 
           {/* Next steps */}

@@ -10,7 +10,6 @@ import {
   CalendarClock,
   Check,
   CheckCircle2,
-  Globe2,
   MapPin,
   Pencil,
   ShieldCheck,
@@ -19,14 +18,12 @@ import {
 } from "lucide-react";
 import {
   APP_IMAGES,
-  CONSULTATION_WINDOWS,
   EXAM_DECIDE_WITH_ADVISOR,
   INTAKE_OPTIONS,
   MIN_SCIENCE_GRADE,
   UNIVERSITIES,
 } from "../data/constants";
 import {
-  formatDay,
   furthestReachableStep,
   isExamSessionOpen,
   parseGrade,
@@ -34,7 +31,6 @@ import {
   scienceAverage,
   STEP_TITLES,
   TOTAL_STEPS,
-  upcomingWeekdays,
   validateStep,
 } from "../lib/application";
 import { warmUpApi } from "../lib/api";
@@ -201,8 +197,6 @@ export const WizardView: React.FC<WizardViewProps> = ({
     goTo(currentStep + 1);
   };
 
-  const callDays = upcomingWeekdays(10);
-  const timezone = "Europe/Sofia";
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] py-8 px-4 sm:px-6 lg:px-8">
@@ -866,8 +860,8 @@ export const WizardView: React.FC<WizardViewProps> = ({
             {currentStep === 7 && (
               <div className="space-y-6 animate-in fade-in duration-200">
                 <StepHeading
-                  title="Step 7: Review and request your call"
-                  subtitle="Check your answers, pick a preferred time for your 45-minute consultation, and confirm the three statements. Nothing is charged at this step."
+                  title="Step 7: Review and confirm"
+                  subtitle="Check your answers and confirm the three statements. Nothing is charged at this step. After you pay, you book your 30-minute consultation call at a time that suits you."
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -922,70 +916,15 @@ export const WizardView: React.FC<WizardViewProps> = ({
                   </ReviewCard>
                 </div>
 
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-5 space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
-                        <CalendarClock className="w-4 h-4 text-[#006644]" />{" "}
-                        Request your 45-min call with StudyBg admissions team
-                      </div>
-                      <div className="text-[0.6875rem] text-slate-500">
-                        Consultation request included in your €180 fee.
-                      </div>
-                    </div>
-                  </div>
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-5 flex items-start gap-3">
+                  <CalendarClock className="w-5 h-5 text-[#006644] shrink-0 mt-0.5" />
                   <div>
-                    <span
-                      id="grp-call-day"
-                      className="block text-xs font-semibold text-slate-700 mb-2"
-                    >
-                      Preferred day
-                    </span>
-                    <div
-                      role="group"
-                      aria-labelledby="grp-call-day"
-                      className="flex flex-wrap gap-2"
-                    >
-                      {callDays.map((day) => (
-                        <button
-                          key={day}
-                          type="button"
-                          onClick={() => update({ consultationDate: day })}
-                          aria-pressed={form.consultationDate === day}
-                          className={`px-3 py-2 text-xs font-semibold ${choiceClass(form.consultationDate === day)}`}
-                        >
-                          {formatDay(day)}
-                        </button>
-                      ))}
+                    <div className="font-bold text-sm text-slate-900">
+                      Your 30-minute video call is included in your €180 fee
                     </div>
-                  </div>
-                  <div>
-                    <span
-                      id="grp-call-time"
-                      className="block text-xs font-semibold text-slate-700 mb-2"
-                    >
-                      Preferred time
-                    </span>
-                    <div
-                      role="group"
-                      aria-labelledby="grp-call-time"
-                      className="grid grid-cols-1 sm:grid-cols-3 gap-2"
-                    >
-                      {CONSULTATION_WINDOWS.map((w) => (
-                        <button
-                          key={w}
-                          type="button"
-                          onClick={() => update({ consultationWindow: w })}
-                          aria-pressed={form.consultationWindow === w}
-                          className={`px-3 py-2 text-xs font-semibold ${choiceClass(form.consultationWindow === w)}`}
-                        >
-                          {w}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-[0.6875rem] text-slate-500 mt-2 flex items-center gap-1">
-                      <Globe2 className="w-3 h-3" /> Your timezone: {timezone}.
-                      We confirm the exact time by email.
+                    <p className="text-xs text-slate-600 mt-1">
+                      After you pay, a “Book your call” button appears and you choose the day and time that suit you. The booking
+                      system sends you the call details.
                     </p>
                   </div>
                 </div>

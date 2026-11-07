@@ -32,8 +32,17 @@ export function createDemoAccountApi(): AccountApi {
     university: 'Medical University of Sofia',
     intake: 'Autumn intake (October)',
     examSession: 'Decide with advisor',
-    callDate: new Date(now + 2 * DAY).toISOString().slice(0, 10),
-    callWindow: 'Afternoon (14:00–16:00 Sofia time)',
+    invoice: {
+      number: '0000000001',
+      issuedAt: iso(3 * DAY + HOUR),
+      currency: 'eur',
+      grossAmount: 18000,
+      netAmount: 14876,
+      vatAmount: 3124,
+      vatRatePercent: 21,
+      paymentIntentId: 'pi_demo',
+    },
+    bookingUrl: 'https://example.com/demo-booking-page',
   };
   const files = new Map<string, Blob>();
   let documents: StoredDocument[] = [
@@ -134,6 +143,15 @@ export function createDemoAccountApi(): AccountApi {
           { type: 'text/html' },
         );
       return { url: URL.createObjectURL(blob), type: blob.type };
+    },
+    async fetchInvoicePdf() {
+      requireSignIn();
+      await pause(200);
+      return { url: URL.createObjectURL(new Blob(['%PDF-1.4 demo invoice'], { type: 'application/pdf' })) };
+    },
+    async getReceiptUrl() {
+      requireSignIn();
+      return { url: null };
     },
   };
 }

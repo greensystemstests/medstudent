@@ -207,7 +207,7 @@ export function structuredData(view: AppView): object | null {
         name: `StudyBg ${GATEWAY_NAME}`,
         serviceType: "Admissions support for English-taught medical degrees in Bulgaria",
         description:
-          "An application and qualification review, a 45-minute video consultation, a document and deadline plan for your university route, and a StudyBg account with secure document uploads. Tuition, exam, translation, legalisation, visa and living costs are not included.",
+          "An application and qualification review, a 30-minute video consultation, a document and deadline plan for your university route, and a StudyBg account with secure document uploads. Tuition, exam, translation, legalisation, visa and living costs are not included.",
         provider: { "@id": ORG_ID },
         areaServed: "Worldwide",
         audience: { "@type": "EducationalAudience", educationalRole: "prospective student" },

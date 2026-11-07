@@ -3,8 +3,8 @@ import { POLICY_VERSION } from "../../shared/admissions.js";
 import { EXAM_DECIDE_WITH_ADVISOR, UNIVERSITIES } from "../data/constants";
 import { ApplicationState } from "../types";
 
-// Empty in local dev (Vite proxies /api to the local server); set at build time for production.
-const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "");
+import { API_BASE } from "./apiBase";
+import type { InvoiceSummary } from "./account";
 
 export interface PaymentConfig {
   publishableKey: string;
@@ -22,6 +22,9 @@ export interface PaymentIntentInfo {
   receiptRef: string;
   createdAt: string;
   clientSecret?: string;
+  /** Only present once the payment is confirmed (server-side), for the signed-in owner. */
+  invoice?: InvoiceSummary | null;
+  bookingUrl?: string | null;
 }
 
 export class ApiError extends Error {

@@ -130,8 +130,17 @@ export async function buildFromEnv(env = process.env, options = {}) {
   const stripeMode = !stripe || !publishableKey ? "NOT CONFIGURED" : secretKey.includes("_live_") ? "LIVE" : "test";
   const missing = [!db && "database URL", !resend && "RESEND_API_KEY", !seller && "company details"].filter(Boolean);
   const accountMissing = [!db && "database URL", !fileKey && "FILE_ENCRYPTION_KEY", !deliverCode && "RESEND_API_KEY"].filter(Boolean);
+  // Which database connection is in use (host and port only, never the password): the app takes
+  // session-level locks, so it must be a direct connection, not a transaction pooler.
+  let dbTarget = "none";
+  try {
+    const u = new URL(val("DATABASE_URL") || val("SUPABASE_DB_URL") || "");
+    dbTarget = `${u.hostname}:${u.port || "5432"}`;
+  } catch {
+    // no database configured
+  }
   const summary =
-    `Stripe: ${stripeMode}, invoicing/email: ${missing.length ? `NOT CONFIGURED (missing ${missing.join(", ")})` : "ready"}, ` +
+    `Database: ${dbTarget}, Stripe: ${stripeMode}, invoicing/email: ${missing.length ? `NOT CONFIGURED (missing ${missing.join(", ")})` : "ready"}, ` +
     `accounts: ${accountMissing.length ? `NOT CONFIGURED (missing ${accountMissing.join(", ")})` : "ready"}`;
 
   return { app, db, billing, sweep, summary };

@@ -192,10 +192,6 @@ export function validateStep(step, input, now = new Date()) {
       "Enter your proposed collection address, or turn off the translation/courier request.",
     );
   if (step === 7) {
-    if (!callDays(10, now).includes(f.consultationDate))
-      e.push("Choose an upcoming consultation day (Sofia time).");
-    if (!CALL_WINDOWS.includes(f.consultationWindow))
-      e.push("Choose a consultation time window.");
     if (!f.accuracySigned) e.push("Confirm your information is accurate.");
     if (!f.termsAgreed) e.push("Read and accept the service terms.");
     if (!f.gdprAgreed) e.push("Read and acknowledge the privacy notice.");

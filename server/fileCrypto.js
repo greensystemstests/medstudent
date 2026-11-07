@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { Buffer } from 'node:buffer';
 
 // Recorded with every document, so a future key rotation can tell which key encrypted what.
 export const KEY_ID = 'v1';

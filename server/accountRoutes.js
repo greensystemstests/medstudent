@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { Buffer } from "node:buffer";
 import express from "express";
 import {
   createLoginCode,
@@ -21,6 +22,7 @@ import {
   sniffFileType,
 } from "./fileCrypto.js";
 import { sendLoginCodeEmail } from "./mail.js";
+import { bookingLink, ensureInvoicePdf, invoicesForEmail, ownedInvoice } from "./billing.js";
 import { ONBOARDING_FEE, PAYMENT_SOURCE } from "./pricing.js";
 import { rateLimit } from "./rateLimit.js";
 
@@ -96,8 +98,6 @@ async function applicationsForEmail(stripe, email) {
       university: pi.metadata.university || null,
       intake: pi.metadata.intake || null,
       examSession: pi.metadata.exam_session || null,
-      callDate: pi.metadata.call_date || null,
-      callWindow: pi.metadata.call_window || null,
     }));
 }
 
@@ -113,11 +113,13 @@ async function applicationsForEmail(stripe, email) {
  * @param {(email: string, code: string) => Promise<void> | null} deps.deliverCode  null when no way to send codes
  * @param {import('stripe').Stripe | null} deps.stripe
  * @param {(line: string) => void} deps.log
+ * @param {object | null} [deps.billing]  seller + mail settings; needed to build an invoice PDF on demand
+ * @param {string | null} [deps.bookingUrl]  consultation booking page; only returned for paid applications
  * @param {{ requestCode?: number, verify?: number, upload?: number }} [deps.rateLimits]  per-IP maximums (tests raise them)
  */
 export function mountAccountRoutes(
   app,
-  { db, fileKey, deliverCode, stripe, log, rateLimits = {} },
+  { db, fileKey, deliverCode, stripe, log, rateLimits = {}, billing = null, bookingUrl = null },
 ) {
   const limits = { requestCode: 10, verify: 30, upload: 20, ...rateLimits };
   const accountsReady = Boolean(db && fileKey && deliverCode);
@@ -276,8 +278,6 @@ export function mountAccountRoutes(
         university: a.form.universityId,
         intake: a.form.intakeSeason,
         examSession: a.form.examDate,
-        callDate: a.form.consultationDate,
-        callWindow: a.form.consultationWindow,
       }));
       applications = [
         ...savedPayments,
@@ -287,11 +287,56 @@ export function mountAccountRoutes(
         ),
       ];
       if (savedPayments.length) applicationsAvailable = true;
+      // Everything in `applications` is paid, so each one gets its invoice and the booking link.
+      const invoices = await invoicesForEmail(db, req.user.email);
+      applications = applications.map((a) => ({
+        ...a,
+        invoice: invoices.get(a.paymentIntentId) ?? null,
+        bookingUrl: bookingLink(bookingUrl, a.applicantName || req.user.full_name, req.user.email),
+      }));
       res.json({
         user: publicUser(req.user),
         applications,
         applicationsAvailable,
       });
+    }),
+  );
+
+  // Invoice PDF: only for the signed-in owner (matched by the email they proved with a sign-in code).
+  me.get(
+    "/invoices/:paymentIntentId/pdf",
+    safe(async (req, res) => {
+      const row = await ownedInvoice(db, req.user.email, req.params.paymentIntentId);
+      if (!row) return res.status(404).json({ error: "Invoice not found." });
+      let invoice = row;
+      if (!row.pdf) {
+        if (!billing?.seller)
+          return res.status(503).json({ error: "Your invoice is being prepared. Please try again in a minute." });
+        try {
+          invoice = await ensureInvoicePdf(db, row.payment_intent_id, billing);
+        } catch (err) {
+          log(`invoice build error: ${err?.message}`);
+          return res.status(503).json({ error: "Your invoice is being prepared. Please try again in a minute." });
+        }
+      }
+      const number = String(invoice.invoice_number).padStart(10, "0");
+      res.set({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="StudyBg-Invoice-${number}.pdf"`,
+      });
+      res.send(Buffer.from(invoice.pdf));
+    }),
+  );
+
+  // Link to Stripe's own card receipt for the same payment.
+  me.get(
+    "/receipts/:paymentIntentId",
+    safe(async (req, res) => {
+      if (!stripe) return res.status(503).json({ error: "Receipts are temporarily unavailable." });
+      const row = await ownedInvoice(db, req.user.email, req.params.paymentIntentId);
+      if (!row) return res.status(404).json({ error: "Receipt not found." });
+      const pi = await stripe.paymentIntents.retrieve(row.payment_intent_id, { expand: ["latest_charge"] });
+      res.json({ url: pi.latest_charge?.receipt_url ?? null });
     }),
   );
 

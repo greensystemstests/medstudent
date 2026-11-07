@@ -46,6 +46,7 @@ import {
 import { formatDay } from '../lib/application';
 import { useDialogFocus } from '../lib/useDialogFocus';
 import { AppView } from '../types';
+import { BookCallCard, InvoiceCard } from './PaidActions';
 import { formatMoney } from './PaymentStep';
 
 interface AccountViewProps {
@@ -418,7 +419,13 @@ const Profile: React.FC<{ api: AccountApi; onNavigate: (view: AppView) => void; 
         <div role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           <div className="lg:col-span-7 space-y-6">
             {applications.length > 0 ? (
-              applications.map((a) => <ApplicationCard key={a.paymentIntentId} app={a} />)
+              applications.map((a) => (
+                <React.Fragment key={a.paymentIntentId}>
+                  <ApplicationCard app={a} />
+                  <BookCallCard bookingUrl={a.bookingUrl} />
+                  <InvoiceCard invoice={a.invoice} paymentIntentId={a.paymentIntentId} api={api} />
+                </React.Fragment>
+              ))
             ) : (
               <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-3">
                 <div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center">
@@ -532,11 +539,7 @@ const ApplicationCard: React.FC<{ app: PaidApplication }> = ({ app }) => (
     <dl className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
       <Detail icon={CreditCard} label="Onboarding package" value={`${formatMoney(app.amount, app.currency)} · ${new Date(app.paidAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`} />
       <Detail icon={FileText} label="Payment reference" value={app.receiptRef} mono />
-      <Detail
-        icon={CalendarClock}
-        label="Consultation call requested"
-        value={app.callDate ? `${formatDay(app.callDate, { weekday: 'short', day: 'numeric', month: 'short' })}, ${app.callWindow ?? ''}` : '—'}
-      />
+      <Detail icon={CalendarClock} label="Consultation call" value="30-minute video call · book below" />
       <Detail icon={GraduationCap} label="Intake · entrance exam" value={`${app.intake ?? '—'} · ${app.examSession === 'Decide with advisor' ? 'chosen on your call' : app.examSession ?? '—'}`} />
     </dl>
   </div>

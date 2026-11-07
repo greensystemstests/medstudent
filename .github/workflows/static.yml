@@ -74,8 +74,9 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          # Public URL of the payments API (Render). Override with a repository variable if it moves.
-          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://studybg-api.onrender.com' }}
+          # Public URL of the API: the "studybg" Edge Function in the Supabase project StudyBg.ac.
+          # Override with a repository variable if it moves.
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://lexvesszfuqqrateocap.supabase.co/functions/v1/studybg' }}
       - name: Setup Pages
         if: github.ref == 'refs/heads/claude/intelligent-curie-jsa86h'
         uses: actions/configure-pages@v5

@@ -141,7 +141,7 @@ export const GdprView: React.FC<{ onNavigate: (view: AppView) => void }> = ({ on
     <Section id="breaches" n={9} title="If something goes wrong">
       <p>
         If we become aware of a personal data breach, we act immediately to contain it and assess the risk. Where it's likely to affect
-        your rights and freedoms, we notify the Commission for Personal Data Protection within 72 hours. Where the risk to you is high, we
+        your rights and freedoms, we notify the Office for Personal Data Protection within 72 hours. Where the risk to you is high, we
         also tell you directly, without undue delay, with what happened and what you can do. We keep a record of every breach, whether or
         not it has to be reported.
       </p>
@@ -150,9 +150,9 @@ export const GdprView: React.FC<{ onNavigate: (view: AppView) => void }> = ({ on
     <Section id="authority" n={10} title="Supervisory authority">
       <p>Our lead supervisory authority is:</p>
       <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm space-y-0.5">
-        <div className="font-bold text-slate-900">Commission for Personal Data Protection (<span lang="bg">Комисия за защита на личните данни</span>)</div>
-        <div>2 Prof. Tsvetan Lazarov Blvd., Sofia 1592, Bulgaria</div>
-        <div>www.cpdp.bg</div>
+        <div className="font-bold text-slate-900">Office for Personal Data Protection (<span lang="cs">Úřad pro ochranu osobních údajů</span>)</div>
+        <div>Pplk. Sochora 27, 170 00 Praha 7, Czech Republic</div>
+        <div>www.uoou.gov.cz</div>
       </div>
       <p>
         You can also complain to the data protection authority in the EU country where you live, work, or where you believe the

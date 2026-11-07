@@ -1,3 +1,4 @@
+import { API_BASE } from "../lib/apiBase";
 import React, { useEffect, useState } from "react";
 import { request } from "../lib/api";
 import { getSessionToken, liveAccountApi } from "../lib/account";
@@ -34,8 +35,6 @@ const FIELD_LABELS: [keyof ApplicationState["form"], string][] = [
   ["examDate", "Exam session"],
   ["swornTranslationRequested", "Wants translation help"],
   ["dhlPickupAddress", "Collection address"],
-  ["consultationDate", "Preferred call day"],
-  ["consultationWindow", "Preferred call time"],
   ["accuracySigned", "Accuracy confirmed"],
   ["termsAgreed", "Terms accepted"],
   ["gdprAgreed", "Privacy notice acknowledged"],
@@ -139,11 +138,7 @@ export function StaffReviewView() {
   async function document(id: string) {
     setBusy(true);
     try {
-      const base = (import.meta.env.VITE_API_BASE_URL ?? "").replace(
-        /\/+$/,
-        "",
-      );
-      const res = await fetch(`${base}/api/staff/documents/${id}/file`, {
+      const res = await fetch(`${API_BASE}/api/staff/documents/${id}/file`, {
         headers: { authorization: `Bearer ${getSessionToken()}` },
         signal: AbortSignal.timeout(25000),
       });

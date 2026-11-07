@@ -121,9 +121,6 @@ export function checkoutMetadata(row) {
       degree: f.degree,
       university: UNIVERSITIES.find((u) => u.id === f.universityId)?.name || "",
       intake: f.intakeSeason,
-      call_date: f.consultationDate,
-      call_window: f.consultationWindow,
-      call_timezone: "Europe/Sofia",
     },
   };
 }

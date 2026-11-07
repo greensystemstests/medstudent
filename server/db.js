@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { Buffer } from "node:buffer";
 import pg from "pg";
 
 /**
@@ -29,11 +30,11 @@ export function assertDirectConnection(url) {
 export function connectDb(url) {
   if (!url) return null;
   assertDirectConnection(url);
-  // Neon and Render's external connection strings require TLS; Render's internal ones (same region) don't.
-  const needsTls = /sslmode=require|\.render\.com|\.neon\.tech/.test(url);
+  // Hosted Postgres (Supabase, Neon, Render) requires TLS; local and Render-internal connections don't.
+  const needsTls = /sslmode=require|\.render\.com|\.neon\.tech|\.supabase\.(co|com)/.test(url);
   const pool = new pg.Pool({
     connectionString: url,
-    max: 5,
+    max: 4,
     ssl: needsTls ? { rejectUnauthorized: false } : false,
   });
   // Managed Postgres drops idle connections (Neon suspends idle compute; providers restart for
@@ -43,6 +44,37 @@ export function connectDb(url) {
     console.error("Postgres idle connection error:", err.message),
   );
   return pool;
+}
+
+/**
+ * Reads the go-live switches from the app_settings table, cached for a few seconds. A database
+ * value wins; the environment value is only the fallback when the table or key is missing. Any
+ * failure reads as "off", so a database hiccup can never switch payments on.
+ */
+export function loadFlags(db, fallback, ttlMs = 10_000) {
+  let cached = null;
+  let at = 0;
+  return async () => {
+    if (cached && Date.now() - at < ttlMs) return cached;
+    if (!db) return fallback;
+    try {
+      const { rows } = await db.query(
+        "SELECT key, value FROM app_settings WHERE key IN ('checkout_enabled','legal_approved')",
+      );
+      const get = (key, fb) => {
+        const row = rows.find((r) => r.key === key);
+        return row ? row.value === "true" : fb;
+      };
+      cached = {
+        checkoutEnabled: get("checkout_enabled", fallback.checkoutEnabled),
+        legalApproved: get("legal_approved", fallback.legalApproved),
+      };
+      at = Date.now();
+      return cached;
+    } catch {
+      return { checkoutEnabled: false, legalApproved: false };
+    }
+  };
 }
 
 export async function migrate(db) {
@@ -119,6 +151,9 @@ export async function migrate(db) {
       state text NOT NULL DEFAULT 'pending', attempts int NOT NULL DEFAULT 0,
       first_attempt_at timestamptz, next_attempt_at timestamptz NOT NULL DEFAULT now(),
       provider_id text, last_error text, created_at timestamptz NOT NULL DEFAULT now(), sent_at timestamptz
+    );
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key text PRIMARY KEY, value text NOT NULL, updated_at timestamptz NOT NULL DEFAULT now()
     );
     CREATE TABLE IF NOT EXISTS staff_audit (
       id bigserial PRIMARY KEY, actor_id uuid NOT NULL REFERENCES users(id),

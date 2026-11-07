@@ -9,7 +9,9 @@ Final verification on 25 September 2026 on `codex/studybg-production-readiness`,
 3. Preview the built frontend with the matching API. Verify keyboard navigation, Quick Fit, pharmacy prefill, all wizard steps, sign-in, Save online, account resume, checkout cancellation, document review and review notes. Recheck at 320px and 200% zoom. Local server rendering is not a substitute for this browser pass.
 4. Complete `src/data/legal.ts`, review the policy drafts and service promises, and update `shared/admissions.js` `POLICY_VERSION` when changing accepted terms. Verify consent and the lawful handling of medical/criminal-record documents before allowing real applicants to upload them. Do not treat the generic privacy checkbox as authorization for every sensitive-data use. Finalize retention, deletion/export and incident-handling procedures with the operator.
 
-## Existing Render service
+## Legacy: Render service (replaced by Supabase, see SUPABASE.md)
+
+The API now runs on Supabase; the notes below only matter while the old Render service still exists.
 
 Service: `studybg-api` (`srv-daqf8597lnhs73cq11p0`), workspace Green1. The service was provisioned directly, so editing `render.yaml` does not update its dashboard settings.
 

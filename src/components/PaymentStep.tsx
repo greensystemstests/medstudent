@@ -201,7 +201,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
               </div>
               <div className="flex items-center gap-3 text-[0.6875rem] text-slate-700">
                 <span className="inline-flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-[#006644]" /> 45 min
+                  <Clock className="w-3.5 h-3.5 text-[#006644]" /> 30 min
                 </span>
                 <span className="inline-flex items-center gap-1">
                   <Video className="w-3.5 h-3.5 text-[#006644]" /> Video call
@@ -213,21 +213,12 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
               <CalendarClock className="w-4 h-4 text-[#006644] shrink-0 mt-0.5" />
               <div>
                 <div className="font-bold text-slate-900">
-                  Requested:{" "}
-                  {form.consultationDate
-                    ? formatDay(form.consultationDate, {
-                        weekday: "long",
-                        day: "numeric",
-                        month: "long",
-                      })
-                    : "—"}
-                  {" · "}
-                  {form.consultationWindow}
+                  You choose your time right after payment
                 </div>
                 <div className="text-slate-500 mt-0.5 flex items-center gap-1">
                   <Globe2 className="w-3 h-3" />
-                  We'll confirm the exact time and send the meeting link to{" "}
-                  {form.email}.
+                  A “Book your call” button appears on your confirmation page
+                  and in your account.
                 </div>
               </div>
             </div>
@@ -279,7 +270,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
                   <span>{total}</span>
                 </div>
                 <div className="flex justify-between text-slate-600">
-                  <span>45-min consultation call</span>
+                  <span>30-min consultation call</span>
                   <span className="text-[#006644] font-semibold">Included</span>
                 </div>
                 <div className="flex justify-between items-baseline pt-2 border-t border-dashed border-slate-200">

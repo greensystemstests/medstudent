@@ -1,7 +1,7 @@
 import { SignIn } from "./AccountView";
 import { CheckoutForm } from "./CheckoutForm";
 import { liveAccountApi } from "../lib/account";
-import { getApplication, saveOnline } from "../lib/api";
+import { listApplications, saveOnline } from "../lib/api";
 import React, { useEffect, useState } from "react";
 import {
   AlertCircle,
@@ -80,12 +80,9 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
     setLoadError(null);
     try {
       let saved: ApplicationState;
-      let remote: ApplicationState | null = null;
-      try {
-        remote = await getApplication(app.id);
-      } catch (e) {
-        if (!(e instanceof ApiError) || e.status !== 404) throw e;
-      }
+      // Is this application already saved online? Ask the list (a lookup of an unsaved id would be a 404).
+      const { applications } = await listApplications();
+      const remote: ApplicationState | null = applications.find((a) => a.id === app.id) ?? null;
       if (remote && remote.status !== "draft") saved = remote;
       else saved = await saveOnline(app);
       onSaved(saved);

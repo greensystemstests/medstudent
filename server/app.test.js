@@ -394,6 +394,14 @@ describe(
         await new Promise((r) => server.close(r));
       }
     });
+    test("staff check answers false for ordinary users and true for staff, never an error", async () => {
+      const ordinary = await call("/api/staff/me");
+      assert.equal(ordinary.status, 200);
+      assert.deepEqual(await ordinary.json(), { staff: false });
+      const staffToken = await login("reviewer@example.com");
+      assert.deepEqual(await (await call("/api/staff/me", { auth: staffToken })).json(), { staff: true });
+      assert.equal((await call("/api/staff/me", { auth: null })).status, 401);
+    });
     test("readiness includes accounts and payment prerequisites", async () => {
       assert.equal((await call("/api/ready")).status, 200);
       assert.equal(

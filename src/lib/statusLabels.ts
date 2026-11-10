@@ -14,7 +14,7 @@ export const TONE_CLASS: Record<Tone, string> = {
 const APPLICATION: Record<string, { label: string; next: string; tone: Tone }> = {
   draft: { label: "Draft", next: "Finish the remaining steps. Payment is the last step.", tone: "neutral" },
   checkout: { label: "Waiting for payment", next: "Complete the payment, or cancel checkout to edit your answers.", tone: "action" },
-  submitted: { label: "Paid, waiting for review", next: "We’ll review your file and email you to confirm your call time.", tone: "progress" },
+  submitted: { label: "Paid, waiting for review", next: "Book your 30-minute call below, and we’ll review your file.", tone: "progress" },
   in_review: { label: "Being reviewed", next: "Nothing to do right now. We’ll add notes here as we go.", tone: "progress" },
   action_needed: { label: "Action needed", next: "Read the note from our team, then update your documents.", tone: "action" },
   review_complete: { label: "Review complete", next: "See the notes from our team. Next steps are covered on your call.", tone: "done" },

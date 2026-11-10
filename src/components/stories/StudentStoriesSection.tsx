@@ -19,7 +19,7 @@ export const CountryStrip: React.FC<{ onDark?: boolean }> = ({ onDark = false })
 /** Fine print that goes next to any testimonial: honest about what a story is. */
 export const StoriesDisclaimer: React.FC<{ className?: string }> = ({ className = "" }) => (
   <p className={`text-xs text-slate-500 ${className}`}>
-    Individual experiences, in the students’ own words. StudyBg doesn’t guarantee admission: universities make their own decisions.
+    Individual experiences, in the students’ own voices. StudyBg doesn’t guarantee admission: universities make their own decisions.
   </p>
 );
 

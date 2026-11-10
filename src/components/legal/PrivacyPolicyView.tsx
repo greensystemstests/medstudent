@@ -86,6 +86,10 @@ export const PrivacyPolicyView: React.FC<{ onNavigate: (view: AppView) => void }
             <>
               <strong>Your messages:</strong> what you tell us by email or during the consultation call, and our notes from the call.
             </>,
+            <>
+              <strong>Student stories (only if you chose to share one):</strong> a short video or audio recording about your experience,
+              with your name and country. We publish it on studybg.ac only with your permission.
+            </>,
           ]}
         />
       </Sub>
@@ -129,6 +133,7 @@ export const PrivacyPolicyView: React.FC<{ onNavigate: (view: AppView) => void }
           ['Taking payment and preventing payment fraud', 'Contact details, payment details, technical data', 'Contract (Art. 6(1)(b)); our legitimate interest in preventing fraud (Art. 6(1)(f))'],
           ['Your student account: sign-in, storing your documents, showing your application', 'Account details, documents, account activity', 'Contract (Art. 6(1)(b))'],
           ['Sensitive documents (medical certificate, police clearance)', 'The documents themselves', 'Your explicit consent (Art. 9(2)(a) and Art. 10), see section 5'],
+          ['Publishing a student story on studybg.ac (only if you shared one)', 'The recording (your voice and, for video, your face), your name and your country', 'Your consent (Art. 6(1)(a)). You can withdraw it at any time by writing to us, and we will remove the story'],
           ['Service emails: sign-in codes, receipts, invoices, call confirmations', 'Contact details, payment details', 'Contract (Art. 6(1)(b))'],
           ['Issuing invoices and keeping accounting records', 'Name, contact and payment details', 'Legal obligation under Czech accounting and tax law (Art. 6(1)(c))'],
           ['Keeping the site and your account secure, preventing misuse', 'Technical data, account activity', 'Our legitimate interest in security (Art. 6(1)(f))'],
@@ -261,6 +266,7 @@ export const PrivacyPolicyView: React.FC<{ onNavigate: (view: AppView) => void }
           ['Sign-in sessions', 'Until you sign out, or 30 days at most'],
           ['Payment records and invoices', 'For the period required by Czech accounting and tax law, currently up to 10 years'],
           ['Server logs (technical data)', 'For a short period set by our hosting providers, normally no more than a few weeks'],
+          ['Student stories you shared', 'Until you withdraw your consent, then removed from the site'],
           ['Emails and call notes', 'As long as needed for your application, then as for account details'],
         ]}
       />

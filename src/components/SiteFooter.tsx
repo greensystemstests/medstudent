@@ -16,6 +16,7 @@ const LEGAL_LINKS: { view: AppView; label: string }[] = [
 const GUIDE_LINKS: { view: AppView; label: string }[] = [
   { view: "guide", label: "How to study medicine in Bulgaria" },
   { view: "universities", label: "Compare the four universities" },
+  { view: "stories", label: "What students say about us" },
   { view: "calendar", label: "Admissions calendar" },
   { view: "wizard", label: "Apply: €180 Admissions Gateway" },
 ];

@@ -56,6 +56,13 @@ export const PAGE_META: Record<AppView, PageMeta> = {
     index: true,
     crumb: "Universities",
   },
+  stories: {
+    title: "What Students Say About StudyBg: Real Student Stories",
+    description:
+      "Hear from students from Greece, Germany, Ukraine and Cyprus who used StudyBg to apply for English-taught medicine in Bulgaria, in their own words.",
+    index: true,
+    crumb: "Student stories",
+  },
   "university:mu-sofia": uniMeta("university:mu-sofia"),
   "university:mu-plovdiv": uniMeta("university:mu-plovdiv"),
   "university:mu-varna": uniMeta("university:mu-varna"),

@@ -1,3 +1,4 @@
+import { StudentStoriesSection } from "./stories/StudentStoriesSection";
 import { SafeImage } from "./SafeImage";
 import React, { useState } from "react";
 import {
@@ -428,6 +429,8 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
           ))}
         </ol>
       </section>
+
+      <StudentStoriesSection onOpenQuickFit={() => onOpenQuickFit()} />
 
       {/* ------------------------------------------------------------------ */}
       {/* The €180 Admissions Gateway: price, contents, after-payment, exclusions */}

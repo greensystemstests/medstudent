@@ -1,3 +1,4 @@
+import { StudentStoriesPage } from "./components/content/StudentStoriesPage";
 import { ServiceNotice } from "./components/ApplicationWorkspace";
 import { AdmissionsCalendar } from "./components/AdmissionsCalendar";
 import { StaffReviewView } from "./components/StaffReviewView";
@@ -373,6 +374,9 @@ export default function App() {
         {currentView === "guide" && <GuideView onOpenQuickFit={openQuickFit} />}
         {currentView === "universities" && (
           <UniversitiesView onOpenQuickFit={openQuickFit} />
+        )}
+        {currentView === "stories" && (
+          <StudentStoriesPage onOpenQuickFit={() => openQuickFit()} />
         )}
         {isUniversityView(currentView) && (
           <UniversityPage view={currentView} onOpenQuickFit={openQuickFit} />

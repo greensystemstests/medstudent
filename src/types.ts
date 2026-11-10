@@ -4,7 +4,7 @@ export type UniversityView = 'university:mu-sofia' | 'university:mu-plovdiv' | '
 export type AppView =
   | 'home' | 'wizard' | 'account' | 'privacy' | 'terms' | 'gdpr' | 'accessibility'
   | 'student' | 'staff' | 'staff-live' | 'calendar'
-  | 'guide' | 'universities' | UniversityView | 'not-found';
+  | 'guide' | 'universities' | 'stories' | UniversityView | 'not-found';
 
 /** A date that repeats every year. Month is 1–12. */
 export interface AnnualDate {

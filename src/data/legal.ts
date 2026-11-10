@@ -20,7 +20,7 @@ export const LEGAL_ENTITY = {
 };
 
 /** Shown at the top of each legal page. Update whenever the text changes. */
-export const LEGAL_LAST_UPDATED = '7 November 2026';
+export const LEGAL_LAST_UPDATED = '10 November 2026';
 
 export const hasRealEmail = (value: string) => /^[^\s@[\]]+@[^\s@[\]]+\.[^\s@[\]]+$/.test(value);
 

@@ -20,6 +20,7 @@ export const VIEW_PATH: Record<Exclude<AppView, "not-found">, string> = {
   home: "/",
   guide: "/study-medicine-in-bulgaria/",
   universities: "/universities/",
+  stories: "/student-stories/",
   "university:mu-sofia": `/universities/${UNIVERSITY_SLUGS["university:mu-sofia"]}/`,
   "university:mu-plovdiv": `/universities/${UNIVERSITY_SLUGS["university:mu-plovdiv"]}/`,
   "university:mu-varna": `/universities/${UNIVERSITY_SLUGS["university:mu-varna"]}/`,

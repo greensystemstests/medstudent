@@ -19,8 +19,8 @@ try {
       const storage={getItem:()=>null,setItem:()=>{},removeItem:()=>{}};
       globalThis.localStorage=storage;globalThis.sessionStorage=storage;
       const pages=[['/',''],['/apply/',''],['/account/',''],['/admissions-calendar/',''],['/review/',''],['/privacy/',''],['/terms/',''],['/gdpr/',''],['/accessibility/',''],
-        ['/study-medicine-in-bulgaria/',''],['/universities/',''],['/universities/medical-university-of-plovdiv/',''],['/no-such-page/',''],['/','#/terms']];
-      const expect={'/no-such-page/':'Page not found','/study-medicine-in-bulgaria/':'How to study medicine in Bulgaria in English','/universities/medical-university-of-plovdiv/':'62%','#/terms':'Terms'};
+        ['/study-medicine-in-bulgaria/',''],['/universities/',''],['/student-stories/',''],['/universities/medical-university-of-plovdiv/',''],['/no-such-page/',''],['/','#/terms']];
+      const expect={'/no-such-page/':'Page not found','/student-stories/':'What students say about us','/study-medicine-in-bulgaria/':'How to study medicine in Bulgaria in English','/universities/medical-university-of-plovdiv/':'62%','#/terms':'Terms'};
       for(const [pathname,hash] of pages){
         globalThis.window={location:{pathname,hash,search:'',href:'https://example.test'+pathname+hash},matchMedia:()=>({matches:false})};
         const html=renderToString(React.createElement(App));

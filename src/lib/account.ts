@@ -1,10 +1,24 @@
-const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/+$/, '');
+import { API_BASE } from './apiBase';
+
 const SESSION_KEY = 'studybg.session';
 
 export interface AccountUser {
   email: string;
   fullName: string | null;
   createdAt: string;
+}
+
+/** The invoice for one payment: what the customer sees on screen (the PDF is fetched separately). */
+export interface InvoiceSummary {
+  number: string;
+  issuedAt: string;
+  currency: string;
+  /** All amounts in cents. net + VAT = gross. */
+  grossAmount: number;
+  netAmount: number;
+  vatAmount: number;
+  vatRatePercent: number;
+  paymentIntentId: string;
 }
 
 export interface PaidApplication {
@@ -18,8 +32,9 @@ export interface PaidApplication {
   university: string | null;
   intake: string | null;
   examSession: string | null;
-  callDate: string | null;
-  callWindow: string | null;
+  invoice: InvoiceSummary | null;
+  /** Booking page for the consultation call. The server only sends it for a paid application. */
+  bookingUrl: string | null;
 }
 
 export type DocumentCategory = 'passport' | 'diploma' | 'transcript' | 'medical' | 'police' | 'other';
@@ -142,6 +157,25 @@ export const getActivity = () => request<{ activity: ActivityEvent[] }>('/api/me
 
 export const deleteDocument = (id: string) => request<{ ok: true }>(`/api/me/documents/${id}`, { method: 'DELETE' });
 
+/** Downloads the invoice PDF (needs the session header, so it is fetched and handed back as a local URL). */
+export async function fetchInvoicePdf(paymentIntentId: string) {
+  const token = getSessionToken();
+  const res = await fetch(`${API_BASE}/api/me/invoices/${encodeURIComponent(paymentIntentId)}/pdf`, {
+    signal: AbortSignal.timeout(30000),
+    headers: token ? { authorization: `Bearer ${token}` } : {},
+  });
+  if (res.status === 401) setSessionToken(null);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new AccountApiError(body.error || 'Could not download this invoice.', res.status);
+  }
+  return { url: URL.createObjectURL(await res.blob()) };
+}
+
+/** Link to Stripe's own card receipt for the payment (null if Stripe has none). */
+export const getReceiptUrl = (paymentIntentId: string) =>
+  request<{ url: string | null }>(`/api/me/receipts/${encodeURIComponent(paymentIntentId)}`);
+
 /** Uploads with progress (fetch can't report upload progress, XMLHttpRequest can). */
 export function uploadDocument(file: File, category: DocumentCategory, onProgress: (fraction: number) => void) {
   return new Promise<StoredDocument>((resolve, reject) => {
@@ -204,6 +238,8 @@ export interface AccountApi {
   deleteDocument(id: string): Promise<unknown>;
   uploadDocument(file: File, category: DocumentCategory, onProgress: (fraction: number) => void): Promise<StoredDocument>;
   fetchDocumentBlobUrl(id: string, download?: boolean): Promise<{ url: string; type: string }>;
+  fetchInvoicePdf(paymentIntentId: string): Promise<{ url: string }>;
+  getReceiptUrl(paymentIntentId: string): Promise<{ url: string | null }>;
 }
 
 export const liveAccountApi: AccountApi = {
@@ -218,4 +254,6 @@ export const liveAccountApi: AccountApi = {
   deleteDocument,
   uploadDocument,
   fetchDocumentBlobUrl,
+  fetchInvoicePdf,
+  getReceiptUrl,
 };

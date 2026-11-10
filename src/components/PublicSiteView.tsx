@@ -1,3 +1,4 @@
+import { SafeImage } from "./SafeImage";
 import React, { useState } from "react";
 import {
   ArrowRight,
@@ -178,7 +179,7 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
           <div className="lg:col-span-5">
             <div className="bg-slate-900/80 rounded-2xl border border-slate-700 p-6 shadow-2xl overflow-hidden">
               <div className="relative aspect-video bg-slate-900 -mx-6 -mt-6 mb-5">
-                <img
+                <SafeImage
                   src={APP_IMAGES.muSofia}
                   alt="Medical University of Sofia"
                   width={800}
@@ -311,7 +312,7 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
               <li key={source.id} className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 flex flex-col gap-4 overflow-hidden">
                 {profile && (
                   <div className="relative aspect-video overflow-hidden bg-slate-900 -mx-5 -mt-5 sm:-mx-6 sm:-mt-6">
-                    <img
+                    <SafeImage
                       src={profile.image}
                       alt={source.name}
                       width={800}

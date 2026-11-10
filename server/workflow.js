@@ -121,9 +121,6 @@ export function checkoutMetadata(row) {
       degree: f.degree,
       university: UNIVERSITIES.find((u) => u.id === f.universityId)?.name || "",
       intake: f.intakeSeason,
-      call_date: f.consultationDate,
-      call_window: f.consultationWindow,
-      call_timezone: "Europe/Sofia",
     },
   };
 }
@@ -420,8 +417,10 @@ export function mountWorkflow(
       res.json(result);
     }),
   );
-  app.get("/api/staff/me", auth, staff, (_req, res) =>
-    res.json({ staff: true }),
+  // Anyone signed in can ask "am I staff?". The answer is false for most people, never an error,
+  // so ordinary visitors don't produce failed requests.
+  app.get("/api/staff/me", auth, (req, res) =>
+    res.json({ staff: staffEmails.includes(req.user.email) }),
   );
   app.get(
     "/api/staff/applications",

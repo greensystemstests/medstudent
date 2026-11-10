@@ -311,9 +311,9 @@ export const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
 export const FAQS = [
   {q:'Why pay StudyBg instead of applying myself?',a:'You don\'t have to. Every university accepts applications directly, and if you\'re comfortable reading the official requirements, preparing your documents and tracking the deadlines yourself, that\'s a perfectly good route. StudyBg is for applicants who want an independent person to review their file, explain the requirements for their situation and keep the steps organised in one place.'},
   {q:'Is the eligibility check really free?',a:'Yes. It runs in your browser, asks five questions and needs no sign-up or payment. Nothing is sent to us unless you later choose to continue with an application. The result is preliminary guidance, not an admission decision.'},
-  {q:'What does the €180 cover?',a:'An application and qualification review, a 45-minute video consultation, a document and deadline plan for your route, and your StudyBg account with secure document uploads and review notes. Tuition, entrance exams, translations, legalisation, courier, visa and living costs are separate.'},
+  {q:'What does the €180 cover?',a:'An application and qualification review, a 30-minute video consultation, a document and deadline plan for your route, and your StudyBg account with secure document uploads and review notes. Tuition, entrance exams, translations, legalisation, courier, visa and living costs are separate.'},
   {q:'What is the minimum Biology and Chemistry grade?',a:'It depends on the university and your qualification. Plovdiv\'s published 2026/27 guide uses a 62% average in school Biology and Chemistry. Other universities assess applicants differently, for example through entrance exams. Always check the official page for your route.'},
-  {q:'Is my consultation time confirmed when I choose it?',a:'Not yet. You choose a preferred day and time window (Sofia time); we confirm the exact time by email.'},
+  {q:'How do I book my consultation call?',a:'Once your payment is confirmed, a “Book your call” button appears on your confirmation page and in your StudyBg account. You pick a day and time that suit you, and the booking system emails you the call details.'},
   {q:'Does a Bulgarian degree guarantee I can practise in my country?',a:'No. Check the current rules of the professional regulator where you plan to practise, including recognised universities, exams and language requirements. StudyBg doesn\'t guarantee professional registration.'},
   {q:'Do you book visas or renew residence permits?',a:'No. We help you understand which requirements to check. Visa and residence decisions are made by the relevant authorities, and appointments are booked by you. Automated reminders shown in the demo are planned, not live.'},
 ];
@@ -338,15 +338,15 @@ export const GATEWAY_NAME = 'Admissions Gateway';
  */
 export const ONBOARDING_INCLUSIONS = [
   { title: 'Application and qualification review', detail: 'We read your saved application and school results against the published requirements of the university route you chose, and tell you what looks ready and what needs checking.' },
-  { title: '45-minute video consultation', detail: 'You request a day and time window; we confirm the exact time by email.' },
+  { title: '30-minute video consultation', detail: 'After you pay, you book the day and time that suit you. The booking system sends you the call details.' },
   { title: 'Your document and deadline plan', detail: 'Which documents your route needs, in what order (legalisation, translation, submission) and which official deadlines to watch.' },
   { title: 'Your StudyBg account', detail: 'Saved applications, secure document uploads, review notes from our team and a record of every action.' },
 ];
 
 /** What happens after a successful payment. Only steps the platform and team actually carry out. */
 export const AFTER_PAYMENT_STEPS = [
-  'You see a payment confirmation straight away, and we email your receipt.',
-  'We email you to confirm the exact time of your consultation call.',
+  'You see a payment confirmation straight away, with your invoice and receipt (we email them too).',
+  'You book your 30-minute consultation call at a time that suits you.',
   'Our review notes and document statuses appear in My Account as we work through your file.',
 ];
 
@@ -363,7 +363,7 @@ export const GATEWAY_EXCLUSIONS = [
 export const INDEPENDENCE_STATEMENT =
   'StudyBg is an independent admissions support service, not a university or an official representative of a Bulgarian university. Universities and the relevant authorities make their own decisions. StudyBg does not guarantee admission, exam results, visas, residence permits or professional registration.';
 
-/** What is covered on the 45-minute consultation call. */
+/** What is covered on the 30-minute consultation call. */
 export const CONSULTATION_AGENDA = [
   { title: 'Your qualification', detail: 'Your grades and school documents against the published requirements of your chosen university.' },
   { title: 'Choosing a route', detail: 'How the four universities compare for your situation, and which intake to aim for.' },
@@ -371,12 +371,6 @@ export const CONSULTATION_AGENDA = [
   { title: 'Documents', detail: 'Legalisation, sworn translation and submission steps for the country that issued your documents.' },
   { title: 'Visa questions', detail: 'Which requirements to check with the authorities for your citizenship (we don\'t book visa appointments).' },
   { title: 'Your questions', detail: 'Costs, timing, and exactly what happens next.' },
-];
-
-export const CONSULTATION_WINDOWS = [
-  'Morning (10:00–12:00 Sofia time)',
-  'Afternoon (14:00–16:00 Sofia time)',
-  'Evening (17:00–19:00 Sofia time)',
 ];
 
 export const INTAKE_OPTIONS = [

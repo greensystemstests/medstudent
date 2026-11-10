@@ -1,7 +1,18 @@
+import { Buffer } from "node:buffer";
 import { transaction, logActivity } from "./db.js";
-import { renderInvoicePdf, formatMoney } from "./invoice.js";
+import { renderInvoicePdf, formatMoney, fetchCnbEurRate, computeVat } from "./invoice.js";
+import { VAT_RATE } from "./company.js";
 import { sendReceiptEmail, sendSaleNotification, sendChecked } from "./mail.js";
 import { ONBOARDING_FEE, PAYMENT_SOURCE } from "./pricing.js";
+
+/** Calendly link prefilled with the customer's name and email. Only ever built for a paid application. */
+export function bookingLink(baseUrl, name, email) {
+  if (!baseUrl) return null;
+  const url = new URL(baseUrl);
+  if (name) url.searchParams.set("name", name);
+  if (email) url.searchParams.set("email", email);
+  return url.toString();
+}
 
 export async function recordPayment(db, intent, startNumber = 1) {
   if (
@@ -52,7 +63,11 @@ export async function recordPayment(db, intent, startNumber = 1) {
     return invoice.rows[0];
   });
 }
-async function preparedInvoice(db, id, billing) {
+/**
+ * Returns the invoice row with its PDF, generating (once) and storing the PDF if it doesn't exist yet.
+ * Safe to call repeatedly and concurrently: the row is locked while the PDF is built.
+ */
+export async function ensureInvoicePdf(db, id, billing) {
   return transaction(db, async (c) => {
     const { rows } = await c.query(
       "SELECT * FROM invoices WHERE payment_intent_id=$1 FOR UPDATE",
@@ -63,6 +78,8 @@ async function preparedInvoice(db, id, billing) {
     if (row.pdf) return row;
     const i = row.payload.intent,
       number = String(row.invoice_number).padStart(10, "0");
+    // Czech VAT law wants the VAT amount in CZK too: use the ČNB rate for the issue date, kept with the invoice.
+    const czkRate = await (billing.czkRate || fetchCnbEurRate)(new Date(row.issued_at));
     const pdf = await renderInvoicePdf({
       invoiceNumber: number,
       issueDate: new Date(row.issued_at),
@@ -72,9 +89,11 @@ async function preparedInvoice(db, id, billing) {
       amountMinor: i.amount,
       currency: i.currency,
       paymentRef: i.id,
+      czkRate,
     });
     const payload = {
       ...row.payload,
+      czkRate,
       seller: billing.seller,
       fromEmail: billing.fromEmail,
       saleNotifyEmail: billing.saleNotifyEmail,
@@ -140,6 +159,7 @@ export async function processOutbox(
           billing.resend,
           {
             from: billing.fromEmail,
+            replyTo: billing.replyTo,
             to: job.payload.email,
             subject: "Your StudyBg application has an update",
             html: '<p>Your application or document review has been updated.</p><p><a href="https://studybg.ac/account/">Sign in to view the update</a>.</p>',
@@ -147,7 +167,7 @@ export async function processOutbox(
           id,
         );
       else {
-        const inv = await preparedInvoice(
+        const inv = await ensureInvoicePdf(
             db,
             job.payload.paymentIntentId,
             billing,
@@ -155,6 +175,7 @@ export async function processOutbox(
           i = inv.payload.intent;
         const common = {
           from: inv.payload.fromEmail,
+          replyTo: billing.replyTo,
           buyerName: i.metadata.applicant_name,
           invoiceNumber: String(inv.invoice_number).padStart(10, "0"),
           totalText: formatMoney(i.amount, i.currency),
@@ -165,6 +186,7 @@ export async function processOutbox(
             ...common,
             to: inv.buyer_email,
             pdfBytes: inv.pdf,
+            bookingUrl: bookingLink(billing.bookingUrl, i.metadata.applicant_name, inv.buyer_email),
           });
         else
           providerId = await sendSaleNotification(billing.resend, {
@@ -174,8 +196,6 @@ export async function processOutbox(
             applicant: {
               degree: i.metadata.degree,
               university: i.metadata.university,
-              callDate: i.metadata.call_date,
-              callWindow: i.metadata.call_window,
             },
           });
       }
@@ -197,4 +217,50 @@ export async function processOutbox(
       c.release();
     }
   }
+}
+
+/** What the customer sees about their invoice: amounts only, never the PDF bytes or payment internals. */
+export function invoiceSummary(row) {
+  const gross = row.payload?.intent?.amount ?? ONBOARDING_FEE.amount;
+  const { netMinor, vatMinor } = computeVat(gross, true);
+  return {
+    number: String(row.invoice_number).padStart(10, "0"),
+    issuedAt: new Date(row.issued_at).toISOString(),
+    currency: row.payload?.intent?.currency ?? ONBOARDING_FEE.currency,
+    grossAmount: gross,
+    netAmount: netMinor,
+    vatAmount: vatMinor,
+    vatRatePercent: Math.round(VAT_RATE * 100),
+    paymentIntentId: row.payment_intent_id,
+  };
+}
+
+/** Invoice rows belonging to this email, keyed by PaymentIntent id. */
+export async function invoicesForEmail(db, email) {
+  const { rows } = await db.query(
+    "SELECT payment_intent_id, invoice_number, issued_at, payload FROM invoices WHERE buyer_email=$1",
+    [email],
+  );
+  return new Map(rows.map((r) => [r.payment_intent_id, invoiceSummary(r)]));
+}
+
+/** One invoice, only if it belongs to this signed-in email. */
+export async function ownedInvoice(db, email, paymentIntentId) {
+  const { rows } = await db.query(
+    "SELECT * FROM invoices WHERE payment_intent_id=$1 AND buyer_email=$2",
+    [paymentIntentId, email],
+  );
+  return rows[0] || null;
+}
+
+/**
+ * Invoice summary + booking link for a PAID application. This is the only place the booking URL is
+ * produced, and callers only reach it after the payment is confirmed.
+ */
+export async function paidExtras(db, { bookingUrl }, user, intent) {
+  const invoice = (await invoicesForEmail(db, user.email)).get(intent.id) ?? null;
+  return {
+    invoice,
+    bookingUrl: bookingLink(bookingUrl, intent.metadata?.applicant_name || user.full_name, user.email),
+  };
 }

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 // "/pure" loads Stripe.js only when loadStripe() is called (the main entry loads it on every page).
 import { loadStripe } from "@stripe/stripe-js/pure";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, RefreshCw } from "lucide-react";
+import { LEGAL_ENTITY } from "../data/legal";
 
 /** Look and feel configured in Stripe Checkout Studio. */
 const appearance = {
@@ -38,18 +39,23 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   sessionId,
 }) => {
   const [ready, setReady] = useState(false);
+  // The form itself could not be loaded (weak connection, a blocker, Stripe unreachable). Separate from
+  // a card being declined, which Stripe reports inside the form.
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     let form: { unmount: () => void; destroy: () => void } | undefined;
+    setReady(false);
+    setError(null);
+    setLoadFailed(false);
     (async () => {
       try {
         const stripe = await loadStripe(publishableKey);
-        if (!stripe || cancelled) {
-          if (!stripe) throw new Error("Stripe could not be loaded. Check your connection and try again.");
-          return;
-        }
+        if (cancelled) return;
+        if (!stripe) throw new Error("Stripe could not be loaded.");
         const checkout = stripe.initCheckoutFormSdk({ clientSecret, appearance });
         const checkoutForm = checkout.createForm({ layout: "expanded" });
         form = checkoutForm;
@@ -74,7 +80,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
           }
         });
       } catch (e) {
-        if (!cancelled) setError((e as Error).message || "The payment form could not be loaded.");
+        if (!cancelled) setLoadFailed(true);
       }
     })();
     return () => {
@@ -86,17 +92,49 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
         // Already gone.
       }
     };
-  }, [publishableKey, clientSecret, sessionId]);
+  }, [publishableKey, clientSecret, sessionId, attempt]);
 
   return (
     <div className="space-y-3">
-      {!ready && !error && (
+      {!ready && !error && !loadFailed && (
         <p role="status" className="flex items-center gap-2 text-xs text-slate-600">
           <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
           Loading the secure payment form…
         </p>
       )}
       <div id="checkout-form" role="group" aria-label="Payment form" />
+      {loadFailed && (
+        <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-xs text-red-900 space-y-3">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+            <div>
+              <div className="font-bold text-sm">We couldn't load the payment form</div>
+              <p className="mt-1">
+                Your application is saved and <strong>nothing has been charged</strong>. This usually means a weak connection or a
+                browser extension blocking Stripe, our payment provider. Check your connection, pause any ad blocker on this page, then
+                try again.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              id="retry-payment-form-btn"
+              onClick={() => setAttempt((n) => n + 1)}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[#006644] hover:bg-[#005538]"
+            >
+              <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" /> Try again
+            </button>
+            <span>
+              Still stuck? Email{" "}
+              <a href={`mailto:${LEGAL_ENTITY.contactEmail}`} className="font-semibold underline">
+                {LEGAL_ENTITY.contactEmail}
+              </a>
+              .
+            </span>
+          </div>
+        </div>
+      )}
       {error && (
         <div role="alert" className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />

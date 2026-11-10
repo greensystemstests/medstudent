@@ -100,7 +100,7 @@ export const AccessibilityStatementView: React.FC<{ onNavigate: (view: AppView) 
       <List
         items={[
           <><strong>Card payment form</strong>: the card fields on the payment step are provided by our payment processor, Stripe, inside a secure frame. We can't change them, but Stripe designs them to be accessible, including with screen readers.</>,
-          <><strong>Video consultation calls</strong>: calls take place on Zoom, which has its own accessibility features, such as captions and keyboard shortcuts. Tell us if you need an alternative, such as a phone call or email.</>,
+          <><strong>Video consultation calls</strong>: you book the call through Calendly, and the call itself takes place on a video platform that has its own accessibility features, such as captions and keyboard shortcuts. Tell us if you need an alternative, such as a phone call or email.</>,
           <><strong>Documents you upload</strong>: whether a PDF or image works with assistive technology depends on how it was created. Scanned documents are usually images of text.</>,
           <><strong>Sample-data demo pages</strong>: the demonstration Student Portal and Staff Operations pages (shown only in demo mode) haven't yet been reviewed to the same standard.</>,
         ]}
@@ -127,8 +127,8 @@ export const AccessibilityStatementView: React.FC<{ onNavigate: (view: AppView) 
 
     <Section id="enforcement" n={8} title="Enforcement">
       <p>
-        If you aren't satisfied with our response, you can contact the Bulgarian Commission for Consumer Protection (
-        <span lang="bg">Комисия за защита на потребителите</span>, www.kzp.bg), or the authority responsible for accessibility in the
+        If you aren't satisfied with our response, you can contact the Czech Trade Inspection Authority (
+        <span lang="cs">Česká obchodní inspekce</span>, www.coi.gov.cz), or the authority responsible for accessibility in the
         EU country where you live.
       </p>
     </Section>

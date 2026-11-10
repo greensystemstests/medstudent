@@ -13,7 +13,7 @@ import {
   settleCheckoutSession,
   httpError,
 } from "./workflow.js";
-import { recordPayment } from "./billing.js";
+import { paidExtras, recordPayment } from "./billing.js";
 import { ONBOARDING_FEE, PAYMENT_SOURCE } from "./pricing.js";
 import { POLICY_VERSION } from "../shared/admissions.js";
 import { rateLimit } from "./rateLimit.js";
@@ -55,15 +55,24 @@ export function createApp({
   const accountsConfigured = Boolean(
     db && accounts?.fileKey && accounts?.deliverCode,
   );
-  const paymentsReady = Boolean(
-    stripe &&
-    config.publishableKey &&
-    config.webhookSecret &&
-    billingReady &&
-    accountsConfigured &&
-    config.checkoutEnabled &&
-    config.legalApproved,
-  );
+  // Go-live switches: read per request (cached briefly) from the database in production, so turning
+  // payments on is one SQL update, not a redeploy. Tests and local runs pass fixed values in config.
+  const flags = config.flags || (async () => ({
+    checkoutEnabled: Boolean(config.checkoutEnabled),
+    legalApproved: Boolean(config.legalApproved),
+  }));
+  const paymentsReady = async () => {
+    const f = await flags();
+    return Boolean(
+      stripe &&
+      config.publishableKey &&
+      config.webhookSecret &&
+      billingReady &&
+      accountsConfigured &&
+      f.checkoutEnabled &&
+      f.legalApproved,
+    );
+  };
   app.use((_req, res, next) => {
     res.set({
       "X-Content-Type-Options": "nosniff",
@@ -82,7 +91,8 @@ export function createApp({
         );
       let event;
       try {
-        event = stripe.webhooks.constructEvent(
+        // The async variant works on every runtime (Node and the Edge Function's Web Crypto).
+        event = await stripe.webhooks.constructEventAsync(
           req.body,
           req.headers["stripe-signature"],
           config.webhookSecret,
@@ -109,6 +119,7 @@ export function createApp({
           billing?.invoiceStartNumber || 1,
         );
       log(JSON.stringify({ event: event.type, paymentIntentId: intent?.id }));
+      void config.sweep?.(); // send the receipt now rather than waiting for the next scheduled sweep
       res.json({ received: true });
     }),
   );
@@ -126,6 +137,8 @@ export function createApp({
     next();
   });
   mountAccountRoutes(app, {
+    billing,
+    bookingUrl: config.bookingUrl || null,
     db: db || null,
     fileKey: accounts?.fileKey || null,
     deliverCode: accounts?.deliverCode || null,
@@ -141,6 +154,8 @@ export function createApp({
     billing,
   });
   const status = async () => {
+    const f = await flags();
+    const ready = await paymentsReady();
     let databaseReady = false;
     if (db) {
       try {
@@ -151,17 +166,20 @@ export function createApp({
     return {
       ok: !db || databaseReady,
       build: config.buildSha || "local",
-      paymentsReady: paymentsReady && databaseReady,
+      paymentsReady: ready && databaseReady,
       billingReady: billingReady && databaseReady,
       accountsReady: accountsConfigured && databaseReady,
       policyVersion: POLICY_VERSION,
-      legalApproved: !!config.legalApproved,
-      company: config.legalApproved
+      legalApproved: f.legalApproved,
+      company: f.legalApproved
         ? {
             name: billing?.seller?.name,
             address: billing?.seller?.address,
+            postcode: billing?.seller?.postcode,
             city: billing?.seller?.city,
-            registration: billing?.seller?.eik,
+            country: billing?.seller?.country,
+            registration: billing?.seller?.companyNumber,
+            vatNumber: billing?.seller?.vatNumber,
             email: config.supportEmail,
           }
         : null,
@@ -199,12 +217,19 @@ export function createApp({
     }),
   );
   const auth = sessionAuth(db);
+  // A paid response also carries the invoice summary and the booking link. They are produced here and
+  // nowhere else, only for the signed-in owner, and only once the payment is confirmed.
+  const describePaid = async (user, pi) => {
+    const described = describeIntent(pi);
+    if (!described.paid) return described;
+    return { ...described, ...(await paidExtras(db, config, user, pi)) };
+  };
   app.post(
     "/api/payment-intent",
     rateLimit({ windowMs: 60_000, max: 20 }),
     auth,
     safe(async (req, res) => {
-      if (!paymentsReady)
+      if (!(await paymentsReady()))
         throw httpError(503, "Online payments are not available yet.");
       if (req.body.policyVersion !== POLICY_VERSION)
         throw httpError(
@@ -229,7 +254,7 @@ export function createApp({
     rateLimit({ windowMs: 60_000, max: 20 }),
     auth,
     safe(async (req, res) => {
-      if (!paymentsReady)
+      if (!(await paymentsReady()))
         throw httpError(503, "Online payments are not available yet.");
       if (req.body.policyVersion !== POLICY_VERSION)
         throw httpError(
@@ -267,7 +292,7 @@ export function createApp({
         session,
         billing?.invoiceStartNumber || 1,
       );
-      if (pi) return res.json(describeIntent(pi));
+      if (pi) return res.json(await describePaid(req.user, pi));
       res.json({
         paid: false,
         status: session.status === "expired" ? "expired" : "processing",
@@ -295,9 +320,15 @@ export function createApp({
         throw httpError(404, "Payment not found.");
       if (describeIntent(pi).paid)
         await recordPayment(db, pi, billing?.invoiceStartNumber || 1);
-      res.json(describeIntent(pi));
+      res.json(await describePaid(req.user, pi));
     }),
   );
+  // Cron/webhook nudge: retries any pending receipt emails. Harmless to call anytime: it only touches
+  // jobs that are already due, at most once every few seconds, and returns nothing.
+  app.all("/api/internal/sweep", (_req, res) => {
+    void config.sweep?.();
+    res.status(202).json({ ok: true });
+  });
   app.use("/api", (_req, res) => res.status(404).json({ error: "Not found" }));
   app.use((err, _req, res, _next) => {
     log(`API error: ${err.status || 500} ${err.message}`);

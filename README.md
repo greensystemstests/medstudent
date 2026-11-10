@@ -9,7 +9,7 @@ mode) a sample student portal and staff operations view.
 | Part | What | Hosted on |
 |---|---|---|
 | Frontend | React 19 + Vite + Tailwind (`src/`) | GitHub Pages → `studybg.ac` |
-| Payments API | Express + Stripe (`server/`) | Render (`render.yaml`) |
+| API (accounts, payments, invoices) | Express + Stripe (`server/`) | Supabase Edge Function + Postgres, see [SUPABASE.md](SUPABASE.md) |
 
 The browser never holds the Stripe secret key and never decides the amount. The API:
 
@@ -24,9 +24,9 @@ The browser never holds the Stripe secret key and never decides the amount. The 
 
 Every successful payment automatically gets:
 
-- **A PDF invoice/receipt** (`server/invoice.js`), bilingual (Bulgarian/English), with a gap-free sequential
-  number, your company's legal details, the applicant's details, the €180.00 total, and — if `COMPANY_VAT_NUMBER`
-  is set — a VAT breakdown at 20%; otherwise a note that VAT isn't charged (Art. 113(9) ЗДДС).
+- **A PDF invoice/receipt** (`server/invoice.js`), bilingual (Czech/English), with a gap-free sequential
+  number, the company's legal details, the applicant's details, and the €180.00 VAT-inclusive total split into net and
+  21% VAT (the VAT is also stated in CZK at the Czech National Bank rate).
 - **Emailed to the applicant** as an attachment, via [Resend](https://resend.com).
 - **A "New sale" email to you** (`SALE_NOTIFICATION_EMAIL`) with the amount, applicant and call slot.
 
@@ -121,49 +121,16 @@ npm test       # API tests (account tests also need TEST_DATABASE_URL=postgres:/
 npm run build
 ```
 
-## Going live with Stripe
+## Going live
 
-1. **Render → studybg-api → Environment**: set `STRIPE_SECRET_KEY` and `STRIPE_PUBLISHABLE_KEY`
-   (test keys first, live keys when ready. Both must be the same mode).
-2. **Stripe → Developers → Webhooks**: add endpoint `https://<render-url>/api/stripe/webhook` for
-   `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `payment_intent.succeeded` and
-   `payment_intent.payment_failed`, then set its signing secret as `STRIPE_WEBHOOK_SECRET` on Render.
-3. Decide whether to also enable Stripe’s own customer receipt emails; the StudyBg invoice email is already separate.
-4. The frontend build reads the API address from the `VITE_API_BASE_URL` repository variable
-   (GitHub → Settings → Secrets and variables → Actions → Variables); the workflow falls back to the Render URL.
+Everything about hosting, secrets, the go-live switch and deploying the API is in [SUPABASE.md](SUPABASE.md).
+In short: add the secrets in Supabase, point the Stripe webhook at `<API base>/api/stripe/webhook`
+(`checkout.session.completed`, `checkout.session.async_payment_succeeded`, `payment_intent.succeeded`), verify the sender
+domain in Resend, test with Stripe's test card, then flip the two `app_settings` switches.
 
-## Turning on invoices & receipt emails
-
-1. **Resend → Domains**: add `studybg.ac`, add the DNS records it gives you (at your domain registrar,
-   alongside the GitHub Pages records), wait for it to verify. Then Resend → API Keys → create a key.
-2. **Render → studybg-api → Environment**, set:
-   - `RESEND_API_KEY` — from step 1
-   - `INVOICE_FROM_EMAIL` — e.g. `StudyBg Billing <billing@studybg.ac>` (must be on the verified domain)
-   - `SALE_NOTIFICATION_EMAIL` — the inbox that should get a "New sale" email each payment
-   - `COMPANY_LEGAL_NAME`, `COMPANY_EIK` (ЕИК/Bulstat), `COMPANY_ADDRESS`, `COMPANY_CITY` — required on every invoice
-   - `COMPANY_VAT_NUMBER` — only if VAT-registered; leave empty otherwise
-   - Existing `DATABASE_URL` stores invoice numbers, PDFs and retry jobs. Reconcile any historical invoice numbering before enabling checkout.
-3. Make a test payment; check the applicant's inbox for the receipt PDF and your own inbox for the sale alert.
-   Staff review shows invoice email processing state and provider failures. Confirm actual delivery in Resend as well as the recipient inbox.
-
-## Turning on student accounts
-
-1. **Neon** → create a project in **AWS Frankfurt (eu-central-1)** (same region as the Render service), Postgres 16.
-   Open *Connect*, **turn off "Connection pooling"**, and copy the connection string. The host must *not* contain
-   `-pooler`: checkout locks use session-level advisory locks, which Neon's pooler can't keep safe, so the server
-   refuses to start with a pooled URL. Tables are created automatically on first start.
-   Neon's free plan includes 0.5 GB of storage and suspends the database after 5 minutes without queries
-   (the first request after that waits a moment while it wakes). Uploaded student documents are stored in the
-   database (up to 10 MB each), so move the project to Neon's pay-as-you-go Launch plan before real students upload files.
-2. **Render → studybg-api → Environment**, set:
-   - `DATABASE_URL`: the string from step 1
-   - `FILE_ENCRYPTION_KEY`: click *Generate*. **Back this value up somewhere safe and never change it**;
-     without it, stored documents can't be decrypted.
-   - `RESEND_API_KEY` + `INVOICE_FROM_EMAIL`: needed to email sign-in codes (same as for receipts).
-3. After the redeploy, `/api/health` shows `"accountsReady": true` and the Render log line says `accounts: ready`.
-
-The company's legal name, ЕИК, address and contact emails shown on the legal pages live in `src/data/legal.ts`.
-Fill them in before launch, and update `LEGAL_LAST_UPDATED` whenever the legal text changes.
+The company that charges and invoices (Plasma Ltd, Czech Republic) is defined in `server/company.js` (invoices) and
+`src/data/legal.ts` (legal pages and footer). Update `LEGAL_LAST_UPDATED` and `POLICY_VERSION` (`shared/admissions.js`)
+whenever the legal text changes.
 
 Admissions sources and validation live in `shared/admissions.js`. Future exam selection stays advisor-confirmed until verified, dated, university-specific sessions are published. Do not roll old dates forward automatically.
 

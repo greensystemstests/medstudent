@@ -1,6 +1,6 @@
 // Shared by the browser and API. Source review: 2026-09-24. University decisions
 // require transcript/qualification review; this is not an admission decision engine.
-export const POLICY_VERSION = "2026-09-28";
+export const POLICY_VERSION = "2026-11-07";
 /** Date the official university sources below were last reviewed. Update it whenever you re-check them. */
 export const SOURCE_REVIEW_DATE = "2026-09-24";
 export const UNIVERSITIES = [
@@ -192,10 +192,6 @@ export function validateStep(step, input, now = new Date()) {
       "Enter your proposed collection address, or turn off the translation/courier request.",
     );
   if (step === 7) {
-    if (!callDays(10, now).includes(f.consultationDate))
-      e.push("Choose an upcoming consultation day (Sofia time).");
-    if (!CALL_WINDOWS.includes(f.consultationWindow))
-      e.push("Choose a consultation time window.");
     if (!f.accuracySigned) e.push("Confirm your information is accurate.");
     if (!f.termsAgreed) e.push("Read and accept the service terms.");
     if (!f.gdprAgreed) e.push("Read and acknowledge the privacy notice.");

@@ -108,18 +108,19 @@ export const TermsView: React.FC<{ onNavigate: (view: AppView) => void }> = ({ o
         items={[
           <>
             The Package costs <strong>€{ONBOARDING_FEE_EUR}.00</strong> (euro), payable once in advance. This is the total price for the
-            Package, including any taxes that apply. It is not a subscription and nothing renews automatically.
+            Package and it <strong>includes VAT</strong> at the Czech standard rate (21%). It is not a subscription and nothing renews automatically.
           </>,
           'Payment is taken by card or another method shown at checkout, processed securely by Stripe. Your bank may charge its own currency conversion or international payment fees.',
-          'We issue receipts and invoices electronically to the email address you gave us.',
+          'We issue your invoice (a VAT tax document) and receipt electronically. You get them by email and can download them from your StudyBg account.',
         ]}
       />
     </Section>
 
     <Section id="call" n={7} title="Your consultation call">
       <p>
-        You choose a preferred day and time during the application. We confirm the exact time by email and send you a video call link.
-        The call lasts about 45 minutes. If you can't make it, tell us as early as possible and we will offer you another time.
+        Once your payment is confirmed, you book the call yourself: a booking button appears on your confirmation page and in your StudyBg
+        account, and we also send the link in your receipt email. You pick a time that suits you, and the booking system sends you the
+        call details. The call lasts about 30 minutes. If you can't make it, tell us as early as possible and we will offer you another time.
       </p>
     </Section>
 
@@ -207,15 +208,15 @@ export const TermsView: React.FC<{ onNavigate: (view: AppView) => void }> = ({ o
         within 14 days and to resolve complaints quickly and fairly.
       </p>
       <p>
-        If we can't resolve your complaint, consumers can contact the Bulgarian Commission for Consumer Protection (<span lang="bg">Комисия за защита на потребителите</span>, www.kzp.bg), which can refer disputes to an out-of-court conciliation committee, or the consumer authority in their
-        own country.
+        If we can't resolve your complaint, consumers can contact the Czech Trade Inspection Authority (<span lang="cs">Česká obchodní inspekce</span>, www.coi.gov.cz), the
+        body for out-of-court resolution of consumer disputes in the Czech Republic, or the consumer authority in their own country.
       </p>
     </Section>
 
     <Section id="law" n={15} title="Governing law">
       <p>
-        These terms are governed by the laws of the Republic of Bulgaria. If you are a consumer, you also keep the protection of any
-        mandatory provisions of the law of the country where you live. Disputes will be decided by the competent courts of Bulgaria, but
+        These terms are governed by the laws of the Czech Republic. If you are a consumer, you also keep the protection of any
+        mandatory provisions of the law of the country where you live. Disputes will be decided by the competent courts of the Czech Republic, but
         as a consumer you may also bring proceedings in the courts of the country where you live, where the law allows this.
       </p>
     </Section>

@@ -21,7 +21,7 @@ export const STEP_TITLES = [
   "Documents",
   "Entrance exam",
   "Translation help (optional)",
-  "Review & request your call",
+  "Review & confirm",
   "Payment (€180)",
 ];
 

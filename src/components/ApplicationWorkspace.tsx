@@ -105,8 +105,8 @@ export function SavedApplications({
         ),
       )
       .finally(() => setLoading(false));
-    request("/api/staff/me")
-      .then(() => setStaff(true))
+    request<{ staff: boolean }>("/api/staff/me")
+      .then((r) => setStaff(r.staff === true))
       .catch(() => {});
   }, []);
   async function open(a: ApplicationState, reopen = false) {

@@ -28,11 +28,14 @@ if (DB_URL && !new URL(DB_URL).pathname.endsWith("_test"))
     "TEST_DATABASE_URL must use a disposable database whose name ends with _test",
   );
 const seller = {
-  name: "Test Company",
-  eik: "123456789",
+  name: "Test Company s.r.o.",
+  companyNumber: "12345678",
+  vatNumber: "CZ12345678",
   address: "1 Test Street",
-  city: "Sofia",
-  vatNumber: "",
+  postcode: "100 00",
+  city: "Praha",
+  country: "Czech Republic",
+  registerNote: "",
 };
 function stripeFake() {
   const intents = new Map(),
@@ -124,7 +127,7 @@ function stripeFake() {
       return session;
     },
     webhooks: {
-      constructEvent(body, sig) {
+      async constructEventAsync(body, sig) {
         if (sig !== "valid") throw new Error("bad signature");
         return JSON.parse(body.toString());
       },
@@ -148,8 +151,6 @@ const fullForm = (email) => ({
   hasDiploma: true,
   hasTranscript: true,
   examDate: "advisor",
-  consultationDate: callDays()[0],
-  consultationWindow: CALL_WINDOWS[0],
   termsAgreed: true,
   gdprAgreed: true,
   accuracySigned: true,
@@ -160,9 +161,9 @@ test("shared validation accepts university-specific average and rejects stale da
   assert.deepEqual(validateApplication(f), []);
   assert.match(preliminaryResult("mu-plovdiv", "60", "80"), /meets/);
   assert.match(preliminaryResult("mu-pleven", "90", "90"), /review/);
-  assert.ok(
-    validateApplication({ ...f, consultationDate: "2000-01-01" }).length,
-  );
+  assert.ok(validateApplication({ ...f, accuracySigned: false }).length);
+  // The call time is no longer part of the form: it is booked on Calendly after payment.
+  assert.deepEqual(validateApplication({ ...f, consultationDate: "", consultationWindow: "" }), []);
   assert.ok(validateApplication({ ...f, degree: "Fake" }).length);
   assert.ok(validateApplication({ ...f, termsAgreed: "true" }).length);
 });
@@ -341,6 +342,10 @@ describe(
         fromEmail: "billing@example.com",
         saleNotifyEmail: "owner@example.com",
         invoiceStartNumber: 501,
+        replyTo: "support@example.com",
+        bookingUrl: "https://calendly.com/test/30min",
+        // The real lookup asks the Czech National Bank; tests never touch the network.
+        czkRate: async () => ({ rate: 24.5, date: "2026-11-06" }),
         resend: {
           emails: {
             async send(payload, opts) {
@@ -373,6 +378,7 @@ describe(
           allowedOrigins: ["https://studybg.ac"],
           checkoutEnabled: true,
           legalApproved: true,
+          bookingUrl: "https://calendly.com/test/30min",
           staffEmails: ["reviewer@example.com"],
         },
         log: () => {},
@@ -387,6 +393,14 @@ describe(
         server.closeAllConnections();
         await new Promise((r) => server.close(r));
       }
+    });
+    test("staff check answers false for ordinary users and true for staff, never an error", async () => {
+      const ordinary = await call("/api/staff/me");
+      assert.equal(ordinary.status, 200);
+      assert.deepEqual(await ordinary.json(), { staff: false });
+      const staffToken = await login("reviewer@example.com");
+      assert.deepEqual(await (await call("/api/staff/me", { auth: staffToken })).json(), { staff: true });
+      assert.equal((await call("/api/staff/me", { auth: null })).status, 401);
     });
     test("readiness includes accounts and payment prerequisites", async () => {
       assert.equal((await call("/api/ready")).status, 200);
@@ -670,6 +684,77 @@ describe(
       await processOutbox(db, billing);
       assert.equal(sent.length, 2);
     });
+    test("booking link and invoice appear only after payment, and only for the owner", async () => {
+      const a = await draft(),
+        p = await checkout(a),
+        pi = stripe.intents.get(p.paymentIntentId);
+      const status = () =>
+        call(`/api/payment-intent/${p.paymentIntentId}?applicationId=${a.id}`).then((r) => r.json());
+      const before = await status();
+      assert.equal(before.paid, false);
+      assert.equal(before.bookingUrl, undefined);
+      assert.equal(before.invoice, undefined);
+      assert.doesNotMatch(JSON.stringify(await (await call("/api/me")).json()), /calendly/);
+      pi.status = "succeeded";
+      const paid = await status();
+      assert.equal(paid.paid, true);
+      const booking = new URL(paid.bookingUrl);
+      assert.equal(booking.origin + booking.pathname, "https://calendly.com/test/30min");
+      assert.equal(booking.searchParams.get("email"), "synthetic@example.com");
+      assert.equal(booking.searchParams.get("name"), "Synthetic Applicant");
+      assert.deepEqual(
+        { ...paid.invoice, issuedAt: undefined },
+        {
+          number: "0000000501",
+          issuedAt: undefined,
+          currency: "eur",
+          grossAmount: 18000,
+          netAmount: 14876,
+          vatAmount: 3124,
+          vatRatePercent: 21,
+          paymentIntentId: p.paymentIntentId,
+        },
+      );
+      // Another signed-in user never gets it.
+      assert.equal(
+        (await call(`/api/payment-intent/${p.paymentIntentId}?applicationId=${a.id}`, { auth: otherToken })).status,
+        404,
+      );
+      assert.equal((await call("/api/payment-intent/" + p.paymentIntentId + "?applicationId=" + a.id, { auth: null })).status, 401);
+    });
+    test("invoice PDF and Stripe receipt are downloadable only by the paying owner", async () => {
+      const a = await draft(),
+        p = await checkout(a),
+        pi = stripe.intents.get(p.paymentIntentId);
+      pi.status = "succeeded";
+      pi.latest_charge = { receipt_url: "https://pay.stripe.test/receipts/abc" };
+      await webhook(pi);
+      const pdfPath = `/api/me/invoices/${p.paymentIntentId}/pdf`;
+      const res = await call(pdfPath);
+      assert.equal(res.status, 200);
+      assert.equal(res.headers.get("content-type"), "application/pdf");
+      assert.match(res.headers.get("content-disposition"), /StudyBg-Invoice-0000000501\.pdf/);
+      const bytes = Buffer.from(await res.arrayBuffer());
+      assert.equal(bytes.subarray(0, 5).toString(), "%PDF-");
+      assert.equal((await call(pdfPath, { auth: otherToken })).status, 404);
+      assert.equal((await call(pdfPath, { auth: null })).status, 401);
+      assert.equal((await call("/api/me/invoices/pi_unknown/pdf")).status, 404);
+      const receipt = await (await call(`/api/me/receipts/${p.paymentIntentId}`)).json();
+      assert.equal(receipt.url, "https://pay.stripe.test/receipts/abc");
+      assert.equal((await call(`/api/me/receipts/${p.paymentIntentId}`, { auth: otherToken })).status, 404);
+    });
+    test("the invoice is built on demand if the receipt email has not been sent yet", async () => {
+      const a = await draft(),
+        p = await checkout(a),
+        pi = stripe.intents.get(p.paymentIntentId);
+      pi.status = "succeeded";
+      await webhook(pi);
+      assert.equal((await db.query("SELECT pdf FROM invoices")).rows[0].pdf, null);
+      assert.equal((await call(`/api/me/invoices/${p.paymentIntentId}/pdf`)).status, 200);
+      const row = (await db.query("SELECT pdf, payload FROM invoices")).rows[0];
+      assert.ok(row.pdf.length > 1000);
+      assert.deepEqual(row.payload.czkRate, { rate: 24.5, date: "2026-11-06" });
+    });
     test("failed receipt remains pending while accepted sale alert is not resent", async () => {
       const a = await draft(),
         p = await checkout(a),
@@ -910,10 +995,11 @@ describe("VAT math (computeVat)", () => {
     });
   });
 
-  test("VAT-registered: net + VAT sum back exactly to the gross amount, at the 20% rate", () => {
+  test("VAT-registered: the €180 fee is VAT-inclusive; net + VAT sum back exactly at the Czech 21% rate", () => {
     const { netMinor, vatMinor } = computeVat(18000, true);
+    assert.deepEqual({ netMinor, vatMinor }, { netMinor: 14876, vatMinor: 3124 });
     assert.equal(netMinor + vatMinor, 18000);
-    assert.equal(Math.round(netMinor * 1.2), 18000);
+    assert.equal(Math.round(netMinor * 1.21), 18000);
   });
 
   test("rounding never loses or invents a cent, across a range of amounts", () => {

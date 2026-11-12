@@ -17,6 +17,12 @@
     <link rel="manifest" href="/site.webmanifest" />
     <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-readable summary" />
     <script>
+      // Old copies of the site on other hosts (e.g. *.onrender.com) go to the real site.
+      if (/\.onrender\.com$/i.test(location.hostname)) {
+        location.replace("https://studybg.ac" + location.pathname + location.search + location.hash);
+      }
+    </script>
+    <script>
       (function() {
         try {
           var originalDefineProperty = Object.defineProperty;

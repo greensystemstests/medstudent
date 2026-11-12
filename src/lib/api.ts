@@ -37,25 +37,31 @@ export class ApiError extends Error {
 }
 
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  let res: Response;
-  try {
-    res = await fetch(`${API_BASE}${path}`, {
-      ...init,
-      signal: AbortSignal.timeout(25000),
-      headers: {
-        "content-type": "application/json",
-        ...(getSessionToken()
-          ? { authorization: `Bearer ${getSessionToken()}` }
-          : {}),
-        ...init?.headers,
-      },
-    });
-  } catch {
+  let res: Response | undefined;
+  // A read that fails to connect is retried once, quietly, before the person sees anything.
+  const attempts = !init?.method || init.method === "GET" ? 2 : 1;
+  for (let attempt = 1; attempt <= attempts && !res; attempt++) {
+    try {
+      res = await fetch(`${API_BASE}${path}`, {
+        ...init,
+        signal: AbortSignal.timeout(25000),
+        headers: {
+          "content-type": "application/json",
+          ...(getSessionToken()
+            ? { authorization: `Bearer ${getSessionToken()}` }
+            : {}),
+          ...init?.headers,
+        },
+      });
+    } catch {
+      if (attempt < attempts) await new Promise((r) => setTimeout(r, 700));
+    }
+  }
+  if (!res)
     throw new ApiError(
       "Could not reach StudyBg. Check your connection and try again.",
       0,
     );
-  }
   const body = await res.json().catch(() => ({}));
   if (!res.ok)
     throw new ApiError(

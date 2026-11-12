@@ -205,14 +205,13 @@ export function SavedApplications({
   );
 }
 export function ServiceNotice() {
-  const [state, setState] = useState(
-    "Checking account and payment availability…",
-  );
+  // Nothing is shown while checking, or when everything works. A notice appears only if the
+  // service really can't be reached after a few quick, silent retries.
+  const [state, setState] = useState("");
   useEffect(() => {
     let active = true;
     (async () => {
-      // A hosting plan that sleeps when idle needs up to a minute to wake: try again before giving up.
-      for (let attempt = 0; attempt < 4 && active; attempt++) {
+      for (let attempt = 0; attempt < 3 && active; attempt++) {
         try {
           const s = await request<{
             accountsReady: boolean;
@@ -229,17 +228,12 @@ export function ServiceNotice() {
           return;
         } catch {
           if (!active) return;
-          if (attempt < 3) {
-            setState(
-              "Our online service is waking up. This can take up to a minute. Your application is saved on this device.",
-            );
-            await new Promise((r) => setTimeout(r, 5000));
-          }
+          if (attempt < 2) await new Promise((r) => setTimeout(r, 1500));
         }
       }
       if (active)
         setState(
-          "We can't reach our online service right now. Your application is still saved on this device.",
+          "We can't reach our online service right now. Your application is still saved on this device. Please refresh the page in a moment.",
         );
     })();
     return () => {

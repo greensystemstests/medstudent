@@ -1,10 +1,15 @@
 import { API_BASE } from "../lib/apiBase";
 import React, { useEffect, useState } from "react";
 import { request } from "../lib/api";
-import { getSessionToken, liveAccountApi } from "../lib/account";
+import { CATEGORY_LABELS, getSessionToken, liveAccountApi } from "../lib/account";
 import { SignIn } from "./AccountView";
 import { ApplicationState } from "../types";
-import { UNIVERSITIES } from "../../shared/admissions.js";
+import {
+  TRANSLATION_DOC_TYPES,
+  TRANSLATION_LANGUAGES,
+  translationDocList,
+  UNIVERSITIES,
+} from "../../shared/admissions.js";
 import {
   applicationStatus,
   documentStatus,
@@ -34,7 +39,9 @@ const FIELD_LABELS: [keyof ApplicationState["form"], string][] = [
   ["hasPoliceClearance", "Has police clearance"],
   ["examDate", "Exam session"],
   ["swornTranslationRequested", "Wants translation help"],
-  ["dhlPickupAddress", "Collection address"],
+  ["translationDocs", "Documents to translate"],
+  ["translationLanguage", "Translate into"],
+  ["translationNote", "Translation note"],
   ["accuracySigned", "Accuracy confirmed"],
   ["termsAgreed", "Terms accepted"],
   ["gdprAgreed", "Privacy notice acknowledged"],
@@ -44,6 +51,14 @@ const show = (key: string, v: unknown) => {
   if (typeof v === "boolean") return v ? "Yes" : "No";
   if (key === "universityId") return UNIVERSITIES.find((u) => u.id === v)?.name ?? String(v || "—");
   if (key === "examDate" && v === "advisor") return "Decide with adviser";
+  if (key === "translationDocs")
+    return (
+      translationDocList(v)
+        .map((k) => TRANSLATION_DOC_TYPES[k as keyof typeof TRANSLATION_DOC_TYPES])
+        .join(", ") || "—"
+    );
+  if (key === "translationLanguage")
+    return TRANSLATION_LANGUAGES[v as keyof typeof TRANSLATION_LANGUAGES] ?? "—";
   return String(v ?? "").replaceAll("_", " ") || "—";
 };
 
@@ -65,6 +80,7 @@ type Detail = {
     id: string;
     filename: string;
     status: string;
+    category?: string;
     review_note: string;
   }[];
   history: {
@@ -252,6 +268,11 @@ export function StaffReviewView() {
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <strong className="break-all">{d.filename}</strong>
+                  {d.category && (
+                    <span className="text-xs text-slate-600">
+                      ({CATEGORY_LABELS[d.category as keyof typeof CATEGORY_LABELS] ?? d.category})
+                    </span>
+                  )}
                   <Badge {...documentStatus(d.status)} />
                 </div>
                 {d.review_note && (

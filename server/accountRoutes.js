@@ -32,6 +32,7 @@ export const DOCUMENT_CATEGORIES = {
   transcript: "Science transcript",
   medical: "Medical certificate",
   police: "Police clearance",
+  translation: "Document for translation",
   other: "Other document",
 };
 

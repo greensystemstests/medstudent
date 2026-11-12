@@ -37,7 +37,7 @@ export interface PaidApplication {
   bookingUrl: string | null;
 }
 
-export type DocumentCategory = 'passport' | 'diploma' | 'transcript' | 'medical' | 'police' | 'other';
+export type DocumentCategory = 'passport' | 'diploma' | 'transcript' | 'medical' | 'police' | 'translation' | 'other';
 
 export interface StoredDocument {
   id: string;
@@ -79,6 +79,7 @@ export const CATEGORY_LABELS: Record<DocumentCategory, string> = {
   transcript: 'Science transcript',
   medical: 'Medical certificate',
   police: 'Police clearance',
+  translation: 'Document for translation',
   other: 'Other document',
 };
 

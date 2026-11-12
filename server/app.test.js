@@ -19,6 +19,9 @@ import {
   callDays,
   POLICY_VERSION,
   validateApplication,
+  validateStep,
+  cleanForm,
+  translationDocList,
   preliminaryResult,
 } from "../shared/admissions.js";
 
@@ -866,6 +869,58 @@ describe(
       pi.amount = 1;
       assert.equal((await webhook(pi)).status, 500);
       assert.equal((await db.query("SELECT * FROM invoices")).rows.length, 0);
+    });
+    test("translation files upload under their own category and staff can see them", async () => {
+      const pdf = Buffer.from("%PDF-1.4 synthetic diploma to translate");
+      const up = await fetch(
+        base + "/api/me/documents?category=translation&filename=diploma-bg.pdf",
+        {
+          method: "POST",
+          headers: {
+            authorization: `Bearer ${token}`,
+            "content-type": "application/octet-stream",
+          },
+          body: pdf,
+        },
+      );
+      assert.equal(up.status, 201, await up.clone().text());
+      const { document } = await up.json();
+      assert.equal(document.category, "translation");
+      assert.equal(document.categoryLabel, "Document for translation");
+      const bad = await fetch(base + "/api/me/documents?category=nonsense", {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${token}`,
+          "content-type": "application/octet-stream",
+        },
+        body: pdf,
+      });
+      assert.equal(bad.status, 400);
+    });
+    test("translation step is optional; asking for help needs a document type", () => {
+      const base = { ...FORM_DEFAULTS };
+      assert.deepEqual(validateStep(6, base), []);
+      assert.equal(
+        validateStep(6, { ...base, swornTranslationRequested: true }).length,
+        1,
+      );
+      assert.deepEqual(
+        validateStep(6, {
+          ...base,
+          swornTranslationRequested: true,
+          translationDocs: "diploma,transcript",
+        }),
+        [],
+      );
+      assert.deepEqual(translationDocList("diploma,bogus,diploma,police"), [
+        "diploma",
+        "police",
+      ]);
+      assert.equal(
+        cleanForm({ translationDocs: "diploma", translationNote: "x".repeat(2000) })
+          .translationNote.length,
+        1000,
+      );
     });
     test("staff document review is audited and visible to its owner", async () => {
       const pdf = Buffer.from("%PDF-1.4 synthetic test document");

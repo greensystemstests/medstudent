@@ -133,9 +133,11 @@ export interface WizardFormData {
   // Step 5: Entrance exam ('advisor' = decide on the consultation call)
   examDate: string;
 
-  // Step 6: Translation & courier
+  // Step 6: Translation help (optional). translationDocs is a comma-separated list of document types.
   swornTranslationRequested: boolean;
-  dhlPickupAddress: string;
+  translationDocs: string;
+  translationLanguage: string;
+  translationNote: string;
 
   // Step 7: Review, consultation call & consents
   consultationDate: string;

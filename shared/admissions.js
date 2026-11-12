@@ -72,7 +72,9 @@ export const FORM_DEFAULTS = {
   hasHagueApostilleAccess: false,
   examDate: "",
   swornTranslationRequested: false,
-  dhlPickupAddress: "",
+  translationDocs: "",
+  translationLanguage: "",
+  translationNote: "",
   consultationDate: "",
   consultationWindow: "",
   termsAgreed: false,
@@ -99,6 +101,24 @@ export function callDays(count = 10, now = new Date()) {
   }
   return days;
 }
+export const TRANSLATION_DOC_TYPES = {
+  diploma: "High school diploma",
+  transcript: "Science transcript",
+  medical: "Medical certificate",
+  police: "Police clearance",
+  birth: "Birth certificate",
+  other: "Other document",
+};
+export const TRANSLATION_LANGUAGES = {
+  bulgarian: "Into Bulgarian",
+  english: "Into English",
+  advisor: "Not sure - advise me",
+};
+/** "diploma,transcript" -> ["diploma","transcript"], only known types, no repeats. */
+export const translationDocList = (value) =>
+  [...new Set(String(value || "").split(","))].filter((k) =>
+    Object.prototype.hasOwnProperty.call(TRANSLATION_DOC_TYPES, k),
+  );
 export function cleanForm(raw) {
   const form = { ...FORM_DEFAULTS };
   for (const [k, v] of Object.entries(form)) {
@@ -109,7 +129,7 @@ export function cleanForm(raw) {
           ? raw[k]
               .replace(/[\u0000-\u001f]/g, " ")
               .trim()
-              .slice(0, k === "dhlPickupAddress" ? 1000 : 200)
+              .slice(0, k === "translationNote" ? 1000 : 200)
           : "";
   }
   form.email = form.email.toLowerCase();
@@ -183,13 +203,14 @@ export function validateStep(step, input, now = new Date()) {
     e.push(
       "Choose “Decide with my advisor”; current session selection is confirmed with the university.",
     );
+  // Step 6 is optional: the default is "no translation help", which needs nothing.
   if (
     step === 6 &&
     f.swornTranslationRequested &&
-    f.dhlPickupAddress.length < 10
+    !translationDocList(f.translationDocs).length
   )
     e.push(
-      "Enter your proposed collection address, or turn off the translation/courier request.",
+      "Choose which documents need translating, or select “I don’t need translation help”.",
     );
   if (step === 7) {
     if (!f.accuracySigned) e.push("Confirm your information is accurate.");

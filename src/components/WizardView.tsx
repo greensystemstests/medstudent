@@ -1,5 +1,9 @@
 import { OnlineSave } from "./ApplicationWorkspace";
-import { preliminaryResult } from "../../shared/admissions.js";
+import {
+  preliminaryResult,
+  TRANSLATION_DOC_TYPES,
+  translationDocList,
+} from "../../shared/admissions.js";
 import React, { useEffect, useRef, useState } from "react";
 import { scrollBehavior } from "../lib/a11y";
 import { examSessionLabel, examSessions } from "../lib/admissions";
@@ -42,6 +46,7 @@ import {
 } from "../types";
 import { PaymentStep } from "./PaymentStep";
 import { ApplicationConfirmation } from "./ApplicationConfirmation";
+import { TranslationStep } from "./TranslationStep";
 
 interface WizardViewProps {
   app: ApplicationState;
@@ -856,6 +861,11 @@ export const WizardView: React.FC<WizardViewProps> = ({
               </div>
             )}
 
+            {/* STEP 6 */}
+            {currentStep === 6 && (
+              <TranslationStep form={form} update={update} demoMode={demoMode} />
+            )}
+
             {/* STEP 7 */}
             {currentStep === 7 && (
               <div className="space-y-6 animate-in fade-in duration-200">
@@ -911,7 +921,9 @@ export const WizardView: React.FC<WizardViewProps> = ({
                     </div>
                     <div>
                       Translation help:{" "}
-                      {form.swornTranslationRequested ? "requested" : "not requested"}
+                      {form.swornTranslationRequested
+                        ? `requested (${translationDocList(form.translationDocs).map((k) => TRANSLATION_DOC_TYPES[k as keyof typeof TRANSLATION_DOC_TYPES]).join(", ") || "documents not chosen"})`
+                        : "not needed"}
                     </div>
                   </ReviewCard>
                 </div>

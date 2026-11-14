@@ -1,6 +1,9 @@
 import React from "react";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { AUDIO_STORIES, STORY_COUNTRIES, VIDEO_STORIES } from "../../data/stories";
+import { AUDIO_STORIES, STORY_COUNTRIES, STUDENT_STORIES, VIDEO_STORIES } from "../../data/stories";
+
+const COUNT_WORDS = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten"];
+const countWord = (n: number) => COUNT_WORDS[n] ?? String(n);
 import { pathFor } from "../../lib/routes";
 import { AudioStoryCard, CountryChip, VideoStoryCard } from "./StoryCards";
 
@@ -47,19 +50,20 @@ export const StudentStoriesSection: React.FC<Props> = ({ onOpenQuickFit }) => (
           What students say about us
         </h2>
         <p className="text-slate-600 mt-2 leading-relaxed">
-          Here’s the thing about admissions help: everybody says they’re great at it. So don’t take our word for it. Take theirs. Five
-          students, four countries, no script and no fancy editing. Press play and hear it from them.
+          Here’s the thing about admissions help: everybody says they’re great at it. So don’t take our word for it. Take theirs.{" "}
+          {countWord(STUDENT_STORIES.length)} students, {countWord(STORY_COUNTRIES.length).toLowerCase()} countries, no script and no fancy
+          editing. Press play and hear it from them.
         </p>
       </div>
       <CountryStrip />
     </div>
 
     <div className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-      <div className="lg:col-span-5">
+      <div className={VIDEO_STORIES.length > 2 ? "lg:col-span-7" : "lg:col-span-5"}>
         <div
           role="group"
           aria-label="Video stories"
-          className="-mx-4 px-4 sm:mx-0 sm:px-0 flex sm:grid sm:grid-cols-2 gap-4 overflow-x-auto sm:overflow-visible snap-x snap-mandatory scroll-px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className={`-mx-4 px-4 sm:mx-0 sm:px-0 flex sm:grid ${VIDEO_STORIES.length > 2 ? "sm:grid-cols-3" : "sm:grid-cols-2"} gap-4 overflow-x-auto sm:overflow-visible snap-x snap-mandatory scroll-px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`}
         >
           {VIDEO_STORIES.map((story) => (
             <div key={story.id} className="snap-start shrink-0 w-[64%] max-w-[260px] sm:w-auto sm:max-w-none">
@@ -69,7 +73,7 @@ export const StudentStoriesSection: React.FC<Props> = ({ onOpenQuickFit }) => (
         </div>
       </div>
 
-      <div className="lg:col-span-7 space-y-3" role="group" aria-label="Audio stories">
+      <div className={`${VIDEO_STORIES.length > 2 ? "lg:col-span-5" : "lg:col-span-7"} space-y-3`} role="group" aria-label="Audio stories">
         <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Or just listen</p>
         {AUDIO_STORIES.map((story) => (
           <AudioStoryCard key={story.id} story={story} />

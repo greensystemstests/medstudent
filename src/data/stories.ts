@@ -32,6 +32,7 @@ const audio = (slug: string): MediaSource[] => [{ src: `/stories/${slug}.mp3`, t
 export const STUDENT_STORIES: StudentStory[] = [
   { id: "nikolay-kolev", name: "Nikolay Kolev", country: "Greece", kind: "video", durationSec: 13, sources: video("nikolay-kolev"), poster: "/stories/nikolay-kolev.jpg" },
   { id: "maja-seib", name: "Maja Seib", country: "Germany", kind: "video", durationSec: 8, sources: video("maja-seib"), poster: "/stories/maja-seib.jpg" },
+  { id: "dimana-krumova", name: "Dimana Krumova", country: "Turkey", kind: "video", durationSec: 15, sources: video("dimana-krumova"), poster: "/stories/dimana-krumova.jpg" },
   { id: "maria-nicolova", name: "Maria Nicolova", country: "Ukraine", kind: "audio", durationSec: 19, sources: audio("maria-nicolova") },
   { id: "anna-gergana", name: "Anna Gergana", country: "Greece", kind: "audio", durationSec: 17, sources: audio("anna-gergana") },
   { id: "nicole-sabag", name: "Nicole Sabag", country: "Cyprus", kind: "audio", durationSec: 36, sources: audio("nicole-sabag") },

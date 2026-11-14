@@ -59,7 +59,7 @@ export const PAGE_META: Record<AppView, PageMeta> = {
   stories: {
     title: "What Students Say About StudyBg: Real Student Stories",
     description:
-      "Hear from students from Greece, Germany, Ukraine and Cyprus who used StudyBg to apply for English-taught medicine in Bulgaria, in their own words.",
+      "Hear from students from Greece, Germany, Turkey, Ukraine and Cyprus who used StudyBg to apply for English-taught medicine in Bulgaria, in their own words.",
     index: true,
     crumb: "Student stories",
   },

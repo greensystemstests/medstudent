@@ -6,6 +6,11 @@ import { pathFor } from "../../lib/routes";
 import { AudioStoryCard, CountryChip, VideoStoryCard } from "../stories/StoryCards";
 import { CountryStrip, StoriesDisclaimer } from "../stories/StudentStoriesSection";
 
+const COUNT_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+const countWord = (n: number) => COUNT_WORDS[n] ?? String(n);
+const names = STORY_COUNTRIES.map((c) => c.country);
+const countryList = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : (names[0] ?? "");
+
 interface Props {
   onOpenQuickFit: () => void;
 }
@@ -30,8 +35,8 @@ export const StudentStoriesPage: React.FC<Props> = ({ onOpenQuickFit }) => (
         </nav>
         <h1 className="text-3xl sm:text-4xl font-extrabold font-heading tracking-tight leading-tight text-balance">What students say about us</h1>
         <p className="text-base text-slate-300 leading-relaxed max-w-3xl">
-          No brochure talk. Just students from Greece, Germany, Ukraine and Cyprus, in their own voices. Watch two. Listen to three. Then
-          decide if you want to be next.
+          No brochure talk. Just students from {countryList}, in their own voices. Watch {countWord(VIDEO_STORIES.length).toLowerCase()}. Listen to{" "}
+          {countWord(AUDIO_STORIES.length).toLowerCase()}. Then decide if you want to be next.
         </p>
         <CountryStrip onDark />
       </div>
@@ -42,7 +47,7 @@ export const StudentStoriesPage: React.FC<Props> = ({ onOpenQuickFit }) => (
         <h2 id="watch-title" className="text-xl sm:text-2xl font-extrabold font-heading text-slate-900">
           Watch
         </h2>
-        <div className="grid grid-cols-2 gap-4 sm:gap-8 max-w-2xl">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 max-w-3xl">
           {VIDEO_STORIES.map((story) => (
             <VideoStoryCard key={story.id} story={story} />
           ))}

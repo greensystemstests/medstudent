@@ -219,6 +219,8 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
         </div>
       </section>
 
+      <StudentStoriesSection onOpenQuickFit={() => onOpenQuickFit()} />
+
       {/* ------------------------------------------------------------------ */}
       {/* Why StudyBg                                                          */}
       {/* ------------------------------------------------------------------ */}
@@ -429,8 +431,6 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
           ))}
         </ol>
       </section>
-
-      <StudentStoriesSection onOpenQuickFit={() => onOpenQuickFit()} />
 
       {/* ------------------------------------------------------------------ */}
       {/* The €180 Admissions Gateway: price, contents, after-payment, exclusions */}

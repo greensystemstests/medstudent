@@ -253,8 +253,9 @@ export async function createHostedCheckout(db, stripe, user, id, version) {
     const { description, receipt_email, metadata } = checkoutMetadata(row);
     const session = await stripe.checkout.sessions.create(
       {
-        // Configured in Stripe Checkout Studio.
+        // Configured in Stripe Checkout Studio. English for every applicant, whatever their browser language.
         ui_mode: "form",
+        locale: "en",
         billing_address_collection: "auto",
         phone_number_collection: { enabled: false },
         automatic_tax: { enabled: false },

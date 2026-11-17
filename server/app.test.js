@@ -469,6 +469,7 @@ describe(
       assert.equal(first.url, undefined);
       const s = await stripe.checkout.sessions.retrieve(first.sessionId);
       assert.equal(s.ui_mode, "form");
+      assert.equal(s.locale, "en");
       assert.equal(s.mode, "payment");
       assert.equal(s.billing_address_collection, "auto");
       assert.deepEqual(s.phone_number_collection, { enabled: false });

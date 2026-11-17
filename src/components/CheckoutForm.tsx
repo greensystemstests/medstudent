@@ -53,7 +53,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
     setLoadFailed(false);
     (async () => {
       try {
-        const stripe = await loadStripe(publishableKey);
+        const stripe = await loadStripe(publishableKey, { locale: "en" });
         if (cancelled) return;
         if (!stripe) throw new Error("Stripe could not be loaded.");
         const checkout = stripe.initCheckoutFormSdk({ clientSecret, appearance });

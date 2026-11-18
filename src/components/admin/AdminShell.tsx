@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { GraduationCap, LayoutDashboard, LogOut, ScrollText, ShieldCheck, Users } from "lucide-react";
+import { Activity, GraduationCap, LayoutDashboard, LogOut, ScrollText, ShieldCheck, Users } from "lucide-react";
 import { AdminApiError, AdminProfile, adminCan, isSuperAdmin } from "../../lib/adminApi";
 import { OverviewPage } from "./OverviewPage";
 import { StudentsPage } from "./StudentsPage";
+import { MonitoringPage } from "./MonitoringPage";
 import { TeamPage } from "./TeamPage";
 import { AuditPage } from "./AuditPage";
 import { SecurityPage } from "./SecurityPage";
@@ -32,6 +33,7 @@ interface Section {
 const SECTIONS: Section[] = [
   { id: "overview", label: "Overview", icon: LayoutDashboard, allowed: () => true },
   { id: "students", label: "Students", icon: GraduationCap, allowed: (a) => adminCan(a, "students.view") },
+  { id: "monitoring", label: "Monitoring", icon: Activity, allowed: (a) => adminCan(a, "monitoring.view") },
   { id: "team", label: "Team & roles", icon: Users, allowed: isSuperAdmin },
   { id: "audit", label: "Audit log", icon: ScrollText, allowed: isSuperAdmin },
   { id: "security", label: "My security", icon: ShieldCheck, allowed: () => true },
@@ -129,6 +131,7 @@ export const AdminShell: React.FC<Props> = ({ admin, onSignOut, onAdminChange, o
         <div className="flex-1 min-w-0" id="admin-main">
           {active.id === "overview" && <OverviewPage ctx={ctx} onNavigate={go} />}
           {active.id === "students" && <StudentsPage ctx={ctx} />}
+          {active.id === "monitoring" && <MonitoringPage ctx={ctx} />}
           {active.id === "team" && <TeamPage ctx={ctx} />}
           {active.id === "audit" && <AuditPage ctx={ctx} />}
           {active.id === "security" && <SecurityPage ctx={ctx} />}

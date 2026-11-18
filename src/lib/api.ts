@@ -4,6 +4,7 @@ import { EXAM_DECIDE_WITH_ADVISOR, UNIVERSITIES } from "../data/constants";
 import { ApplicationState } from "../types";
 
 import { API_BASE } from "./apiBase";
+import { reportEvent } from "./reportError";
 import type { InvoiceSummary } from "./account";
 
 export interface PaymentConfig {
@@ -57,11 +58,15 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
       if (attempt < attempts) await new Promise((r) => setTimeout(r, 700));
     }
   }
-  if (!res)
+  if (!res) {
+    // Our own API timing out or unreachable while the visitor is online is worth knowing about.
+    if (typeof navigator === "undefined" || navigator.onLine !== false)
+      reportEvent("api_error", `The request did not complete (${init?.method ?? "GET"} ${path.split("?")[0]})`, { route: path, status: 0 });
     throw new ApiError(
       "Could not reach StudyBg. Check your connection and try again.",
       0,
     );
+  }
   const body = await res.json().catch(() => ({}));
   if (!res.ok)
     throw new ApiError(

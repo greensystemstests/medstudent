@@ -73,6 +73,32 @@ export const ADMIN_STUDENTS_SQL = `
   CREATE INDEX IF NOT EXISTS student_notes_app_idx ON student_notes(application_id, created_at DESC);
 `;
 
+// Phase 3: what went wrong on the site, and which problems someone has already dealt with.
+export const ADMIN_MONITORING_SQL = `
+  CREATE TABLE IF NOT EXISTS error_events (
+    id          bigserial PRIMARY KEY,
+    created_at  timestamptz NOT NULL DEFAULT now(),
+    source      text NOT NULL CHECK (source IN ('client','server')),
+    kind        text NOT NULL,
+    fingerprint text NOT NULL,
+    message     text NOT NULL,
+    route       text,
+    page        text,
+    status      int,
+    step        int,
+    user_id     uuid REFERENCES users(id) ON DELETE SET NULL
+  );
+  CREATE INDEX IF NOT EXISTS error_events_created_idx ON error_events(created_at DESC);
+  CREATE INDEX IF NOT EXISTS error_events_fp_idx ON error_events(fingerprint, created_at DESC);
+  CREATE TABLE IF NOT EXISTS error_group_state (
+    fingerprint text PRIMARY KEY,
+    status      text NOT NULL CHECK (status IN ('resolved','ignored')),
+    note        text NOT NULL DEFAULT '',
+    updated_by  text NOT NULL,
+    updated_at  timestamptz NOT NULL DEFAULT now()
+  );
+`;
+
 /** Adds the built-in roles if they're missing. Never overwrites a role someone has since edited. */
 export async function seedAdminRoles(db) {
   for (const r of BUILT_IN_ROLES) {
@@ -87,6 +113,7 @@ export async function seedAdminRoles(db) {
 export async function migrateAdmin(db) {
   await db.query(ADMIN_SCHEMA_SQL);
   await db.query(ADMIN_STUDENTS_SQL);
+  await db.query(ADMIN_MONITORING_SQL);
   await seedAdminRoles(db);
 }
 

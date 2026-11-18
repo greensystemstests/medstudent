@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { LayoutDashboard, LogOut, ScrollText, ShieldCheck, Users } from "lucide-react";
-import { AdminApiError, AdminProfile, isSuperAdmin } from "../../lib/adminApi";
+import { GraduationCap, LayoutDashboard, LogOut, ScrollText, ShieldCheck, Users } from "lucide-react";
+import { AdminApiError, AdminProfile, adminCan, isSuperAdmin } from "../../lib/adminApi";
 import { OverviewPage } from "./OverviewPage";
+import { StudentsPage } from "./StudentsPage";
 import { TeamPage } from "./TeamPage";
 import { AuditPage } from "./AuditPage";
 import { SecurityPage } from "./SecurityPage";
@@ -30,12 +31,14 @@ interface Section {
 // Sections appear here as they're built. The server checks every request; this list only hides what a role can't use.
 const SECTIONS: Section[] = [
   { id: "overview", label: "Overview", icon: LayoutDashboard, allowed: () => true },
+  { id: "students", label: "Students", icon: GraduationCap, allowed: (a) => adminCan(a, "students.view") },
   { id: "team", label: "Team & roles", icon: Users, allowed: isSuperAdmin },
   { id: "audit", label: "Audit log", icon: ScrollText, allowed: isSuperAdmin },
   { id: "security", label: "My security", icon: ShieldCheck, allowed: () => true },
 ];
 
-const fromHash = () => (typeof window === "undefined" ? "" : window.location.hash.replace(/^#/, ""));
+// "#students/app-123" opens that student: the section is the part before the slash.
+const fromHash = () => (typeof window === "undefined" ? "" : window.location.hash.replace(/^#/, "").split("/")[0]);
 
 export const AdminShell: React.FC<Props> = ({ admin, onSignOut, onAdminChange, onSessionLost }) => {
   const allowed = SECTIONS.filter((s) => s.allowed(admin));
@@ -123,12 +126,13 @@ export const AdminShell: React.FC<Props> = ({ admin, onSignOut, onAdminChange, o
           </ul>
         </nav>
 
-        <main className="flex-1 min-w-0" id="admin-main">
+        <div className="flex-1 min-w-0" id="admin-main">
           {active.id === "overview" && <OverviewPage ctx={ctx} onNavigate={go} />}
+          {active.id === "students" && <StudentsPage ctx={ctx} />}
           {active.id === "team" && <TeamPage ctx={ctx} />}
           {active.id === "audit" && <AuditPage ctx={ctx} />}
           {active.id === "security" && <SecurityPage ctx={ctx} />}
-        </main>
+        </div>
       </div>
     </div>
   );

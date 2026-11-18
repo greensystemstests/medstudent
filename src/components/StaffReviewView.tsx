@@ -2,6 +2,7 @@ import { API_BASE } from "../lib/apiBase";
 import React, { useEffect, useState } from "react";
 import { request } from "../lib/api";
 import { CATEGORY_LABELS, getSessionToken, liveAccountApi } from "../lib/account";
+import { FIELD_LABELS, showField } from "../lib/applicationLabels";
 import { SignIn } from "./AccountView";
 import { ApplicationState } from "../types";
 import {
@@ -15,52 +16,6 @@ import {
   documentStatus,
   TONE_CLASS,
 } from "../lib/statusLabels";
-
-/** Readable names for the saved form fields, in the order staff read them. */
-const FIELD_LABELS: [keyof ApplicationState["form"], string][] = [
-  ["fullName", "Full name"],
-  ["email", "Email"],
-  ["phone", "Phone"],
-  ["nationalityCategory", "Immigration category"],
-  ["citizenshipCountry", "Passport country"],
-  ["schoolCountry", "School qualification country"],
-  ["highSchoolCurriculum", "Curriculum"],
-  ["graduationYear", "Graduation year"],
-  ["degree", "Degree"],
-  ["universityId", "University"],
-  ["intakeSeason", "Intake"],
-  ["biologyGrade", "Biology (%)"],
-  ["chemistryGrade", "Chemistry (%)"],
-  ["englishProficiency", "English"],
-  ["hasDiploma", "Has diploma"],
-  ["hasTranscript", "Has transcript"],
-  ["hasHagueApostilleAccess", "Can get apostille/legalisation"],
-  ["hasMedicalCertificate", "Has medical certificate"],
-  ["hasPoliceClearance", "Has police clearance"],
-  ["examDate", "Exam session"],
-  ["swornTranslationRequested", "Wants translation help"],
-  ["translationDocs", "Documents to translate"],
-  ["translationLanguage", "Translate into"],
-  ["translationNote", "Translation note"],
-  ["accuracySigned", "Accuracy confirmed"],
-  ["termsAgreed", "Terms accepted"],
-  ["gdprAgreed", "Privacy notice acknowledged"],
-];
-
-const show = (key: string, v: unknown) => {
-  if (typeof v === "boolean") return v ? "Yes" : "No";
-  if (key === "universityId") return UNIVERSITIES.find((u) => u.id === v)?.name ?? String(v || "—");
-  if (key === "examDate" && v === "advisor") return "Decide with adviser";
-  if (key === "translationDocs")
-    return (
-      translationDocList(v)
-        .map((k) => TRANSLATION_DOC_TYPES[k as keyof typeof TRANSLATION_DOC_TYPES])
-        .join(", ") || "—"
-    );
-  if (key === "translationLanguage")
-    return TRANSLATION_LANGUAGES[v as keyof typeof TRANSLATION_LANGUAGES] ?? "—";
-  return String(v ?? "").replaceAll("_", " ") || "—";
-};
 
 const Badge: React.FC<{ label: string; tone: keyof typeof TONE_CLASS }> = ({ label, tone }) => (
   <span className={`inline-flex text-xs font-semibold px-2 py-0.5 rounded-full border ${TONE_CLASS[tone]}`}>
@@ -240,7 +195,7 @@ export function StaffReviewView() {
                 <div key={k}>
                   <dt className="text-xs text-slate-600">{label}</dt>
                   <dd className="break-words text-sm text-slate-900">
-                    {show(k, detail.application.form[k])}
+                    {showField(k, detail.application.form[k])}
                   </dd>
                 </div>
               ))}

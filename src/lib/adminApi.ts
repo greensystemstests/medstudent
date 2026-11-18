@@ -46,6 +46,28 @@ async function req<T>(path: string, opts: { method?: string; json?: unknown; tok
 }
 
 export type StudentScope = "all" | "assigned";
+
+export function studentQuery(f: StudentFilters) {
+  const p = new URLSearchParams();
+  for (const [k, v] of Object.entries(f)) if (v !== undefined && v !== "" && v !== null) p.set(k, String(v));
+  return p.toString();
+}
+
+/** Files need the sign-in header, so they are fetched here and handed to the page as a blob. */
+async function blob(path: string): Promise<{ url: string; type: string }> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/admin${path}`, { headers: { authorization: `Bearer ${getAdminToken() ?? ""}` } });
+  } catch {
+    throw new AdminApiError("Could not reach the server. Check your connection and try again.", 0);
+  }
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new AdminApiError(data.error || `Request failed (${res.status})`, res.status);
+  }
+  const data = await res.blob();
+  return { url: URL.createObjectURL(data), type: data.type };
+}
 export interface AdminRoleInfo {
   id: string;
   key: string | null;
@@ -89,6 +111,71 @@ export interface AuditEntry {
   ip: string | null;
   created_at: string;
 }
+export interface StudentRow {
+  id: string;
+  name: string;
+  email: string;
+  degree: string;
+  universityId: string;
+  status: string;
+  paid: boolean;
+  currentStep: number;
+  source: string;
+  country: string;
+  signupCountry: string;
+  createdAt: string;
+  updatedAt: string;
+  assignedTo: { id: string; name: string } | null;
+}
+export interface Facet {
+  value: string;
+  count: number;
+}
+export interface StudentList {
+  items: StudentRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  facets: { status: Facet[]; degree: Facet[]; university: Facet[]; source: Facet[]; country: Facet[] };
+  assignable: { id: string; name: string }[];
+}
+export interface StudentFilters {
+  q?: string;
+  status?: string;
+  degree?: string;
+  university?: string;
+  source?: string;
+  country?: string;
+  paid?: string;
+  assigned?: string;
+  sort?: string;
+  page?: number;
+}
+export interface StudentDetailData {
+  application: {
+    id: string;
+    form: Record<string, unknown>;
+    currentStep: number;
+    status: string;
+    updatedAt: string;
+    payment: { status: string; paymentIntentId?: string; paidAt?: string; amount?: number; currency?: string; receiptRef?: string };
+  };
+  student: { email: string; createdAt: string; lastLoginAt: string | null; source: Record<string, string>; signupCountry: string };
+  invoiceNumber: string | null;
+  documents: { id: string; category: string; categoryLabel: string; filename: string; status: string; reviewNote: string; sizeBytes: number; createdAt: string }[];
+  activity: { type: string; detail: string; created_at: string }[];
+  notes: { id: number; admin_email: string; note: string; created_at: string }[];
+  assignedTo: { id: string; name: string } | null;
+}
+export interface OverviewData {
+  totals: Record<string, number>;
+  bySource: Facet[];
+  byCountry: Facet[];
+  byDegree: Facet[];
+  byUniversity: Facet[];
+  perDay: { day: string; count: number }[];
+  scope: StudentScope;
+}
 export type Stage = "totp" | "enroll" | "full";
 export interface SessionState {
   stage: Stage;
@@ -126,6 +213,15 @@ export const adminApi = {
   updateRole: (id: string, input: { name: string; description: string; permissions: string[]; studentsScope: StudentScope }) =>
     req<{ ok: true }>(`/team/roles/${id}`, { json: input }),
   deleteRole: (id: string) => req<{ ok: true }>(`/team/roles/${id}`, { method: "DELETE" }),
+  overview: () => req<OverviewData>("/overview"),
+  students: (f: StudentFilters) => req<StudentList>(`/students?${studentQuery(f)}`),
+  student: (id: string) => req<StudentDetailData>(`/students/${encodeURIComponent(id)}`),
+  setStatus: (id: string, status: string, note: string) => req<{ ok: true }>(`/students/${encodeURIComponent(id)}/status`, { json: { status, note } }),
+  assign: (id: string, adminId: string | null) => req<{ ok: true }>(`/students/${encodeURIComponent(id)}/assign`, { json: { adminId } }),
+  addNote: (id: string, note: string) => req<{ ok: true }>(`/students/${encodeURIComponent(id)}/notes`, { json: { note } }),
+  reviewDocument: (docId: string, status: string, note: string) => req<{ ok: true }>(`/students/documents/${docId}/review`, { json: { status, note } }),
+  documentFile: (docId: string) => blob(`/students/documents/${docId}/file`),
+  exportCsv: (f: StudentFilters) => blob(`/students/export.csv?${studentQuery(f)}`),
   audit: (before?: number) =>
     req<{ entries: AuditEntry[]; next: number | null }>(`/audit?limit=100${before ? `&before=${before}` : ""}`),
 };

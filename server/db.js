@@ -244,16 +244,16 @@ export const consumeLoginCode = (db, key, code) => transaction(db, (c) => consum
  * Checks a sign-in code; on success consumes it, creates the user if new, and opens a session.
  * @returns {Promise<{ token: string, user: object, isNewUser: boolean } | { error: string }>}
  */
-export async function verifyLoginCode(db, email, code) {
+export async function verifyLoginCode(db, email, code, meta = {}) {
   return transaction(db, async (db) => {
     const checked = await consumeCodeInTx(db, email, code);
     if (checked.error) return checked;
 
     const inserted = await db.query(
-      `INSERT INTO users (email, last_login_at) VALUES ($1, now())
+      `INSERT INTO users (email, last_login_at, signup_source, signup_country) VALUES ($1, now(), $2, $3)
      ON CONFLICT (email) DO UPDATE SET last_login_at = now()
      RETURNING id, email, full_name, created_at, (xmax = 0) AS is_new`,
-      [email],
+      [email, meta.source ?? null, meta.country ?? null],
     );
     const user = inserted.rows[0];
 

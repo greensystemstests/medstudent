@@ -1,4 +1,5 @@
 import { API_BASE } from './apiBase';
+import { getAttribution } from './attribution';
 
 const SESSION_KEY = 'studybg.session';
 
@@ -134,7 +135,8 @@ export const requestCode = (email: string) =>
 export async function verifyCode(email: string, code: string) {
   const result = await request<{ token: string; user: AccountUser }>('/api/auth/verify', {
     method: 'POST',
-    body: JSON.stringify({ email, code }),
+    // Only used by the server when this creates a new account (see src/lib/attribution.ts).
+    body: JSON.stringify({ email, code, source: getAttribution() }),
     auth: false,
   });
   setSessionToken(result.token);

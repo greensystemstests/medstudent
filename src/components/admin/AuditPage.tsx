@@ -18,6 +18,13 @@ const LABELS: Record<string, string> = {
   role_created: "Created a role",
   role_updated: "Changed a role",
   role_deleted: "Deleted a role",
+  student_viewed: "Opened a student",
+  student_status: "Changed a student's status",
+  student_assigned: "Assigned a student",
+  student_note: "Added a note to a student",
+  document_viewed: "Opened a student's document",
+  document_review: "Reviewed a student's document",
+  students_exported: "Exported students to CSV",
 };
 export const actionLabel = (a: string) => LABELS[a] ?? a.replaceAll("_", " ");
 

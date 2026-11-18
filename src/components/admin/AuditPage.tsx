@@ -29,6 +29,14 @@ const LABELS: Record<string, string> = {
   content_text: "Edited site text",
   content_image: "Changed a site picture",
   content_reset: "Reset site content to the original",
+  affiliate_link_created: "Created a referral link",
+  affiliate_link_updated: "Changed a referral link",
+  affiliate_link_deleted: "Deleted a referral link",
+  affiliate_payment: "Recorded a commission payout or correction",
+  affiliate_payment_removed: "Removed a commission entry",
+  affiliate_source_created: "Added a referral source",
+  affiliate_source_renamed: "Renamed a referral source",
+  affiliate_source_deleted: "Deleted a referral source",
 };
 export const actionLabel = (a: string) => LABELS[a] ?? a.replaceAll("_", " ");
 

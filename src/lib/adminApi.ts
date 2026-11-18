@@ -83,6 +83,74 @@ async function upload<T>(path: string, file: Blob): Promise<T> {
   return data as T;
 }
 
+export interface AffiliateStats {
+  clicks: number;
+  clicksTotal: number;
+  signups: number;
+  started: number;
+  paid: number;
+  earnedPeriod: number;
+  signupsAll: number;
+  paidAll: number;
+  earnedAll: number;
+  adjustments: number;
+  payouts: number;
+  owed: number;
+}
+export interface AffiliateLink {
+  id: string;
+  code: string;
+  name: string;
+  sourceId: string;
+  sourceName: string;
+  commissionCents: number;
+  destination: string;
+  status: "active" | "paused";
+  notes: string;
+  createdBy: string;
+  createdAt: string;
+  stats: AffiliateStats;
+}
+export interface AffiliateRollup {
+  links: number;
+  clicks: number;
+  signups: number;
+  started: number;
+  paid: number;
+  earnedPeriod: number;
+  owed: number;
+  payouts: number;
+}
+export interface AffiliateData {
+  window: string;
+  totals: AffiliateRollup;
+  bySource: (AffiliateRollup & { id: string; name: string })[];
+  sources: { id: string; name: string; links: number }[];
+  links: AffiliateLink[];
+}
+export interface AffiliatePayment {
+  id: number;
+  kind: "payout" | "adjustment";
+  amountCents: number;
+  note: string;
+  createdBy: string;
+  createdAt: string;
+}
+export interface AffiliateDetail {
+  link: AffiliateLink;
+  daily: { day: string; clicks: number }[];
+  payments: AffiliatePayment[];
+}
+export interface AffiliateLinkInput {
+  name: string;
+  sourceId: string;
+  commissionEur: string;
+  destination: string;
+  notes: string;
+  code?: string;
+  status?: "active" | "paused";
+}
+
 export type StudentScope = "all" | "assigned";
 
 export function studentQuery(f: StudentFilters) {
@@ -324,6 +392,17 @@ export const adminApi = {
   saveText: (key: string, value: string) => req<{ ok: true; unchanged?: boolean }>(`/content/${encodeURIComponent(key)}`, { json: { value } }),
   resetContent: (key: string) => req<{ ok: true }>(`/content/${encodeURIComponent(key)}/reset`, { method: "POST", json: {} }),
   uploadImage: (key: string, file: Blob) => upload<{ ok: true; imageUrl: string }>(`/content/${encodeURIComponent(key)}/image`, file),
+  affiliates: (window: string) => req<AffiliateData>(`/affiliates?window=${window}`),
+  affiliate: (id: string) => req<AffiliateDetail>(`/affiliates/links/${id}`),
+  createLink: (input: AffiliateLinkInput) => req<{ id: string; code: string }>("/affiliates/links", { json: input }),
+  updateLink: (id: string, input: AffiliateLinkInput) => req<{ ok: true }>(`/affiliates/links/${id}`, { json: input }),
+  deleteLink: (id: string) => req<{ ok: true }>(`/affiliates/links/${id}`, { method: "DELETE" }),
+  addPayment: (id: string, input: { kind: "payout" | "adjustment"; amountEur: string; note: string }) =>
+    req<{ ok: true }>(`/affiliates/links/${id}/payments`, { json: input }),
+  removePayment: (id: string, paymentId: number) => req<{ ok: true }>(`/affiliates/links/${id}/payments/${paymentId}`, { method: "DELETE" }),
+  createSource: (name: string) => req<{ id: string }>("/affiliates/sources", { json: { name } }),
+  renameSource: (id: string, name: string) => req<{ ok: true }>(`/affiliates/sources/${id}`, { json: { name } }),
+  deleteSource: (id: string) => req<{ ok: true }>(`/affiliates/sources/${id}`, { method: "DELETE" }),
   audit: (before?: number) =>
     req<{ entries: AuditEntry[]; next: number | null }>(`/audit?limit=100${before ? `&before=${before}` : ""}`),
 };

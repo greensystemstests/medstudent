@@ -15,7 +15,8 @@ import { connectDb, loadFlags, migrate } from "./db.js";
 import { fileKeyFromEnv } from "./fileCrypto.js";
 import { sellerFromEnv } from "./invoice.js";
 import { processOutbox } from "./billing.js";
-import { sendLoginCodeEmail } from "./mail.js";
+import { sendAdminCodeEmail, sendAdminInviteEmail, sendLoginCodeEmail } from "./mail.js";
+import { ensureSuperAdmins } from "./admin/schema.js";
 
 const DEFAULT_ORIGINS = [
   "https://studybg.ac",
@@ -75,6 +76,24 @@ export async function buildFromEnv(env = process.env, options = {}) {
       ? async (email, code) => console.log(`[dev] sign-in code for ${email}: ${code}`)
       : null;
 
+  const deliverAdminCode = resend
+    ? (email, code) => sendAdminCodeEmail(resend, { from: fromEmail, replyTo: supportEmail, to: email, code, siteUrl })
+    : logLoginCodes
+      ? async (email, code) => console.log(`[dev] admin sign-in code for ${email}: ${code}`)
+      : null;
+  const deliverAdminInvite = resend
+    ? (details) => sendAdminInviteEmail(resend, { from: fromEmail, replyTo: supportEmail, to: details.email, ...details, siteUrl })
+    : null;
+  // The very first admin(s): SUPER_ADMIN_EMAILS. Everyone after that is created from the Team page.
+  const superAdminEmails = (env.SUPER_ADMIN_EMAILS || "").split(",");
+  if (db && fileKey && superAdminEmails.some((e) => e.trim())) {
+    try {
+      await ensureSuperAdmins(db, superAdminEmails);
+    } catch (error) {
+      console.error("Could not seed super admins:", error.message);
+    }
+  }
+
   // Background job: retry pending emails (receipt + sale notice). Callable any time, cheap when idle.
   let sweeping = false;
   let lastSweep = 0;
@@ -100,7 +119,7 @@ export async function buildFromEnv(env = process.env, options = {}) {
   const app = createApp({
     stripe,
     billing,
-    accounts: { db, fileKey, deliverCode },
+    accounts: { db, fileKey, deliverCode, deliverAdminCode, deliverAdminInvite },
     config: {
       publishableKey,
       flags: async () => {

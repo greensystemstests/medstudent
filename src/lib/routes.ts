@@ -33,6 +33,7 @@ export const VIEW_PATH: Record<Exclude<AppView, "not-found">, string> = {
   gdpr: "/gdpr/",
   accessibility: "/accessibility/",
   "staff-live": "/review/",
+  admin: "/admin/",
   student: "/portal-demo/",
   staff: "/staff-demo/",
 };

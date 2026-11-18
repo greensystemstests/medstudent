@@ -3,6 +3,7 @@ import path from "node:path";
 import cors from "cors";
 import express from "express";
 import { mountAccountRoutes } from "./accountRoutes.js";
+import { mountAdmin } from "./admin/index.js";
 import {
   mountWorkflow,
   sessionAuth,
@@ -152,6 +153,14 @@ export function createApp({
     staffEmails: config.staffEmails || [],
     stripe,
     billing,
+  });
+  mountAdmin(app, {
+    db: db || null,
+    fileKey: accounts?.fileKey || null,
+    deliverAdminCode: accounts?.deliverAdminCode || null,
+    deliverAdminInvite: accounts?.deliverAdminInvite || null,
+    rateLimits: accounts?.rateLimits,
+    log,
   });
   const status = async () => {
     const f = await flags();

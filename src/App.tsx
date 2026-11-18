@@ -2,7 +2,7 @@ import { StudentStoriesPage } from "./components/content/StudentStoriesPage";
 import { ServiceNotice } from "./components/ApplicationWorkspace";
 import { AdmissionsCalendar } from "./components/AdmissionsCalendar";
 import { StaffReviewView } from "./components/StaffReviewView";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react";
 import { scrollBehavior } from "./lib/a11y";
 import { AccessibilityPanel } from "./components/AccessibilityPanel";
 import { AccountView } from "./components/AccountView";
@@ -17,6 +17,9 @@ import { WizardView } from "./components/WizardView";
 import { StudentPortalView } from "./components/StudentPortalView";
 import { StaffOpsView } from "./components/StaffOpsView";
 import { QuickFitModal } from "./components/QuickFitModal";
+
+// The admin area is a separate chunk: visitors to the public site never download it.
+const AdminApp = lazy(() => import("./components/admin/AdminApp"));
 import {
   applyPrefill,
   createApplication,
@@ -317,6 +320,16 @@ export default function App() {
   };
 
   const isPaid = application.payment.status === "paid";
+
+  // The admin area has its own layout: no public header, footer or accessibility button.
+  if (currentView === "admin")
+    return (
+      <main id="main-content" tabIndex={-1} className="min-h-screen bg-slate-50 font-sans">
+        <Suspense fallback={<p className="p-8 text-sm text-slate-500" role="status">Loading…</p>}>
+          <AdminApp />
+        </Suspense>
+      </main>
+    );
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#0b1c30] flex flex-col font-sans selection:bg-[#006644] selection:text-white">

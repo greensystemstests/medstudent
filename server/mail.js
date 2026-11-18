@@ -59,6 +59,44 @@ export async function sendLoginCodeEmail(resend, { from, replyTo, to, code, site
   });
 }
 
+export async function sendAdminCodeEmail(resend, { from, replyTo, to, code, siteUrl }) {
+  return sendChecked(resend, {
+    from,
+    ...(replyTo ? { replyTo } : {}),
+    to,
+    subject: `${code} is your StudyBg admin sign-in code`,
+    html: `
+      <div style="font-family:Inter,Arial,sans-serif;max-width:480px;margin:0 auto;color:#0b1c30">
+        <p style="font-size:20px;font-weight:700;color:#006644;margin:0 0 16px">StudyBg admin</p>
+        <p>Step 1 of 2. Enter this code on the admin sign-in page:</p>
+        <p style="font-size:32px;font-weight:800;letter-spacing:8px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:16px;text-align:center;margin:16px 0">${escapeHtml(code)}</p>
+        <p>Step 2 is the 6-digit code from your authenticator app.</p>
+        <p style="color:#64748b;font-size:13px">It expires in 10 minutes. If you didn't ask for it, ignore this email and let a super admin know: nobody can sign in with only this code.</p>
+        <p style="font-size:13px"><a href="${escapeHtml(siteUrl)}/admin/" style="color:#006644">Open the admin sign-in</a></p>
+      </div>
+    `,
+  });
+}
+
+export async function sendAdminInviteEmail(resend, { from, replyTo, to, fullName, roleName, invitedBy, siteUrl }) {
+  return sendChecked(resend, {
+    from,
+    ...(replyTo ? { replyTo } : {}),
+    to,
+    subject: "You've been added to the StudyBg admin",
+    html: `
+      <div style="font-family:Inter,Arial,sans-serif;max-width:480px;margin:0 auto;color:#0b1c30">
+        <p style="font-size:20px;font-weight:700;color:#006644;margin:0 0 16px">StudyBg admin</p>
+        <p>Hi ${escapeHtml(fullName)},</p>
+        <p>${escapeHtml(invitedBy)} added you to the StudyBg admin as <strong>${escapeHtml(roleName)}</strong>.</p>
+        <p>To sign in, open the link below and enter this email address. We email you a code, then you set up an
+        authenticator app (Google Authenticator, Authy, 1Password…) the first time. Install one on your phone first.</p>
+        <p><a href="${escapeHtml(siteUrl)}/admin/" style="display:inline-block;background:#006644;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:700">Open the admin</a></p>
+      </div>
+    `,
+  });
+}
+
 function escapeHtml(str = '') {
   return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 }

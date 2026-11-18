@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Activity, FileText, GraduationCap, LayoutDashboard, LogOut, ScrollText, ShieldCheck, Users } from "lucide-react";
+import { Activity, FileText, GraduationCap, Link2, LayoutDashboard, LogOut, ScrollText, ShieldCheck, Users } from "lucide-react";
 import { AdminApiError, AdminProfile, adminCan, isSuperAdmin } from "../../lib/adminApi";
 import { OverviewPage } from "./OverviewPage";
 import { StudentsPage } from "./StudentsPage";
 import { MonitoringPage } from "./MonitoringPage";
 import { ContentPage } from "./ContentPage";
+import { AffiliatesPage } from "./AffiliatesPage";
 import { TeamPage } from "./TeamPage";
 import { AuditPage } from "./AuditPage";
 import { SecurityPage } from "./SecurityPage";
@@ -35,6 +36,7 @@ const SECTIONS: Section[] = [
   { id: "overview", label: "Overview", icon: LayoutDashboard, allowed: () => true },
   { id: "students", label: "Students", icon: GraduationCap, allowed: (a) => adminCan(a, "students.view") },
   { id: "monitoring", label: "Monitoring", icon: Activity, allowed: (a) => adminCan(a, "monitoring.view") },
+  { id: "affiliates", label: "Referral links", icon: Link2, allowed: (a) => adminCan(a, "affiliates.view") },
   { id: "content", label: "Site content", icon: FileText, allowed: (a) => adminCan(a, "content.edit") },
   { id: "team", label: "Team & roles", icon: Users, allowed: isSuperAdmin },
   { id: "audit", label: "Audit log", icon: ScrollText, allowed: isSuperAdmin },
@@ -134,6 +136,7 @@ export const AdminShell: React.FC<Props> = ({ admin, onSignOut, onAdminChange, o
           {active.id === "overview" && <OverviewPage ctx={ctx} onNavigate={go} />}
           {active.id === "students" && <StudentsPage ctx={ctx} />}
           {active.id === "monitoring" && <MonitoringPage ctx={ctx} />}
+          {active.id === "affiliates" && <AffiliatesPage ctx={ctx} />}
           {active.id === "content" && <ContentPage ctx={ctx} />}
           {active.id === "team" && <TeamPage ctx={ctx} />}
           {active.id === "audit" && <AuditPage ctx={ctx} />}

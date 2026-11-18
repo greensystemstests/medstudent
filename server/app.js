@@ -18,6 +18,7 @@ import { paidExtras, recordPayment } from "./billing.js";
 import { ONBOARDING_FEE, PAYMENT_SOURCE } from "./pricing.js";
 import { POLICY_VERSION } from "../shared/admissions.js";
 import { rateLimit } from "./rateLimit.js";
+import { recordReferralVisit } from "./referrals.js";
 import { mountPublicContent } from "./admin/content.js";
 import { CLIENT_KINDS, createMonitor, routeOf } from "./monitor.js";
 import { userForToken } from "./db.js";
@@ -172,6 +173,15 @@ export function createApp({
           userId: user?.id,
         });
       }
+      res.status(204).end();
+    }),
+  );
+  // A page opened through a referral link (?ref=code). Counts the visit only: no address, no browser, no person.
+  app.post(
+    "/api/referral/visit",
+    rateLimit({ windowMs: 60_000, max: accounts?.rateLimits?.referralVisit ?? 30 }),
+    safe(async (req, res) => {
+      await recordReferralVisit(db, req.body?.code, req.get("user-agent"));
       res.status(204).end();
     }),
   );

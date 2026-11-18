@@ -6,6 +6,8 @@ export const PERMISSIONS = {
   "monitoring.view": "See site and user-flow errors, system status and the application funnel",
   "monitoring.manage": "Mark errors as resolved or ignored",
   "content.edit": "Edit the site's text and main images",
+  "affiliates.view": "See referral links, their clicks, sign-ups and commissions",
+  "affiliates.manage": "Create and change referral links and sources, and record commission payouts",
 };
 export const PERMISSION_KEYS = Object.keys(PERMISSIONS);
 /** Short names for badges and lists. */
@@ -15,6 +17,8 @@ export const PERMISSION_SHORT = {
   "monitoring.view": "View monitoring",
   "monitoring.manage": "Resolve errors",
   "content.edit": "Edit site content",
+  "affiliates.view": "View referral links",
+  "affiliates.manage": "Manage referral links",
 };
 
 /** The super admin role holds this wildcard. Managing accounts and roles is for super admins only. */

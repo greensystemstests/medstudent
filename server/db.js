@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { Buffer } from "node:buffer";
 import pg from "pg";
 import { migrateAdmin } from "./admin/schema.js";
+import { attachReferral } from "./referrals.js";
 
 /**
  * Neon's pooled endpoint (host contains "-pooler") runs PgBouncer in transaction mode. Checkout and
@@ -256,6 +257,8 @@ export async function verifyLoginCode(db, email, code, meta = {}) {
       [email, meta.source ?? null, meta.country ?? null],
     );
     const user = inserted.rows[0];
+    // A new account that arrived through a referral link is tied to it (never able to fail the sign-up).
+    if (user.is_new && meta.source?.ref) await attachReferral(db, user.id, meta.source);
 
     const token = crypto.randomBytes(32).toString("base64url");
     await db.query(

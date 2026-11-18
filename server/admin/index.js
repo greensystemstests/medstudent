@@ -5,6 +5,7 @@ import { mountTeam } from "./team.js";
 import { mountStudents } from "./students.js";
 import { mountMonitoring } from "./monitoring.js";
 import { mountContent } from "./content.js";
+import { mountAffiliates } from "./affiliates.js";
 
 /**
  * The admin API, under /api/admin. Everything needs a signed-in admin (two-step sign-in), and each
@@ -24,5 +25,6 @@ export function mountAdmin(app, deps) {
   mountStudents(router, deps);
   mountMonitoring(router, deps);
   mountContent(router, deps);
+  mountAffiliates(router, deps);
   app.use("/api/admin", router);
 }

@@ -15,6 +15,13 @@ export function referrerHost(value) {
   }
 }
 
+/** A referral code: lowercase letters, digits and hyphens, 3 to 40 characters. Anything else is not a code. */
+export const REF_CODE_RE = /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/;
+export const cleanRefCode = (v) => {
+  const code = clip(v, 60).toLowerCase();
+  return REF_CODE_RE.test(code) ? code : "";
+};
+
 export function cleanSource(raw) {
   if (!raw || typeof raw !== "object") return null;
   const landing = clip(raw.landing, 100);
@@ -25,6 +32,8 @@ export function cleanSource(raw) {
     utm_campaign: tag(raw.utm_campaign),
     landing: landing.startsWith("/") ? landing.split("?")[0].split("#")[0] : "",
   };
+  const ref = cleanRefCode(raw.ref);
+  if (ref) source.ref = ref;
   return Object.values(source).some(Boolean) ? source : {};
 }
 
@@ -37,5 +46,5 @@ export function countryFromHeaders(get) {
   return null;
 }
 
-/** SQL for the one-word label shown in the admin: campaign source, else referring site, else Direct. */
-export const SOURCE_LABEL_SQL = `coalesce(nullif(u.signup_source->>'utm_source',''), nullif(u.signup_source->>'referrer',''), 'Direct')`;
+/** SQL for the one-word label shown in the admin: referral link's source (its brand), else campaign source, else referring site, else Direct. */
+export const SOURCE_LABEL_SQL = `coalesce(nullif(u.signup_source->>'ref_label',''), nullif(u.signup_source->>'utm_source',''), nullif(u.signup_source->>'referrer',''), 'Direct')`;

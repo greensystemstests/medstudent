@@ -1,3 +1,5 @@
+import { API_BASE } from "./apiBase";
+
 /**
  * How this visit began (referring site, campaign tags, first page). Read once when the site loads and
  * held in memory only: nothing is written to the visitor's device. It is sent when they create their
@@ -9,6 +11,8 @@ export interface Attribution {
   utm_medium: string;
   utm_campaign: string;
   landing: string;
+  /** The code of the referral link this visit came through (?ref=…), if any. */
+  ref?: string;
 }
 
 function capture(): Attribution | null {
@@ -30,6 +34,8 @@ function capture(): Attribution | null {
       utm_campaign: q.get("utm_campaign") ?? "",
       landing: window.location.pathname,
     };
+    const ref = (q.get("ref") ?? "").trim().toLowerCase();
+    if (/^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/.test(ref)) a.ref = ref;
     return a;
   } catch {
     return null;
@@ -38,3 +44,21 @@ function capture(): Attribution | null {
 
 const arrival = capture();
 export const getAttribution = (): Attribution | null => arrival;
+
+/**
+ * A page opened through a referral link is counted once, so the team can see clicks next to sign-ups.
+ * Only the link's code is sent: no personal data, and nothing is stored on the visitor's device.
+ */
+export function reportReferralVisit() {
+  if (!arrival?.ref) return;
+  try {
+    void fetch(`${API_BASE}/api/referral/visit`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ code: arrival.ref }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    // counting is best effort
+  }
+}

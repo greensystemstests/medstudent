@@ -45,6 +45,44 @@ async function req<T>(path: string, opts: { method?: string; json?: unknown; tok
   return data as T;
 }
 
+export interface ContentItem {
+  key: string;
+  group: string;
+  label: string;
+  type: "text" | "image";
+  hint: string | null;
+  multiline: boolean;
+  max: number | null;
+  original: string | null;
+  value: string | null;
+  imageUrl: string | null;
+  changed: boolean;
+  updatedBy: string | null;
+  updatedAt: string | null;
+}
+export interface ContentData {
+  groups: { id: string; label: string }[];
+  items: ContentItem[];
+}
+
+/** Sends a picture as the request body (not as a form). */
+async function upload<T>(path: string, file: Blob): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/admin${path}`, {
+      method: "POST",
+      headers: { "content-type": file.type || "application/octet-stream", authorization: `Bearer ${getAdminToken() ?? ""}` },
+      body: file,
+      signal: AbortSignal.timeout(60000),
+    });
+  } catch {
+    throw new AdminApiError("Could not reach the server. Check your connection and try again.", 0);
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new AdminApiError(data.error || `Upload failed (${res.status})`, res.status);
+  return data as T;
+}
+
 export type StudentScope = "all" | "assigned";
 
 export function studentQuery(f: StudentFilters) {
@@ -282,6 +320,10 @@ export const adminApi = {
   reviewDocument: (docId: string, status: string, note: string) => req<{ ok: true }>(`/students/documents/${docId}/review`, { json: { status, note } }),
   documentFile: (docId: string) => blob(`/students/documents/${docId}/file`),
   exportCsv: (f: StudentFilters) => blob(`/students/export.csv?${studentQuery(f)}`),
+  content: () => req<ContentData>("/content"),
+  saveText: (key: string, value: string) => req<{ ok: true; unchanged?: boolean }>(`/content/${encodeURIComponent(key)}`, { json: { value } }),
+  resetContent: (key: string) => req<{ ok: true }>(`/content/${encodeURIComponent(key)}/reset`, { method: "POST", json: {} }),
+  uploadImage: (key: string, file: Blob) => upload<{ ok: true; imageUrl: string }>(`/content/${encodeURIComponent(key)}/image`, file),
   audit: (before?: number) =>
     req<{ entries: AuditEntry[]; next: number | null }>(`/audit?limit=100${before ? `&before=${before}` : ""}`),
 };

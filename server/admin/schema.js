@@ -110,10 +110,26 @@ export async function seedAdminRoles(db) {
   }
 }
 
+export const ADMIN_CONTENT_SQL = `
+  CREATE TABLE IF NOT EXISTS site_images (
+    id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    content_type text NOT NULL,
+    data         bytea NOT NULL,
+    created_at   timestamptz NOT NULL DEFAULT now()
+  );
+  CREATE TABLE IF NOT EXISTS site_content (
+    key        text PRIMARY KEY,
+    value      text NOT NULL,
+    updated_by text NOT NULL,
+    updated_at timestamptz NOT NULL DEFAULT now()
+  );
+`;
+
 export async function migrateAdmin(db) {
   await db.query(ADMIN_SCHEMA_SQL);
   await db.query(ADMIN_STUDENTS_SQL);
   await db.query(ADMIN_MONITORING_SQL);
+  await db.query(ADMIN_CONTENT_SQL);
   await seedAdminRoles(db);
 }
 

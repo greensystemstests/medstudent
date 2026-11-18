@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 /**
  * An <img> that disappears cleanly if its address stops working (for example a photo hosted by a third
@@ -7,6 +7,8 @@ import React, { useState } from "react";
  */
 export const SafeImage: React.FC<React.ImgHTMLAttributes<HTMLImageElement>> = ({ onError, ...props }) => {
   const [failed, setFailed] = useState(false);
+  // A new address (for example a picture an admin just replaced) gets a fresh try.
+  useEffect(() => setFailed(false), [props.src]);
   if (failed) return null;
   return (
     <img

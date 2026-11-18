@@ -4,6 +4,7 @@ import { PERMISSIONS } from "../../../shared/adminPermissions.js";
 import { adminApi, adminCan, isSuperAdmin } from "../../lib/adminApi";
 import type { PageContext } from "./AdminShell";
 import { Badge, Card, formatDate } from "./ui";
+import { StudentStats } from "./StudentStats";
 
 export const OverviewPage: React.FC<{ ctx: PageContext; onNavigate: (id: string) => void }> = ({ ctx, onNavigate }) => {
   const { admin } = ctx;
@@ -25,6 +26,8 @@ export const OverviewPage: React.FC<{ ctx: PageContext; onNavigate: (id: string)
           Signed in as {admin.email} · {admin.role.name} · last sign-in {formatDate(admin.lastLoginAt)}
         </p>
       </div>
+
+      {adminCan(admin, "students.view") && <StudentStats ctx={ctx} onNavigate={onNavigate} />}
 
       <Card title="What your role can do">
         <ul className="space-y-2">

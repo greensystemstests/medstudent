@@ -596,7 +596,7 @@ export function mountWorkflow(
     }),
   );
 }
-async function enqueueNotice(c, userId, email) {
+export async function enqueueNotice(c, userId, email) {
   await c.query("INSERT INTO email_outbox(id,kind,payload) VALUES($1,$2,$3)", [
     `notice:${crypto.randomUUID()}`,
     "status_notice",

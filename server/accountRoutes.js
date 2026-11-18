@@ -22,6 +22,7 @@ import {
   sniffFileType,
 } from "./fileCrypto.js";
 import { sendLoginCodeEmail } from "./mail.js";
+import { cleanSource, countryFromHeaders } from "./source.js";
 import { bookingLink, ensureInvoicePdf, invoicesForEmail, ownedInvoice } from "./billing.js";
 import { ONBOARDING_FEE, PAYMENT_SOURCE } from "./pricing.js";
 import { rateLimit } from "./rateLimit.js";
@@ -213,7 +214,10 @@ export function mountAccountRoutes(
           .status(400)
           .json({ error: "Please enter a valid email address." });
       try {
-        const result = await verifyLoginCode(db, email, code);
+        const result = await verifyLoginCode(db, email, code, {
+          source: cleanSource(req.body?.source),
+          country: countryFromHeaders((name) => req.get(name)),
+        });
         if ("error" in result)
           return res.status(401).json({ error: result.error });
         await logActivity(

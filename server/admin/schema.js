@@ -55,6 +55,24 @@ export const ADMIN_SCHEMA_SQL = `
   CREATE INDEX IF NOT EXISTS admin_audit_created_idx ON admin_audit(created_at DESC);
 `;
 
+// Phase 2: how a student arrived, who looks after them, and staff notes. Own block so it has its own migration.
+export const ADMIN_STUDENTS_SQL = `
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS signup_source jsonb;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS signup_country text;
+  ALTER TABLE applications ADD COLUMN IF NOT EXISTS assigned_admin_id uuid REFERENCES admin_users(id) ON DELETE SET NULL;
+  CREATE INDEX IF NOT EXISTS applications_assigned_idx ON applications(assigned_admin_id);
+  CREATE INDEX IF NOT EXISTS applications_status_idx ON applications(status, updated_at DESC);
+  CREATE TABLE IF NOT EXISTS student_notes (
+    id             bigserial PRIMARY KEY,
+    application_id text NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+    admin_id       uuid REFERENCES admin_users(id) ON DELETE SET NULL,
+    admin_email    text NOT NULL,
+    note           text NOT NULL,
+    created_at     timestamptz NOT NULL DEFAULT now()
+  );
+  CREATE INDEX IF NOT EXISTS student_notes_app_idx ON student_notes(application_id, created_at DESC);
+`;
+
 /** Adds the built-in roles if they're missing. Never overwrites a role someone has since edited. */
 export async function seedAdminRoles(db) {
   for (const r of BUILT_IN_ROLES) {
@@ -68,6 +86,7 @@ export async function seedAdminRoles(db) {
 
 export async function migrateAdmin(db) {
   await db.query(ADMIN_SCHEMA_SQL);
+  await db.query(ADMIN_STUDENTS_SQL);
   await seedAdminRoles(db);
 }
 

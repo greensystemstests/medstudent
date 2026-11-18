@@ -110,6 +110,7 @@ export const PAGE_META: Record<AppView, PageMeta> = {
     index: true,
     crumb: "Accessibility",
   },
+  admin: { title: "Admin | StudyBg", description: "StudyBg admin sign-in.", index: false, crumb: "Admin" },
   "staff-live": { title: "Staff review | StudyBg", description: "StudyBg staff review.", index: false, crumb: "Staff review" },
   student: { title: "Student portal (demo) | StudyBg", description: "Demo of the StudyBg student portal with sample data.", index: false, crumb: "Student portal demo" },
   staff: { title: "Staff operations (demo) | StudyBg", description: "Demo of StudyBg staff operations with sample data.", index: false, crumb: "Staff demo" },

@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { Buffer } from "node:buffer";
 import pg from "pg";
+import { migrateAdmin } from "./admin/schema.js";
 
 /**
  * Neon's pooled endpoint (host contains "-pooler") runs PgBouncer in transaction mode. Checkout and
@@ -161,6 +162,7 @@ export async function migrate(db) {
       created_at timestamptz NOT NULL DEFAULT now()
     );
   `);
+  await migrateAdmin(db);
 }
 
 export const sha256 = (value) =>
@@ -210,34 +212,42 @@ export async function createLoginCode(db, email) {
 }
 
 /**
+ * Checks a one-time code for a key (an email, or a prefixed key for another sign-in flow). Counts the
+ * attempt, refuses after too many, and consumes the code on success. Runs inside a transaction.
+ * @returns {Promise<{ ok: true } | { error: string }>}
+ */
+async function consumeCodeInTx(db, key, code) {
+  await db.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))", ["login:" + key]);
+  const { rows } = await db.query(
+    `UPDATE login_codes SET attempts = attempts + 1
+     WHERE email = $1 AND expires_at > now()
+     RETURNING code_hash, attempts`,
+    [key],
+  );
+  const entry = rows[0];
+  if (!entry) return { error: "This code has expired. Please request a new one." };
+  if (entry.attempts > LOGIN_CODE_MAX_ATTEMPTS) {
+    await db.query(`DELETE FROM login_codes WHERE email = $1`, [key]);
+    return { error: "Too many attempts. Please request a new code." };
+  }
+  if (!/^\d{6}$/.test(code) || !sameHash(entry.code_hash, sha256(code))) {
+    return { error: "That code is not correct. Please check the email and try again." };
+  }
+  await db.query(`DELETE FROM login_codes WHERE email = $1`, [key]);
+  return { ok: true };
+}
+
+/** Code check without creating a user (used by the admin sign-in). */
+export const consumeLoginCode = (db, key, code) => transaction(db, (c) => consumeCodeInTx(c, key, code));
+
+/**
  * Checks a sign-in code; on success consumes it, creates the user if new, and opens a session.
  * @returns {Promise<{ token: string, user: object, isNewUser: boolean } | { error: string }>}
  */
 export async function verifyLoginCode(db, email, code) {
   return transaction(db, async (db) => {
-    await db.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))", [
-      "login:" + email,
-    ]);
-    const { rows } = await db.query(
-      `UPDATE login_codes SET attempts = attempts + 1
-     WHERE email = $1 AND expires_at > now()
-     RETURNING code_hash, attempts`,
-      [email],
-    );
-    const entry = rows[0];
-    if (!entry)
-      return { error: "This code has expired. Please request a new one." };
-    if (entry.attempts > LOGIN_CODE_MAX_ATTEMPTS) {
-      await db.query(`DELETE FROM login_codes WHERE email = $1`, [email]);
-      return { error: "Too many attempts. Please request a new code." };
-    }
-    if (!/^\d{6}$/.test(code) || !sameHash(entry.code_hash, sha256(code))) {
-      return {
-        error:
-          "That code is not correct. Please check the email and try again.",
-      };
-    }
-    await db.query(`DELETE FROM login_codes WHERE email = $1`, [email]);
+    const checked = await consumeCodeInTx(db, email, code);
+    if (checked.error) return checked;
 
     const inserted = await db.query(
       `INSERT INTO users (email, last_login_at) VALUES ($1, now())

@@ -3,7 +3,8 @@
 export const PERMISSIONS = {
   "students.view": "See students and their applications",
   "students.manage": "Change application status, review documents, add notes and assign students",
-  "monitoring.view": "See site and user-flow errors and the application funnel",
+  "monitoring.view": "See site and user-flow errors, system status and the application funnel",
+  "monitoring.manage": "Mark errors as resolved or ignored",
   "content.edit": "Edit the site's text and main images",
 };
 export const PERMISSION_KEYS = Object.keys(PERMISSIONS);
@@ -12,6 +13,7 @@ export const PERMISSION_SHORT = {
   "students.view": "View students",
   "students.manage": "Manage students",
   "monitoring.view": "View monitoring",
+  "monitoring.manage": "Resolve errors",
   "content.edit": "Edit site content",
 };
 

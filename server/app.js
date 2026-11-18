@@ -18,6 +18,8 @@ import { paidExtras, recordPayment } from "./billing.js";
 import { ONBOARDING_FEE, PAYMENT_SOURCE } from "./pricing.js";
 import { POLICY_VERSION } from "../shared/admissions.js";
 import { rateLimit } from "./rateLimit.js";
+import { CLIENT_KINDS, createMonitor, routeOf } from "./monitor.js";
+import { userForToken } from "./db.js";
 export { ONBOARDING_FEE };
 
 export function describeIntent(intent) {
@@ -46,6 +48,7 @@ export function createApp({
   app.disable("x-powered-by");
   app.set("trust proxy", 1);
   const db = accounts?.db;
+  const monitor = createMonitor(db, log);
   const billingReady = Boolean(
     db &&
     billing?.resend &&
@@ -99,8 +102,19 @@ export function createApp({
           config.webhookSecret,
         );
       } catch {
-        throw httpError(400, "Invalid webhook signature.");
+        await monitor.record({ source: "server", kind: "webhook_failed", message: "Stripe webhook signature check failed (wrong signing secret, or not from Stripe)", route: "/api/stripe/webhook", status: 400 });
+        throw Object.assign(httpError(400, "Invalid webhook signature."), { recorded: true });
       }
+      // Lets the admin see that Stripe is really reaching us, and in which mode (test or live).
+      await db
+        .query(
+          `INSERT INTO app_settings (key, value) VALUES ('last_webhook', $1)
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`,
+          [JSON.stringify({ type: event.type, live: Boolean(event.livemode) })],
+        )
+        .catch(() => {});
+      if (event.type === "checkout.session.async_payment_failed")
+        await monitor.record({ source: "server", kind: "payment_failed", message: "A delayed payment method failed after the student left checkout", route: "/api/stripe/webhook", status: 200 });
       const intent = event.data?.object;
       if (
         intent?.metadata?.source === PAYMENT_SOURCE &&
@@ -137,6 +151,29 @@ export function createApp({
     res.set("Cache-Control", "no-store");
     next();
   });
+  // Problems seen in the visitor's browser. Always answers 204 (the page never waits on it or retries).
+  app.post(
+    "/api/client-events",
+    rateLimit({ windowMs: 60_000, max: accounts?.rateLimits?.clientEvents ?? 30 }),
+    safe(async (req, res) => {
+      const b = req.body || {};
+      if (CLIENT_KINDS.includes(b.kind) && db) {
+        const header = req.get("authorization") || "";
+        const user = header.startsWith("Bearer ") ? await userForToken(db, header.slice(7)).catch(() => null) : null;
+        await monitor.record({
+          source: "client",
+          kind: b.kind,
+          message: b.message,
+          route: typeof b.route === "string" ? b.route : undefined,
+          page: typeof b.page === "string" && b.page.startsWith("/") ? b.page : undefined,
+          step: Number.isInteger(b.step) ? b.step : undefined,
+          status: Number.isInteger(b.status) ? b.status : undefined,
+          userId: user?.id,
+        });
+      }
+      res.status(204).end();
+    }),
+  );
   mountAccountRoutes(app, {
     billing,
     bookingUrl: config.bookingUrl || null,
@@ -146,6 +183,7 @@ export function createApp({
     rateLimits: accounts?.rateLimits,
     stripe,
     log,
+    monitor,
   });
   mountWorkflow(app, {
     db,
@@ -153,14 +191,6 @@ export function createApp({
     staffEmails: config.staffEmails || [],
     stripe,
     billing,
-  });
-  mountAdmin(app, {
-    db: db || null,
-    fileKey: accounts?.fileKey || null,
-    deliverAdminCode: accounts?.deliverAdminCode || null,
-    deliverAdminInvite: accounts?.deliverAdminInvite || null,
-    rateLimits: accounts?.rateLimits,
-    log,
   });
   const status = async () => {
     const f = await flags();
@@ -194,6 +224,17 @@ export function createApp({
         : null,
     };
   };
+  mountAdmin(app, {
+    db: db || null,
+    fileKey: accounts?.fileKey || null,
+    deliverAdminCode: accounts?.deliverAdminCode || null,
+    deliverAdminInvite: accounts?.deliverAdminInvite || null,
+    rateLimits: accounts?.rateLimits,
+    log,
+    monitor,
+    // What the admin's Monitoring page shows about the running system (no secrets, only yes/no and modes).
+    systemStatus: async () => ({ ...(await status()), flags: await flags(), stripeMode: config.stripeMode || (stripe ? "unknown" : "none") }),
+  });
   app.get(
     "/api/health",
     safe(async (_req, res) => {
@@ -339,8 +380,11 @@ export function createApp({
     res.status(202).json({ ok: true });
   });
   app.use("/api", (_req, res) => res.status(404).json({ error: "Not found" }));
-  app.use((err, _req, res, _next) => {
+  app.use(async (err, req, res, _next) => {
     log(`API error: ${err.status || 500} ${err.message}`);
+    // Unexpected failures only: ordinary refusals (400, 401, 404, 409…) and "not set up yet" (503) aren't bugs.
+    if (!err.recorded && (!err.status || [500, 502, 504].includes(err.status)))
+      await monitor.record({ source: "server", kind: "server_error", message: err.message, route: `${req.method} ${req.path}`, status: err.status || 500 });
     res
       .status(err.status || 500)
       .json({

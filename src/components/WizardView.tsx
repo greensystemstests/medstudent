@@ -38,6 +38,7 @@ import {
   validateStep,
 } from "../lib/application";
 import { warmUpApi } from "../lib/api";
+import { reportEvent, setReportStep } from "../lib/reportError";
 import {
   ApplicationState,
   AppView,
@@ -185,9 +186,16 @@ export const WizardView: React.FC<WizardViewProps> = ({
     window.scrollTo({ top: 0, behavior: scrollBehavior() });
   };
 
+  useEffect(() => {
+    setReportStep(currentStep);
+    return () => setReportStep(undefined);
+  }, [currentStep]);
+
   const handleNext = () => {
     if (errors.length) {
       setShowErrors(true);
+      // Which questions stop people, by step (the messages are fixed texts, never what they typed).
+      errors.forEach((e) => reportEvent("validation", e, { step: currentStep }));
       // Move focus to the error summary so keyboard and screen-reader users land on it (WCAG 3.3.1).
       requestAnimationFrame(() => {
         const summary = document.getElementById("step-errors");

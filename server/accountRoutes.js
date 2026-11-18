@@ -121,7 +121,7 @@ async function applicationsForEmail(stripe, email) {
  */
 export function mountAccountRoutes(
   app,
-  { db, fileKey, deliverCode, stripe, log, rateLimits = {}, billing = null, bookingUrl = null },
+  { db, fileKey, deliverCode, stripe, log, rateLimits = {}, billing = null, bookingUrl = null, monitor = null },
 ) {
   const limits = { requestCode: 10, verify: 30, upload: 20, ...rateLimits };
   const accountsReady = Boolean(db && fileKey && deliverCode);
@@ -191,6 +191,7 @@ export function mountAccountRoutes(
         res.json({ sent: true });
       } catch (err) {
         log(`request-code error: ${err.message}`);
+        await monitor?.record({ source: "server", kind: "email_failed", message: `Sign-in code email: ${err.message}`, route: "/api/auth/request-code", status: 502 });
         res
           .status(502)
           .json({
@@ -486,7 +487,7 @@ export function mountAccountRoutes(
   );
 
   // Upload over the size limit, malformed JSON, or an unexpected DB error: answer in JSON, never an HTML stack.
-  const onError = (err, _req, res, _next) => {
+  const onError = async (err, req, res, _next) => {
     if (err?.type === "entity.too.large") {
       return res
         .status(413)
@@ -496,6 +497,7 @@ export function mountAccountRoutes(
     }
     if (err.status === 409) return res.status(409).json({ error: err.message });
     log(`account API error: ${err?.message}`);
+    await monitor?.record({ source: "server", kind: "server_error", message: err?.message || "Unknown error", route: `${req.method} ${req.baseUrl}${req.path === "/" ? "" : req.path}`, status: 500 });
     res.status(500).json({ error: "Something went wrong. Please try again." });
   };
   auth.use(onError);

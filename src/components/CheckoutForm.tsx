@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 // "/pure" loads Stripe.js only when loadStripe() is called (the main entry loads it on every page).
 import { loadStripe } from "@stripe/stripe-js/pure";
+import { reportEvent } from "../lib/reportError";
 import { AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import { LEGAL_ENTITY } from "../data/legal";
 
@@ -80,7 +81,10 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
           }
         });
       } catch (e) {
-        if (!cancelled) setLoadFailed(true);
+        if (!cancelled) {
+          setLoadFailed(true);
+          reportEvent("payment_form", `The payment form did not load: ${(e as Error)?.message || "unknown reason"}`);
+        }
       }
     })();
     return () => {

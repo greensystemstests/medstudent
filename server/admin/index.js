@@ -3,6 +3,7 @@ import { safe, httpError } from "../workflow.js";
 import { mountAdminAuth } from "./auth.js";
 import { mountTeam } from "./team.js";
 import { mountStudents } from "./students.js";
+import { mountMonitoring } from "./monitoring.js";
 
 /**
  * The admin API, under /api/admin. Everything needs a signed-in admin (two-step sign-in), and each
@@ -20,5 +21,6 @@ export function mountAdmin(app, deps) {
   mountAdminAuth(router, deps);
   mountTeam(router, deps);
   mountStudents(router, deps);
+  mountMonitoring(router, deps);
   app.use("/api/admin", router);
 }

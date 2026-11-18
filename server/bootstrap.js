@@ -130,6 +130,7 @@ export async function buildFromEnv(env = process.env, options = {}) {
       supportEmail,
       bookingUrl,
       siteUrl,
+      stripeMode: !stripe || !publishableKey ? "none" : secretKey.includes("_live_") ? "live" : "test",
       staffEmails: (env.STAFF_EMAILS || "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean),
       buildSha: env.BUILD_SHA || env.RENDER_GIT_COMMIT || "local",
       webhookSecret: val("STRIPE_WEBHOOK_SECRET"),

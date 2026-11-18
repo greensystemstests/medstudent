@@ -176,6 +176,59 @@ export interface OverviewData {
   perDay: { day: string; count: number }[];
   scope: StudentScope;
 }
+export interface SystemStatus {
+  database: boolean;
+  build: string;
+  stripeMode: "test" | "live" | "none" | "unknown";
+  paymentsReady: boolean;
+  billingReady: boolean;
+  accountsReady: boolean;
+  checkoutEnabled: boolean;
+  legalApproved: boolean;
+  lastWebhook: { type: string; live: boolean; at: string } | null;
+  emails: { pending: number; retrying: number; needsReview: number; oldestPendingMinutes: number };
+  errors24h: { total: number; server: number; client: number };
+}
+export interface ErrorGroup {
+  fingerprint: string;
+  kind: string;
+  source: "client" | "server";
+  message: string;
+  location: string;
+  count: number;
+  users: number;
+  status: number | null;
+  firstSeen: string;
+  lastSeen: string;
+  state: "open" | "resolved" | "ignored";
+  recurred: boolean;
+  note: string;
+  stateBy: string | null;
+  stateAt: string | null;
+}
+export interface ErrorEventRow {
+  id: number;
+  at: string;
+  kind: string;
+  source: string;
+  message: string;
+  route: string | null;
+  page: string | null;
+  status: number | null;
+  step: number | null;
+  signedIn: boolean;
+  user: { email: string; applicationId: string | null } | null;
+}
+export interface FlowData {
+  accountsCreated: number;
+  applicationsSaved: number;
+  reachedStep: { step: number; count: number }[];
+  checkoutStarted: number;
+  paid: number;
+  abandonedCheckout: number;
+  blocksByStep: { step: number; count: number }[];
+  topBlocks: { step: number; message: string; count: number }[];
+}
 export type Stage = "totp" | "enroll" | "full";
 export interface SessionState {
   stage: Stage;
@@ -214,6 +267,13 @@ export const adminApi = {
     req<{ ok: true }>(`/team/roles/${id}`, { json: input }),
   deleteRole: (id: string) => req<{ ok: true }>(`/team/roles/${id}`, { method: "DELETE" }),
   overview: () => req<OverviewData>("/overview"),
+  monitoringStatus: () => req<SystemStatus>("/monitoring/status"),
+  errorGroups: (window: string, kind: string, state: string) =>
+    req<{ groups: ErrorGroup[]; counts: Record<string, number> }>(`/monitoring/errors?window=${window}&state=${state}${kind ? `&kind=${kind}` : ""}`),
+  errorEvents: (fingerprint: string) => req<{ events: ErrorEventRow[] }>(`/monitoring/errors/${fingerprint}`),
+  setErrorState: (fingerprint: string, status: "open" | "resolved" | "ignored", note = "") =>
+    req<{ ok: true }>(`/monitoring/errors/${fingerprint}/state`, { json: { status, note } }),
+  flow: (window: string) => req<FlowData>(`/monitoring/flow?window=${window}`),
   students: (f: StudentFilters) => req<StudentList>(`/students?${studentQuery(f)}`),
   student: (id: string) => req<StudentDetailData>(`/students/${encodeURIComponent(id)}`),
   setStatus: (id: string, status: string, note: string) => req<{ ok: true }>(`/students/${encodeURIComponent(id)}/status`, { json: { status, note } }),

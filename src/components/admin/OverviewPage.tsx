@@ -5,6 +5,7 @@ import { adminApi, adminCan, isSuperAdmin } from "../../lib/adminApi";
 import type { PageContext } from "./AdminShell";
 import { Badge, Card, formatDate } from "./ui";
 import { StudentStats } from "./StudentStats";
+import { HealthStrip } from "./MonitoringPage";
 
 export const OverviewPage: React.FC<{ ctx: PageContext; onNavigate: (id: string) => void }> = ({ ctx, onNavigate }) => {
   const { admin } = ctx;
@@ -27,6 +28,7 @@ export const OverviewPage: React.FC<{ ctx: PageContext; onNavigate: (id: string)
         </p>
       </div>
 
+      {adminCan(admin, "monitoring.view") && <HealthStrip ctx={ctx} onNavigate={onNavigate} />}
       {adminCan(admin, "students.view") && <StudentStats ctx={ctx} onNavigate={onNavigate} />}
 
       <Card title="What your role can do">

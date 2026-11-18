@@ -33,7 +33,7 @@ const GENERIC_CODE_ERROR = "That code didn't work. Check the email, or request a
  *  2. a 6-digit code from an authenticator app such as Google Authenticator (proves the device).
  * The first time, step 2 is the app's enrolment: scan a QR code, confirm one code, keep the recovery codes.
  */
-export function mountAdminAuth(router, { db, fileKey, deliverAdminCode, log, rateLimits = {} }) {
+export function mountAdminAuth(router, { db, fileKey, deliverAdminCode, log, rateLimits = {}, monitor = null }) {
   const limit = rateLimit({ windowMs: 60_000, max: rateLimits.adminAuth ?? 20 });
   const full = requireAdmin(db);
 
@@ -53,6 +53,7 @@ export function mountAdminAuth(router, { db, fileKey, deliverAdminCode, log, rat
         await deliverAdminCode(email, issued.code);
       } catch (error) {
         log?.(`admin request-code error: ${error.message}`);
+        await monitor?.record({ source: "server", kind: "email_failed", message: `Admin sign-in code email: ${error.message}`, route: "/api/admin/auth/request-code", status: 502 });
         await db.query("DELETE FROM login_codes WHERE email = $1", [adminCodeKey(email)]);
         throw httpError(502, "We could not send the code right now. Please try again.");
       }

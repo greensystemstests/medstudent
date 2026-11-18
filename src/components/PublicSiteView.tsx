@@ -33,6 +33,7 @@ import {
 import { AppView } from "../types";
 import { formatLongDate } from "../lib/admissions";
 import { pathFor, universityView } from "../lib/routes";
+import { useImage, useText } from "../lib/siteContent";
 
 type Programme = "Medicine" | "Dentistry" | "Pharmacy";
 
@@ -110,6 +111,40 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
 }) => {
   const [programme, setProgramme] = useState<"All" | Programme>("All");
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
+  // Text and pictures an admin can change (everything else on the page is fixed in the code).
+  const t = {
+    badge: useText("home.hero.badge"),
+    title: useText("home.hero.title"),
+    accent: useText("home.hero.titleAccent"),
+    intro: useText("home.hero.intro"),
+    primary: useText("home.hero.primaryButton"),
+    note: useText("home.hero.note"),
+    caption: useText("home.hero.imageCaption"),
+    cardTitle: useText("home.hero.cardTitle"),
+    whyTitle: useText("home.why.title"),
+    whyIntro: useText("home.why.intro"),
+    whyCards: [
+      { title: useText("home.why.card1.title"), text: useText("home.why.card1.text") },
+      { title: useText("home.why.card2.title"), text: useText("home.why.card2.text") },
+      { title: useText("home.why.card3.title"), text: useText("home.why.card3.text") },
+    ],
+    calloutLead: useText("home.why.calloutLead"),
+    callout: useText("home.why.callout"),
+    uniTitle: useText("home.universities.title"),
+    uniIntro: useText("home.universities.intro"),
+    journeyTitle: useText("home.journey.title"),
+    gatewayIntro: useText("home.gateway.intro"),
+    start: useText("home.gateway.startButton"),
+    closeTitle: useText("home.closing.title"),
+    closeText: useText("home.closing.text"),
+  };
+  const heroImage = useImage("home.hero.image", APP_IMAGES.muSofia);
+  const uniImages: Record<string, string> = {
+    "mu-sofia": useImage("uni.mu-sofia.image", UNIVERSITIES.find((u) => u.id === "mu-sofia")?.image ?? ""),
+    "mu-plovdiv": useImage("uni.mu-plovdiv.image", UNIVERSITIES.find((u) => u.id === "mu-plovdiv")?.image ?? ""),
+    "mu-varna": useImage("uni.mu-varna.image", UNIVERSITIES.find((u) => u.id === "mu-varna")?.image ?? ""),
+    "mu-pleven": useImage("uni.mu-pleven.image", UNIVERSITIES.find((u) => u.id === "mu-pleven")?.image ?? ""),
+  };
 
   const routes = SOURCES.filter(
     (u) => programme === "All" || u.programs.includes(programme),
@@ -138,20 +173,15 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
           <div className="lg:col-span-7 space-y-6">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-semibold">
               <ShieldCheck className="w-4 h-4 text-emerald-400" aria-hidden="true" />
-              <span>Independent admissions support · Medicine &amp; Dentistry</span>
+              <span>{t.badge}</span>
             </div>
 
             <h1 className="text-3xl sm:text-5xl font-extrabold font-heading tracking-tight leading-[1.15]">
-              Want to study medicine in Bulgaria?{" "}
-              <span className="text-emerald-400">Find out where you stand first.</span>
+              {t.title}{" "}
+              <span className="text-emerald-400">{t.accent}</span>
             </h1>
 
-            <p className="text-base sm:text-lg text-slate-300 max-w-2xl leading-relaxed">
-              Thinking of studying Medicine or Dentistry in English at a
-              Bulgarian medical university, but not sure which one may fit your
-              situation? Start with a free preliminary check before deciding
-              whether to use StudyBg.
-            </p>
+            <p className="text-base sm:text-lg text-slate-300 max-w-2xl leading-relaxed whitespace-pre-line">{t.intro}</p>
 
             <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 pt-1">
               <button
@@ -160,7 +190,7 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
                 id="hero-quick-fit-btn"
               >
                 <Sparkles className="w-4 h-4" aria-hidden="true" />
-                <span>Check your eligibility — Free</span>
+                <span>{t.primary}</span>
               </button>
               <button
                 onClick={() => scrollTo("pricing-section")}
@@ -172,7 +202,7 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
               </button>
             </div>
             <p className="text-sm text-slate-300">
-              5 questions · runs in your browser · no sign-up, no payment
+              {t.note}
             </p>
           </div>
 
@@ -181,8 +211,8 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
             <div className="bg-slate-900/80 rounded-2xl border border-slate-700 p-6 shadow-2xl overflow-hidden">
               <div className="relative aspect-video bg-slate-900 -mx-6 -mt-6 mb-5">
                 <SafeImage
-                  src={APP_IMAGES.muSofia}
-                  alt="Medical University of Sofia"
+                  src={heroImage}
+                  alt={t.caption}
                   width={800}
                   height={450}
                   fetchPriority="high"
@@ -190,11 +220,11 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
                   referrerPolicy="no-referrer"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-3">
-                  <span className="text-xs font-medium text-slate-100">Medical University of Sofia</span>
+                  <span className="text-xs font-medium text-slate-100">{t.caption}</span>
                 </div>
               </div>
               <h2 className="font-heading font-bold text-base text-white">
-                What the free check shows you
+                {t.cardTitle}
               </h2>
               <ol className="mt-4 space-y-3 text-sm text-slate-200">
                 {[
@@ -230,29 +260,14 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
         className="py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto"
       >
         <h2 id="why-title" className="text-2xl sm:text-3xl font-extrabold font-heading text-slate-900">
-          Why StudyBg?
+          {t.whyTitle}
         </h2>
-        <p className="text-slate-600 mt-2 max-w-3xl">
-          Four universities, four sets of rules, documents from your own country,
-          and deadlines that don’t line up. Here’s where we help.
-        </p>
+        <p className="text-slate-600 mt-2 max-w-3xl whitespace-pre-line">{t.whyIntro}</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
           {[
-            {
-              icon: Scale,
-              title: "Compare the four routes",
-              text: "See each university side by side, with a link to its official admissions page and the date we last checked it.",
-            },
-            {
-              icon: ClipboardCheck,
-              title: "Understand what they’ll ask for",
-              text: "Get an independent read of the qualification and document requirements for your situation, in plain language.",
-            },
-            {
-              icon: FolderLock,
-              title: "Keep everything in one place",
-              text: "Your application, documents and our review notes live in your StudyBg account, not scattered across emails.",
-            },
+            { icon: Scale, ...t.whyCards[0] },
+            { icon: ClipboardCheck, ...t.whyCards[1] },
+            { icon: FolderLock, ...t.whyCards[2] },
           ].map(({ icon: Icon, title, text }) => (
             <div key={title} className="bg-white rounded-2xl border border-slate-200 p-5">
               <Icon className="w-6 h-6 text-[#006644]" aria-hidden="true" />
@@ -262,9 +277,7 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
           ))}
         </div>
         <p className="mt-5 text-sm text-slate-700 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-          <strong>You can apply directly to each university.</strong> StudyBg is
-          an independent service for applicants who want structured guidance and
-          support.
+          <strong>{t.calloutLead}</strong> {t.callout}
         </p>
       </section>
 
@@ -280,13 +293,9 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-6">
             <div>
               <h2 id="universities-title" className="text-2xl sm:text-3xl font-extrabold font-heading text-slate-900">
-                Compare the four medical universities
+                {t.uniTitle}
               </h2>
-              <p className="text-slate-600 mt-2 max-w-3xl text-sm sm:text-base">
-                Requirements are set by each university and change between
-                years. Each card links to the official page it’s based on. The
-                university makes the final decision.
-              </p>
+              <p className="text-slate-600 mt-2 max-w-3xl text-sm sm:text-base whitespace-pre-line">{t.uniIntro}</p>
             </div>
             <div
               role="group"
@@ -316,7 +325,7 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
                 {profile && (
                   <div className="relative aspect-video overflow-hidden bg-slate-900 -mx-5 -mt-5 sm:-mx-6 sm:-mt-6">
                     <SafeImage
-                      src={profile.image}
+                      src={uniImages[source.id] || profile.image}
                       alt={source.name}
                       width={800}
                       height={450}
@@ -397,7 +406,7 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
         className="py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto"
       >
         <h2 id="journey-title" className="text-2xl sm:text-3xl font-extrabold font-heading text-slate-900">
-          How it works, in six steps
+          {t.journeyTitle}
         </h2>
         <p className="text-slate-600 mt-2 max-w-3xl">
           Who does what, so there are no surprises. Want the detail first? Read
@@ -444,10 +453,7 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
           <h2 id="gateway-title" className="text-2xl sm:text-3xl font-extrabold font-heading text-slate-900">
             The {GATEWAY_NAME}: €{ONBOARDING_FEE_EUR}, once
           </h2>
-          <p className="text-slate-600 mt-2 max-w-3xl">
-            For when you’ve decided on Bulgaria and want someone independent to
-            go through your file with you. One payment, no subscription.
-          </p>
+          <p className="text-slate-600 mt-2 max-w-3xl whitespace-pre-line">{t.gatewayIntro}</p>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6 items-start">
             <div className="lg:col-span-7 rounded-2xl bg-gradient-to-b from-[#0f1e36] to-[#00281b] text-white p-6 sm:p-8">
@@ -484,7 +490,7 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
                   id="gateway-start-btn"
                   className="shrink-0 whitespace-nowrap min-h-11 px-5 py-3 bg-[#00a86b] hover:bg-[#00bf7a] text-[#04150f] font-bold rounded-xl text-sm inline-flex items-center justify-center gap-2"
                 >
-                  Start my application
+                  {t.start}
                   <ArrowRight className="w-4 h-4" aria-hidden="true" />
                 </button>
                 <p className="text-sm text-slate-300">
@@ -583,13 +589,9 @@ export const PublicSiteView: React.FC<PublicSiteViewProps> = ({
       <section className="px-4 sm:px-6 lg:px-8 pb-16">
         <div className="max-w-4xl mx-auto rounded-2xl bg-[#0f1e36] text-white p-6 sm:p-10 text-center">
           <h2 className="text-2xl sm:text-3xl font-extrabold font-heading">
-            Still deciding? Start with the free check.
+            {t.closeTitle}
           </h2>
-          <p className="text-slate-300 mt-2 max-w-2xl mx-auto">
-            Five questions, a clear list of what’s ready and what needs
-            checking, and a link to the official requirements. Then decide if
-            you want our help.
-          </p>
+          <p className="text-slate-300 mt-2 max-w-2xl mx-auto whitespace-pre-line">{t.closeText}</p>
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
               onClick={() => onOpenQuickFit()}

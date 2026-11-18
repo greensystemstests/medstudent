@@ -26,6 +26,9 @@ const LABELS: Record<string, string> = {
   document_review: "Reviewed a student's document",
   students_exported: "Exported students to CSV",
   error_state: "Changed an error's state",
+  content_text: "Edited site text",
+  content_image: "Changed a site picture",
+  content_reset: "Reset site content to the original",
 };
 export const actionLabel = (a: string) => LABELS[a] ?? a.replaceAll("_", " ");
 

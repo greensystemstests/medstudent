@@ -18,6 +18,7 @@ import { paidExtras, recordPayment } from "./billing.js";
 import { ONBOARDING_FEE, PAYMENT_SOURCE } from "./pricing.js";
 import { POLICY_VERSION } from "../shared/admissions.js";
 import { rateLimit } from "./rateLimit.js";
+import { mountPublicContent } from "./admin/content.js";
 import { CLIENT_KINDS, createMonitor, routeOf } from "./monitor.js";
 import { userForToken } from "./db.js";
 export { ONBOARDING_FEE };
@@ -224,6 +225,7 @@ export function createApp({
         : null,
     };
   };
+  mountPublicContent(app, { db: db || null });
   mountAdmin(app, {
     db: db || null,
     fileKey: accounts?.fileKey || null,

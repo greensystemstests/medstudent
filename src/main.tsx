@@ -5,6 +5,7 @@ import './index.css';
 import { installImageFallback } from './lib/imageFallback';
 import { installErrorReporting } from './lib/reportError';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { SiteContentProvider } from './lib/siteContent';
 
 installImageFallback();
 installErrorReporting();
@@ -12,7 +13,9 @@ installErrorReporting();
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      <App />
+      <SiteContentProvider>
+        <App />
+      </SiteContentProvider>
     </ErrorBoundary>
   </StrictMode>,
 );
